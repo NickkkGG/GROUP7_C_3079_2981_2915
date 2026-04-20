@@ -13,209 +13,221 @@ export interface Aircraft {
 }
 
 export const mockAircraft: Aircraft[] = [
+  // North America Routes
   {
     id: 'EP201',
     callsign: 'ALTUS201',
-    latitude: -6.1275,
-    longitude: 106.6537,
-    altitude: 8500,
+    latitude: 33.7490,
+    longitude: -84.3880,
+    altitude: 10500,
     heading: 45,
-    speed: 450,
-    origin: 'CGK',
-    destination: 'SIN',
+    speed: 500,
+    origin: 'ATL',
+    destination: 'NYC',
     status: 'active',
     route: [
-      { lat: -6.1275, lng: 106.6537 }, // Jakarta
-      { lat: -5.9, lng: 110.4 },
-      { lat: -3.9, lng: 114.6 },
-      { lat: 1.3521, lng: 103.8198 }, // Singapore
+      { lat: 33.7490, lng: -84.3880 }, // Atlanta
+      { lat: 35.0, lng: -82.0 },
+      { lat: 40.6895, lng: -74.0342 }, // New York
     ],
   },
   {
     id: 'EP202',
     callsign: 'ALTUS202',
-    latitude: 3.1390,
-    longitude: 101.6869,
+    latitude: 37.6213,
+    longitude: -122.3790,
     altitude: 9200,
     heading: 120,
     speed: 480,
-    origin: 'SIN',
-    destination: 'KUL',
+    origin: 'SFO',
+    destination: 'LAX',
     status: 'active',
     route: [
-      { lat: 1.3521, lng: 103.8198 }, // Singapore
-      { lat: 2.5, lng: 103.0 },
-      { lat: 3.1390, lng: 101.6869 }, // Kuala Lumpur
+      { lat: 37.6213, lng: -122.3790 }, // San Francisco
+      { lat: 36.5, lng: -120.0 },
+      { lat: 33.9425, lng: -118.4081 }, // Los Angeles
     ],
   },
+
+  // Europe Routes
   {
     id: 'EP203',
     callsign: 'ALTUS203',
-    latitude: 13.9011,
-    longitude: 100.8678,
+    latitude: 51.4700,
+    longitude: -0.4615,
     altitude: 7800,
     heading: 280,
-    speed: 420,
-    origin: 'KUL',
-    destination: 'BKK',
+    speed: 470,
+    origin: 'LHR',
+    destination: 'CDG',
     status: 'active',
     route: [
-      { lat: 3.1390, lng: 101.6869 }, // Kuala Lumpur
-      { lat: 8.0, lng: 101.0 },
-      { lat: 13.9011, lng: 100.8678 }, // Bangkok
+      { lat: 51.4700, lng: -0.4615 }, // London
+      { lat: 50.5, lng: -2.0 },
+      { lat: 48.8566, lng: 2.3522 }, // Paris
     ],
   },
   {
     id: 'EP204',
     callsign: 'ALTUS204',
-    latitude: 21.9162,
-    longitude: 114.2049,
-    altitude: 10500,
+    latitude: 48.3519,
+    longitude: 11.7861,
+    altitude: 8900,
     heading: 35,
     speed: 490,
-    origin: 'BKK',
-    destination: 'HKG',
+    origin: 'CDG',
+    destination: 'MUC',
     status: 'active',
     route: [
-      { lat: 13.9011, lng: 100.8678 }, // Bangkok
-      { lat: 17.5, lng: 105.0 },
-      { lat: 21.9162, lng: 114.2049 }, // Hong Kong
+      { lat: 48.8566, lng: 2.3522 }, // Paris
+      { lat: 49.0, lng: 6.0 },
+      { lat: 48.3519, lng: 11.7861 }, // Munich
     ],
   },
+
+  // Middle East Routes
   {
     id: 'EP205',
     callsign: 'ALTUS205',
-    latitude: 31.1454,
-    longitude: 121.8053,
-    altitude: 9800,
+    latitude: 25.2854,
+    longitude: 55.3677,
+    altitude: 9500,
     heading: 65,
     speed: 510,
-    origin: 'HKG',
-    destination: 'PVG',
+    origin: 'DXB',
+    destination: 'DXB',
     status: 'active',
     route: [
-      { lat: 21.9162, lng: 114.2049 }, // Hong Kong
-      { lat: 28.0, lng: 118.0 },
-      { lat: 31.1454, lng: 121.8053 }, // Shanghai
+      { lat: 25.2854, lng: 55.3677 }, // Dubai
+      { lat: 23.0, lng: 56.0 },
+      { lat: 31.9454, lng: 35.9284 }, // Amman
     ],
   },
   {
     id: 'EP206',
     callsign: 'ALTUS206',
-    latitude: -6.2663,
-    longitude: 106.7300,
-    altitude: 6200,
+    latitude: 31.9454,
+    longitude: 35.9284,
+    altitude: 8200,
     heading: 180,
-    speed: 380,
-    origin: 'CGK',
-    destination: 'SUB',
+    speed: 420,
+    origin: 'AMM',
+    destination: 'CAI',
     status: 'active',
     route: [
-      { lat: -6.1275, lng: 106.6537 }, // Jakarta
-      { lat: -6.5, lng: 107.5 },
-      { lat: -7.2108, lng: 112.7461 }, // Surabaya
+      { lat: 31.9454, lng: 35.9284 }, // Amman
+      { lat: 29.0, lng: 32.0 },
+      { lat: 30.1219, lng: 31.4056 }, // Cairo
     ],
   },
+
+  // Africa Route
   {
     id: 'EP207',
     callsign: 'ALTUS207',
-    latitude: -7.6500,
-    longitude: 110.3900,
-    altitude: 5500,
+    latitude: -33.9249,
+    longitude: 18.6024,
+    altitude: 9800,
     heading: 200,
-    speed: 350,
-    origin: 'CGK',
-    destination: 'JOG',
+    speed: 450,
+    origin: 'CPT',
+    destination: 'JNB',
     status: 'active',
     route: [
-      { lat: -6.1275, lng: 106.6537 }, // Jakarta
-      { lat: -6.8, lng: 108.5 },
-      { lat: -7.6500, lng: 110.3900 }, // Yogyakarta
+      { lat: -33.9249, lng: 18.6024 }, // Cape Town
+      { lat: -31.5, lng: 28.0 },
+      { lat: -26.1393, lng: 28.2426 }, // Johannesburg
     ],
   },
+
+  // Asia Routes
   {
     id: 'EP208',
     callsign: 'ALTUS208',
-    latitude: 1.3521,
-    longitude: 103.8198,
-    altitude: 8200,
+    latitude: 35.5494,
+    longitude: 139.7798,
+    altitude: 10200,
     heading: 310,
-    speed: 440,
-    origin: 'SIN',
-    destination: 'PEN',
+    speed: 500,
+    origin: 'NRT',
+    destination: 'HND',
     status: 'active',
     route: [
-      { lat: 1.3521, lng: 103.8198 }, // Singapore
-      { lat: 5.3, lng: 103.5 },
-      { lat: 5.2833, lng: 100.2667 }, // Penang
+      { lat: 35.7660, lng: 140.3866 }, // Narita Tokyo
+      { lat: 35.5, lng: 139.0 },
+      { lat: 35.5494, lng: 139.7798 }, // Haneda Tokyo
     ],
   },
   {
     id: 'EP209',
     callsign: 'ALTUS209',
-    latitude: -8.7500,
-    longitude: 115.2167,
-    altitude: 7000,
+    latitude: -33.9461,
+    longitude: 151.1772,
+    altitude: 10100,
     heading: 90,
-    speed: 410,
-    origin: 'SUB',
-    destination: 'DPS',
+    speed: 460,
+    origin: 'SYD',
+    destination: 'MEL',
     status: 'active',
     route: [
-      { lat: -7.2108, lng: 112.7461 }, // Surabaya
-      { lat: -7.8, lng: 114.0 },
-      { lat: -8.7500, lng: 115.2167 }, // Bali
+      { lat: -33.9461, lng: 151.1772 }, // Sydney
+      { lat: -34.0, lng: 148.0 },
+      { lat: -37.6733, lng: 144.8433 }, // Melbourne
     ],
   },
+
+  // South America Route
   {
     id: 'EP210',
     callsign: 'ALTUS210',
-    latitude: 6.9271,
-    longitude: 122.1338,
-    altitude: 9500,
+    latitude: -23.4345,
+    longitude: -46.4796,
+    altitude: 9000,
     heading: 155,
     speed: 470,
-    origin: 'DPS',
-    destination: 'DVO',
+    origin: 'GIG',
+    destination: 'GRU',
     status: 'active',
     route: [
-      { lat: -8.7500, lng: 115.2167 }, // Bali
-      { lat: 0.0, lng: 117.0 },
-      { lat: 6.9271, lng: 122.1338 }, // Davao
+      { lat: -22.8068, lng: -43.1729 }, // Rio de Janeiro
+      { lat: -23.2, lng: -45.0 },
+      { lat: -23.4345, lng: -46.4796 }, // São Paulo
     ],
   },
+
+  // Additional Asia Routes
   {
     id: 'EP211',
     callsign: 'ALTUS211',
-    latitude: 14.6091,
-    longitude: 121.0223,
-    altitude: 8900,
+    latitude: 22.3193,
+    longitude: 114.1694,
+    altitude: 8500,
     heading: 0,
-    speed: 460,
-    origin: 'DVO',
-    destination: 'MNL',
+    speed: 480,
+    origin: 'HKG',
+    destination: 'SIN',
     status: 'active',
     route: [
-      { lat: 6.9271, lng: 122.1338 }, // Davao
-      { lat: 10.5, lng: 121.5 },
-      { lat: 14.6091, lng: 121.0223 }, // Manila
+      { lat: 22.3193, lng: 114.1694 }, // Hong Kong
+      { lat: 7.0, lng: 108.0 },
+      { lat: 1.3521, lng: 103.8198 }, // Singapore
     ],
   },
   {
     id: 'EP212',
     callsign: 'ALTUS212',
-    latitude: 22.3193,
-    longitude: 114.1694,
-    altitude: 10200,
+    latitude: 13.1939,
+    longitude: 77.5941,
+    altitude: 9700,
     heading: 340,
     speed: 500,
-    origin: 'MNL',
-    destination: 'HKG',
+    origin: 'DEL',
+    destination: 'BOM',
     status: 'active',
     route: [
-      { lat: 14.6091, lng: 121.0223 }, // Manila
-      { lat: 18.0, lng: 117.5 },
-      { lat: 22.3193, lng: 114.1694 }, // Hong Kong
+      { lat: 28.5664, lng: 77.2038 }, // Delhi
+      { lat: 21.0, lng: 77.0 },
+      { lat: 19.0896, lng: 72.8656 }, // Mumbai
     ],
   },
 ];

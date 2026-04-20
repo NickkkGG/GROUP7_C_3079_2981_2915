@@ -99,11 +99,21 @@ export default function WorldMapLeaflet() {
     return () => cancelAnimationFrame(id);
   }, []);
 
+  // Calculate dynamic icon size based on zoom level
+  const getIconSize = (zoomLevel: number) => {
+    // Zoom 2: 18px, Zoom 10: 38px, Zoom 19: 68px
+    const baseSize = 18 + (zoomLevel - 2) * 2.5;
+    return Math.max(16, Math.min(baseSize, 68));
+  };
+
   // Update aircraft markers
   useEffect(() => {
     if (!layerGroupRef.current || !mapRef.current) return;
 
     layerGroupRef.current.clearLayers();
+
+    const iconSize = getIconSize(zoom);
+    const halfSize = iconSize / 2;
 
     aircraftData.forEach((plane, idx) => {
       // Route line with different colors per aircraft
@@ -132,7 +142,7 @@ export default function WorldMapLeaflet() {
         dashArray: '5, 5',
       }).addTo(layerGroupRef.current!);
 
-      // Aircraft marker with realistic airplane SVG
+      // Aircraft marker with realistic airplane SVG - dynamic sizing
       const planeIcon = L.divIcon({
         html: `
           <div style="
@@ -142,7 +152,7 @@ export default function WorldMapLeaflet() {
             transform: rotate(${plane.heading}deg);
             filter: drop-shadow(0 0 8px rgba(66, 165, 245, 0.8)) drop-shadow(0 0 3px rgba(0,0,0,0.6));
           ">
-            <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="${iconSize}" height="${iconSize}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
               <!-- Main fuselage body -->
               <ellipse cx="50" cy="50" rx="8" ry="28" fill="#ffffff" stroke="#1e3a8a" stroke-width="1.5"/>
 
@@ -187,8 +197,8 @@ export default function WorldMapLeaflet() {
             </svg>
           </div>
         `,
-        iconSize: [40, 40],
-        iconAnchor: [20, 20],
+        iconSize: [iconSize, iconSize],
+        iconAnchor: [halfSize, halfSize],
         className: 'aircraft-marker',
       });
 
@@ -206,7 +216,7 @@ export default function WorldMapLeaflet() {
         </div>
       `);
     });
-  }, [aircraftData]);
+  }, [aircraftData, zoom]);
 
   const handleZoomIn = () => {
     if (mapRef.current) {
