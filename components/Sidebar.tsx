@@ -19,7 +19,7 @@ interface NavItem {
   label: string;
   href: string;
   icon: React.ReactNode;
-  roles: ('guest' | 'operator' | 'admin')[];
+  roles: ('guest' | 'user' | 'operator')[];
 }
 
 const navItems: NavItem[] = [
@@ -27,43 +27,43 @@ const navItems: NavItem[] = [
     label: 'Dashboard',
     href: '/dashboard',
     icon: <LayoutDashboard size={20} />,
-    roles: ['guest', 'operator', 'admin'],
+    roles: ['guest', 'user', 'operator'],
   },
   {
     label: 'Track AWB',
     href: '/dashboard/tracking',
     icon: <Map size={20} />,
-    roles: ['guest', 'operator', 'admin'],
+    roles: ['guest', 'user', 'operator'],
   },
   {
     label: 'Flight Status',
     href: '/dashboard/flight-status',
     icon: <Plane size={20} />,
-    roles: ['guest', 'operator', 'admin'],
+    roles: ['guest', 'user', 'operator'],
   },
   {
     label: 'Manifest',
     href: '/dashboard/manifest',
     icon: <Package size={20} />,
-    roles: ['guest', 'operator', 'admin'],
+    roles: ['guest', 'user', 'operator'],
   },
   {
     label: 'Shipments',
     href: '/dashboard/shipments',
     icon: <Package size={20} />,
-    roles: ['operator', 'admin'],
+    roles: ['operator'],
   },
   {
     label: 'Users',
     href: '/dashboard/users',
     icon: <Users size={20} />,
-    roles: ['operator', 'admin'],
+    roles: ['operator'],
   },
   {
     label: 'Settings',
     href: '/dashboard/settings',
     icon: <Settings size={20} />,
-    roles: ['operator', 'admin'],
+    roles: ['guest', 'user', 'operator'],
   },
 ];
 
