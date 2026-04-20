@@ -55,10 +55,6 @@ export default function LoginPage() {
     window.location.href = '/dashboard?role=guest';
   };
 
-  const handleOperatorLogin = () => {
-    window.location.href = '/dashboard?role=operator';
-  };
-
   return (
     <main className={`${inter.className} bg-[#0d1c32] overflow-x-hidden`}>
       <Header />
@@ -175,15 +171,6 @@ export default function LoginPage() {
                 className="w-full px-6 py-3 bg-white/10 border border-white/20 rounded-[12px] font-bold text-white text-base tracking-wide uppercase hover:bg-white/20 hover:border-white/40 transition-all duration-300"
               >
                 Continue as Guest
-              </button>
-
-              {/* Login as Operator Button */}
-              <button
-                type="button"
-                onClick={handleOperatorLogin}
-                className="w-full px-6 py-3 bg-green-500/20 border border-green-500/30 rounded-[12px] font-bold text-green-400 text-base tracking-wide uppercase hover:bg-green-500/30 hover:border-green-500/50 transition-all duration-300"
-              >
-                Login as Operator
               </button>
             </form>
 

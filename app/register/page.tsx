@@ -5,13 +5,30 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { inter } from '@/app/ui/fonts';
 import Header from '@/components/Header';
+import { RotateCw } from 'lucide-react';
 
 export default function RegisterPage() {
+  const generateCode = (): string => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [verificationCode, setVerificationCode] = useState(() => generateCode());
+  const [userVerificationCode, setUserVerificationCode] = useState('');
+
+  const handleRefreshCode = () => {
+    setVerificationCode(generateCode());
+    setUserVerificationCode('');
+  };
 
   // Scroll to top on initial load
   useEffect(() => {
@@ -41,22 +58,50 @@ export default function RegisterPage() {
     return () => window.removeEventListener('scroll', handleParallax);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
       alert('Passwords do not match!');
       return;
     }
 
+    if (userVerificationCode !== verificationCode) {
+      alert('Verification code is incorrect!');
+      return;
+    }
+
     setIsLoading(true);
-    
-    // Simulate registration process
-    setTimeout(() => {
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName,
+          email,
+          password,
+          confirmPassword,
+          verificationCode: userVerificationCode
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Registration failed');
+        setIsLoading(false);
+        return;
+      }
+
+      alert('Account created successfully!');
+      // Redirect to login
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('Registration failed. Please try again.');
       setIsLoading(false);
-      // Handle registration logic here
-      console.log('Registration attempted with:', { fullName, email, password });
-    }, 1000);
+    }
   };
 
   return (
@@ -115,7 +160,7 @@ export default function RegisterPage() {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4 opacity-0 animate-fade-up" style={{animationDelay: '150ms'}}>
+            <form onSubmit={handleSubmit} className="space-y-2.5 opacity-0 animate-fade-up" style={{animationDelay: '150ms'}}>
               {/* Full Name Field */}
               <div className="space-y-2">
                 <label htmlFor="fullName" className="block text-white/80 font-semibold text-sm">
@@ -178,6 +223,42 @@ export default function RegisterPage() {
                   className="w-full px-4 py-3 rounded-[12px] bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-[#003fcc] focus:bg-white/15 transition-all duration-300 font-medium"
                   required
                 />
+              </div>
+
+              {/* Verification Code Section */}
+              <div className="space-y-3 pt-2 border-t border-white/20">
+                <div className="space-y-2">
+                  <label className="block text-white/80 font-semibold text-sm">
+                    Verification Code
+                  </label>
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1 px-4 py-3 rounded-[12px] bg-white/10 border-2 border-white/30 text-white font-mono text-lg font-bold text-center tracking-widest">
+                      {verificationCode}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRefreshCode}
+                      className="px-4 py-3 bg-white/20 hover:bg-white/30 border border-white/30 rounded-[12px] text-white font-semibold transition-all duration-300"
+                      title="Refresh code"
+                    >
+                      <RotateCw size={20} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="verifyCode" className="block text-white/80 font-semibold text-sm">
+                    Enter Code
+                  </label>
+                  <input
+                    type="text"
+                    id="verifyCode"
+                    value={userVerificationCode}
+                    onChange={(e) => setUserVerificationCode(e.target.value.toUpperCase())}
+                    placeholder="Enter verification code"
+                    className="w-full px-4 py-3 rounded-[12px] bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-[#003fcc] focus:bg-white/15 transition-all duration-300 font-medium text-center font-mono text-lg tracking-widest"
+                  />
+                </div>
               </div>
 
               {/* Terms & Conditions */}

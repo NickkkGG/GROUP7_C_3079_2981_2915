@@ -109,9 +109,9 @@ export default function WorldMapLeaflet() {
       // Route line
       const routeLatLngs = plane.route.map((p) => [p.lat, p.lng] as [number, number]);
       L.polyline(routeLatLngs, {
-        color: '#030d2f',
-        weight: 1.5,
-        opacity: 0.4,
+        color: '#ffff00',
+        weight: 2.5,
+        opacity: 0.8,
       }).addTo(layerGroupRef.current!);
 
       // Aircraft marker
@@ -196,6 +196,12 @@ export default function WorldMapLeaflet() {
         <h3 className="font-bold text-sm mb-2">✈️ Live Flight Tracking</h3>
         <p className="text-slate-300 text-[11px]">Aircraft: {aircraftData.length}</p>
         <p className="text-slate-400 text-[10px] mt-1">Zoom: {zoom}</p>
+      </div>
+
+      {/* Live Update Badge - Top Right */}
+      <div className="absolute top-4 right-4 bg-white backdrop-blur-sm px-3 py-2 rounded-full shadow-lg z-[400] flex items-center gap-2">
+        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+        <span className="text-xs font-bold text-slate-900">LIVE UPDATE</span>
       </div>
 
       {/* Controls - Bottom Right */}
