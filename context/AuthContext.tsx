@@ -1,11 +1,11 @@
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type UserRole = 'guest' | 'operator' | 'admin';
+export type UserRole = 'guest' | 'user' | 'operator';
 
 interface User {
-  id: string;
+  id: string | number;
   name: string;
   email: string;
   role: UserRole;
@@ -17,15 +17,51 @@ interface AuthContextType {
   setUser: (user: User | null) => void;
   logout: () => void;
   loginAsGuest: () => void;
-  loginAsOperator: () => void;
+  loadUserFromStorage: () => void;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const logout = () => setUser(null);
+  useEffect(() => {
+    loadUserFromStorage();
+  }, []);
+
+  const loadUserFromStorage = () => {
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem('user');
+      const userRole = localStorage.getItem('userRole');
+
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          const role = userRole || userData.role || 'user';
+
+          setUser({
+            id: userData.id,
+            name: userData.fullname || userData.name || 'User',
+            email: userData.email,
+            role: role as UserRole,
+          });
+        } catch (error) {
+          console.error('Error loading user from storage:', error);
+        }
+      }
+      setIsLoading(false);
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user');
+      localStorage.removeItem('userRole');
+    }
+  };
 
   const loginAsGuest = () => {
     setUser({
@@ -36,17 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const loginAsOperator = () => {
-    setUser({
-      id: 'op-001',
-      name: 'John Operator',
-      email: 'operator@altus.local',
-      role: 'operator',
-    });
-  };
-
   return (
-    <AuthContext.Provider value={{ user, setUser, logout, loginAsGuest, loginAsOperator }}>
+    <AuthContext.Provider value={{ user, setUser, logout, loginAsGuest, loadUserFromStorage, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -5,9 +5,13 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { inter } from '@/app/ui/fonts';
 import Header from '@/components/Header';
-import { RotateCw } from 'lucide-react';
+import FloatingInput from '@/components/FloatingInput';
+import CustomNotification, { useNotification } from '@/components/CustomNotification';
+import { RotateCw, User, Mail, Eye, EyeOff } from 'lucide-react';
 
 export default function RegisterPage() {
+  const { notification, show: showNotification } = useNotification();
+
   const generateCode = (): string => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let code = '';
@@ -17,17 +21,43 @@ export default function RegisterPage() {
     return code;
   };
 
+  const validateEmail = (email: string): boolean => {
+    return email.includes('@') && email.includes('.');
+  };
+
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [verificationCode, setVerificationCode] = useState(() => generateCode());
+  const [verificationCode, setVerificationCode] = useState('');
   const [userVerificationCode, setUserVerificationCode] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registrationStep, setRegistrationStep] = useState(1); // 1 = form, 2 = verify code
 
-  const handleRefreshCode = () => {
-    setVerificationCode(generateCode());
+  const handleRefreshCode = async () => {
+    // Generate new code locally
+    const newCode = generateCode();
+    setVerificationCode(newCode);
     setUserVerificationCode('');
+
+    // Save new code to database
+    try {
+      await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: fullName.trim(),
+          email: email.toLowerCase().trim(),
+          password,
+          refreshCode: true,
+          newCode: newCode
+        })
+      });
+    } catch (error) {
+      console.error('Error refreshing code:', error);
+    }
   };
 
   // Scroll to top on initial load
@@ -61,55 +91,127 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password !== confirmPassword) {
-      alert('Passwords do not match!');
-      return;
-    }
-
-    if (userVerificationCode !== verificationCode) {
-      alert('Verification code is incorrect!');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName,
-          email,
-          password,
-          confirmPassword,
-          verificationCode: userVerificationCode
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.error || 'Registration failed');
-        setIsLoading(false);
+    // STEP 1: Generate & Save Code
+    if (registrationStep === 1) {
+      // Validation
+      if (!fullName.trim()) {
+        showNotification('Full name is required', 'error');
         return;
       }
 
-      alert('Account created successfully!');
-      // Redirect to login
-      window.location.href = '/login';
-    } catch (error) {
-      console.error('Registration error:', error);
-      alert('Registration failed. Please try again.');
-      setIsLoading(false);
+      if (!validateEmail(email)) {
+        showNotification('Email must contain @ and a domain (e.g., .com)', 'error');
+        return;
+      }
+
+      if (!password || password.length < 6) {
+        showNotification('Password must be at least 6 characters', 'error');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        showNotification('Passwords do not match', 'error');
+        return;
+      }
+
+      setIsLoading(true);
+
+      try {
+        // Generate new code
+        const newCode = generateCode();
+        setVerificationCode(newCode);
+        setUserVerificationCode('');
+
+        // Save code to database
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fullName: fullName.trim(),
+            email: email.toLowerCase().trim(),
+            password,
+            code: newCode,
+            step: 1
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showNotification(data.error || 'Failed to generate code', 'error');
+          setIsLoading(false);
+          return;
+        }
+
+        showNotification('Verification code sent! Enter code to complete registration', 'success');
+        setRegistrationStep(2);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Code generation error:', error);
+        showNotification('Failed to generate code. Please try again.', 'error');
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    // STEP 2: Verify Code & Create User
+    if (registrationStep === 2) {
+      if (!userVerificationCode) {
+        showNotification('Please enter verification code', 'error');
+        return;
+      }
+
+      setIsLoading(true);
+
+      try {
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fullName: fullName.trim(),
+            email: email.toLowerCase().trim(),
+            password,
+            verificationCode: userVerificationCode.trim(),
+            step: 2
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          // Auto-refresh code on error
+          const newCode = generateCode();
+          setVerificationCode(newCode);
+          setUserVerificationCode('');
+          showNotification('Code invalid/expired. Code refreshed! Enter new code.', 'error');
+          setIsLoading(false);
+          return;
+        }
+
+        showNotification('Account created successfully! Redirecting to login...', 'success');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 1500);
+      } catch (error) {
+        console.error('Verification error:', error);
+        showNotification('Verification failed. Please try again.', 'error');
+        setIsLoading(false);
+      }
     }
   };
 
   return (
     <main className={`${inter.className} bg-[#0d1c32] overflow-x-hidden`}>
+      {notification && (
+        <CustomNotification
+          message={notification.message}
+          type={notification.type}
+        />
+      )}
       <Header />
 
       {/* ===== REGISTER SECTION ===== */}
-      <section className="relative min-h-screen w-full flex items-center overflow-hidden pt-32 pb-6">
+      <section className="relative min-h-screen w-full flex items-center overflow-hidden pt-16 pb-6">
         {/* Background Image */}
         <div className="absolute inset-0 z-0 opacity-70 parallax-bg">
           <Image src="/images/login & register.jpeg" fill alt="background" className="object-cover" priority />
@@ -153,112 +255,80 @@ export default function RegisterPage() {
         <div className="relative z-20 w-full lg:w-1/2 flex items-center justify-center px-6 lg:px-10">
           <div className="w-full max-w-sm">
             {/* Heading */}
-            <div className="mb-8 opacity-0 animate-fade-up" style={{animationDelay: '100ms'}}>
+            <div className="mb-5 opacity-0 animate-fade-up" style={{animationDelay: '100ms'}}>
               <h2 className="text-4xl text-white font-black leading-tight tracking-tight">
                 Register
               </h2>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-2.5 opacity-0 animate-fade-up" style={{animationDelay: '150ms'}}>
+            <form onSubmit={handleSubmit} className="space-y-2 opacity-0 animate-fade-up" style={{animationDelay: '150ms'}}>
               {/* Full Name Field */}
-              <div className="space-y-2">
-                <label htmlFor="fullName" className="block text-white/80 font-semibold text-sm">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  id="fullName"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="John Doe"
-                  className="w-full px-4 py-3 rounded-[12px] bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-[#003fcc] focus:bg-white/15 transition-all duration-300 font-medium"
-                  required
-                />
-              </div>
+              <FloatingInput
+                type="text"
+                id="fullName"
+                label="Full Name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                rightIcon={<User size={18} />}
+                required
+              />
 
               {/* Email Field */}
-              <div className="space-y-2">
-                <label htmlFor="email" className="block text-white/80 font-semibold text-sm">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full px-4 py-3 rounded-[12px] bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-[#003fcc] focus:bg-white/15 transition-all duration-300 font-medium"
-                  required
-                />
-              </div>
+              <FloatingInput
+                type="email"
+                id="email"
+                label="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                rightIcon={<Mail size={18} />}
+                required
+              />
 
               {/* Password Field */}
-              <div className="space-y-2">
-                <label htmlFor="password" className="block text-white/80 font-semibold text-sm">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="w-full px-4 py-3 rounded-[12px] bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-[#003fcc] focus:bg-white/15 transition-all duration-300 font-medium"
-                  required
-                />
-              </div>
+              <FloatingInput
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                label="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                rightIcon={showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                onRightIconClick={() => setShowPassword(!showPassword)}
+                required
+              />
 
               {/* Confirm Password Field */}
-              <div className="space-y-2">
-                <label htmlFor="confirmPassword" className="block text-white/80 font-semibold text-sm">
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm your password"
-                  className="w-full px-4 py-3 rounded-[12px] bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-[#003fcc] focus:bg-white/15 transition-all duration-300 font-medium"
-                  required
-                />
-              </div>
+              <FloatingInput
+                type={showConfirmPassword ? 'text' : 'password'}
+                id="confirmPassword"
+                label="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                rightIcon={showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                onRightIconClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                required
+              />
 
               {/* Verification Code Section */}
-              <div className="space-y-3 pt-2 border-t border-white/20">
-                <div className="space-y-2">
+              <div className="space-y-2 pt-2 border-t border-white/20">
+                <div className="space-y-1.5">
                   <label className="block text-white/80 font-semibold text-sm">
                     Verification Code
                   </label>
-                  <div className="flex gap-2 items-center">
-                    <div className="flex-1 px-4 py-3 rounded-[12px] bg-white/10 border-2 border-white/30 text-white font-mono text-lg font-bold text-center tracking-widest">
-                      {verificationCode}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleRefreshCode}
-                      className="px-4 py-3 bg-white/20 hover:bg-white/30 border border-white/30 rounded-[12px] text-white font-semibold transition-all duration-300"
-                      title="Refresh code"
-                    >
-                      <RotateCw size={20} />
-                    </button>
+                  <div className="px-4 py-3 rounded-[12px] bg-white/10 border-2 border-white/30 text-white font-mono text-lg font-bold text-center tracking-widest min-h-[50px] flex items-center justify-center">
+                    {verificationCode || '--- --- ---'}
                   </div>
+                  <p className="text-white/50 text-xs text-center">Code akan di-generate saat Anda tekan Create Account</p>
                 </div>
 
-                <div className="space-y-2">
-                  <label htmlFor="verifyCode" className="block text-white/80 font-semibold text-sm">
-                    Enter Code
-                  </label>
-                  <input
-                    type="text"
-                    id="verifyCode"
-                    value={userVerificationCode}
-                    onChange={(e) => setUserVerificationCode(e.target.value.toUpperCase())}
-                    placeholder="Enter verification code"
-                    className="w-full px-4 py-3 rounded-[12px] bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-[#003fcc] focus:bg-white/15 transition-all duration-300 font-medium text-center font-mono text-lg tracking-widest"
-                  />
-                </div>
+                <FloatingInput
+                  type="text"
+                  id="verifyCode"
+                  label="Enter Code"
+                  value={userVerificationCode}
+                  onChange={(e) => setUserVerificationCode(e.target.value.toUpperCase())}
+                  placeholder="Masukkan kode verifikasi"
+                />
               </div>
 
               {/* Terms & Conditions */}

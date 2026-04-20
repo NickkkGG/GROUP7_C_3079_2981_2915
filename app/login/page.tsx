@@ -5,11 +5,16 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { inter } from '@/app/ui/fonts';
 import Header from '@/components/Header';
+import FloatingInput from '@/components/FloatingInput';
+import CustomNotification, { useNotification } from '@/components/CustomNotification';
+import { Mail, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
+  const { notification, show: showNotification } = useNotification();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Scroll to top on initial load
   useEffect(() => {
@@ -39,16 +44,47 @@ export default function LoginPage() {
     return () => window.removeEventListener('scroll', handleParallax);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validation
+    if (!email || !password) {
+      showNotification('Email and password are required', 'error');
+      return;
+    }
+
     setIsLoading(true);
 
-    // Simulate login process
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.toLowerCase().trim(),
+          password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        showNotification(data.error || 'Login failed', 'error');
+        setIsLoading(false);
+        return;
+      }
+
+      showNotification('Login successful! Redirecting...', 'success');
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('userRole', data.user.role);
+
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 1500);
+    } catch (error) {
+      console.error('Login error:', error);
+      showNotification('Login failed. Please try again.', 'error');
       setIsLoading(false);
-      // Handle login logic here
-      console.log('Login attempted with:', { email, password });
-    }, 1000);
+    }
   };
 
   const handleGuestLogin = () => {
@@ -57,6 +93,12 @@ export default function LoginPage() {
 
   return (
     <main className={`${inter.className} bg-[#0d1c32] overflow-x-hidden`}>
+      {notification && (
+        <CustomNotification
+          message={notification.message}
+          type={notification.type}
+        />
+      )}
       <Header />
 
       {/* ===== LOGIN SECTION ===== */}
@@ -111,38 +153,29 @@ export default function LoginPage() {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-5 opacity-0 animate-fade-up" style={{animationDelay: '150ms'}}>
+            <form onSubmit={handleSubmit} className="space-y-3 opacity-0 animate-fade-up" style={{animationDelay: '150ms'}}>
               {/* Email Field */}
-              <div className="space-y-2">
-                <label htmlFor="email" className="block text-white/80 font-semibold text-sm">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full px-4 py-3 rounded-[12px] bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-[#003fcc] focus:bg-white/15 transition-all duration-300 font-medium"
-                  required
-                />
-              </div>
+              <FloatingInput
+                type="email"
+                id="email"
+                label="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                rightIcon={<Mail size={18} />}
+                required
+              />
 
               {/* Password Field */}
-              <div className="space-y-2">
-                <label htmlFor="password" className="block text-white/80 font-semibold text-sm">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="w-full px-4 py-3 rounded-[12px] bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-[#003fcc] focus:bg-white/15 transition-all duration-300 font-medium"
-                  required
-                />
-              </div>
+              <FloatingInput
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                label="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                rightIcon={showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                onRightIconClick={() => setShowPassword(!showPassword)}
+                required
+              />
 
               {/* Remember Me & Forgot Password */}
               <div className="flex items-center justify-between text-sm">

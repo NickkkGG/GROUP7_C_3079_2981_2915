@@ -105,34 +105,90 @@ export default function WorldMapLeaflet() {
 
     layerGroupRef.current.clearLayers();
 
-    aircraftData.forEach((plane) => {
-      // Route line
+    aircraftData.forEach((plane, idx) => {
+      // Route line with different colors per aircraft
       const routeLatLngs = plane.route.map((p) => [p.lat, p.lng] as [number, number]);
+      const routeColors = [
+        '#FF6B6B', // Red
+        '#4ECDC4', // Teal
+        '#45B7D1', // Blue
+        '#FFA07A', // Light Salmon
+        '#98D8C8', // Mint
+        '#F7DC6F', // Yellow
+        '#BB8FCE', // Purple
+        '#85C1E2', // Light Blue
+        '#F8B88B', // Peach
+        '#A9CCE3', // Sky Blue
+        '#F1948A', // Light Red
+        '#82E0AA', // Light Green
+      ];
+
+      const lineColor = routeColors[idx % routeColors.length];
+
       L.polyline(routeLatLngs, {
-        color: '#ffff00',
-        weight: 2.5,
-        opacity: 0.8,
+        color: lineColor,
+        weight: 3,
+        opacity: 0.85,
+        dashArray: '5, 5',
       }).addTo(layerGroupRef.current!);
 
-      // Aircraft marker
+      // Aircraft marker with realistic airplane SVG
       const planeIcon = L.divIcon({
         html: `
           <div style="
-            width: 24px;
-            height: 24px;
-            background: radial-gradient(circle, rgba(0, 35, 63, 0.8) 0%, rgba(66, 165, 245, 0) 70%);
-            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             transform: rotate(${plane.heading}deg);
+            filter: drop-shadow(0 0 8px rgba(66, 165, 245, 0.8)) drop-shadow(0 0 3px rgba(0,0,0,0.6));
           ">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M6 0L8 8L6 6L4 8Z" fill="#ffffff" stroke="white" stroke-width="0.5"/>
+            <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Main fuselage body -->
+              <ellipse cx="50" cy="50" rx="8" ry="28" fill="#ffffff" stroke="#1e3a8a" stroke-width="1.5"/>
+
+              <!-- Cockpit/nose -->
+              <circle cx="50" cy="22" r="6" fill="#1e3a8a" stroke="#0f172a" stroke-width="1"/>
+              <circle cx="50" cy="23" r="4" fill="#3b82f6" opacity="0.8"/>
+
+              <!-- Main cabin windows -->
+              <circle cx="48" cy="35" r="2" fill="#93c5fd" stroke="#1e40af" stroke-width="0.5"/>
+              <circle cx="52" cy="35" r="2" fill="#93c5fd" stroke="#1e40af" stroke-width="0.5"/>
+              <circle cx="48" cy="45" r="2" fill="#93c5fd" stroke="#1e40af" stroke-width="0.5"/>
+              <circle cx="52" cy="45" r="2" fill="#93c5fd" stroke="#1e40af" stroke-width="0.5"/>
+
+              <!-- Right wing -->
+              <path d="M 58 48 L 95 45 Q 96 45 95 48 L 58 52 Z" fill="#2563eb" stroke="#1e40af" stroke-width="1.2" opacity="0.95"/>
+              <ellipse cx="80" cy="46.5" rx="10" ry="2.5" fill="#3b82f6" opacity="0.5"/>
+
+              <!-- Left wing -->
+              <path d="M 42 48 L 5 45 Q 4 45 5 48 L 42 52 Z" fill="#2563eb" stroke="#1e40af" stroke-width="1.2" opacity="0.95"/>
+              <ellipse cx="20" cy="46.5" rx="10" ry="2.5" fill="#3b82f6" opacity="0.5"/>
+
+              <!-- Right tail -->
+              <path d="M 48 70 L 70 78 Q 70.5 78 70 79 L 48 75 Z" fill="#1e40af" stroke="#0f172a" stroke-width="1"/>
+
+              <!-- Left tail -->
+              <path d="M 52 70 L 30 78 Q 29.5 78 30 79 L 52 75 Z" fill="#1e40af" stroke="#0f172a" stroke-width="1"/>
+
+              <!-- Vertical stabilizer -->
+              <path d="M 50 72 L 48 85 L 50 85 L 52 85 L 50 72 Z" fill="#1e40af" stroke="#0f172a" stroke-width="1"/>
+
+              <!-- Landing gear (left) -->
+              <g opacity="0.7">
+                <line x1="45" y1="55" x2="45" y2="62" stroke="#475569" stroke-width="1"/>
+                <circle cx="45" cy="63" r="1.5" fill="#475569"/>
+              </g>
+
+              <!-- Landing gear (right) -->
+              <g opacity="0.7">
+                <line x1="55" y1="55" x2="55" y2="62" stroke="#475569" stroke-width="1"/>
+                <circle cx="55" cy="63" r="1.5" fill="#475569"/>
+              </g>
             </svg>
           </div>
         `,
-        iconSize: [24, 24],
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
         className: 'aircraft-marker',
       });
 
@@ -192,10 +248,21 @@ export default function WorldMapLeaflet() {
       </div>
 
       {/* Info Panel - Top Left */}
-      <div className="absolute top-4 left-4 bg-black/75 backdrop-blur-sm text-white text-xs p-3 rounded-lg border border-slate-600 shadow-lg z-[400]">
+      <div className="absolute top-4 left-4 bg-black/75 backdrop-blur-sm text-white text-xs p-3 rounded-lg border border-slate-600 shadow-lg z-[400] max-w-xs">
         <h3 className="font-bold text-sm mb-2">✈️ Live Flight Tracking</h3>
         <p className="text-slate-300 text-[11px]">Aircraft: {aircraftData.length}</p>
         <p className="text-slate-400 text-[10px] mt-1">Zoom: {zoom}</p>
+        <div className="mt-2 pt-2 border-t border-slate-600">
+          <p className="text-slate-300 text-[10px] font-semibold mb-1">Flight Routes:</p>
+          <div className="grid grid-cols-2 gap-1 text-[9px]">
+            {aircraftData.slice(0, 4).map((ac, i) => (
+              <div key={i} className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full" style={{backgroundColor: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A'][i % 4]}}></div>
+                <span className="text-slate-300 truncate">{ac.callsign}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Live Update Badge - Top Right */}

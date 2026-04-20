@@ -5,7 +5,11 @@ export async function GET() {
     await createTables();
     return Response.json({ success: true, message: 'Database initialized' });
   } catch (error) {
-    console.error('Error:', error);
-    return Response.json({ error: 'Failed to initialize database' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Database init error:', errorMessage);
+    return Response.json({
+      error: 'Failed to initialize database',
+      details: errorMessage
+    }, { status: 500 });
   }
 }

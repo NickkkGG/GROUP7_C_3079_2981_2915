@@ -17,6 +17,12 @@ const guestNavItems = [
   { label: 'Flight Status', href: '/dashboard/flight-status', icon: <Plane size={20} strokeWidth={2.5} /> },
 ];
 
+const userNavItems = [
+  { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard size={20} strokeWidth={2.5} /> },
+  { label: 'Track AWB', href: '/dashboard/tracking', icon: <Map size={20} strokeWidth={2.5} /> },
+  { label: 'Flight Status', href: '/dashboard/flight-status', icon: <Plane size={20} strokeWidth={2.5} /> },
+];
+
 const operatorNavItems = [
   { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard size={20} strokeWidth={2.5} /> },
   { label: 'Track AWB', href: '/dashboard/tracking', icon: <Map size={20} strokeWidth={2.5} /> },
@@ -28,7 +34,7 @@ const operatorNavItems = [
 export default function DashboardContainer({ children }: DashboardContainerProps) {
   const pathname = usePathname();
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
 
   const isActive = (href: string) => {
     if (href === '/dashboard') {
@@ -37,7 +43,12 @@ export default function DashboardContainer({ children }: DashboardContainerProps
     return pathname === href || pathname.startsWith(href + '/');
   };
 
-  const navItems = user?.role === 'operator' ? operatorNavItems : guestNavItems;
+  // Only show correct nav items setelah user data loaded
+  const navItems = !isLoading ? (
+    user?.role === 'operator' ? operatorNavItems :
+    user?.role === 'user' ? userNavItems :
+    guestNavItems
+  ) : guestNavItems;
 
   return (
     <div className="w-screen h-screen bg-gradient-to-br from-[#0d1c32] via-[#1a2f4a] to-[#0d1c32] flex items-center justify-center px-4 py-2">
@@ -112,11 +123,11 @@ export default function DashboardContainer({ children }: DashboardContainerProps
                     style={{ objectFit: 'cover' }}
                   />
                 )}
-                <span className="relative z-5 drop-shadow-sm">{user?.role === 'guest' ? 'G' : user?.name?.charAt(0) || 'U'}</span>
+                <span className="relative z-5 drop-shadow-sm">{user?.name?.charAt(0)?.toUpperCase() || 'U'}</span>
               </div>
               {sidebarExpanded && (
                 <div className="text-left min-w-0">
-                  <p className="text-slate-900 font-bold text-xs leading-tight truncate">{user?.role === 'guest' ? 'GUEST' : user?.name}</p>
+                  <p className="text-slate-900 font-bold text-xs leading-tight truncate">{user?.name || 'User'}</p>
                   <p className="text-slate-500 text-[10px] font-medium capitalize">{user?.role}</p>
                 </div>
               )}
