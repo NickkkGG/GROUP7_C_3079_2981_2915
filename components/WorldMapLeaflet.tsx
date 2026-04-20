@@ -109,7 +109,7 @@ export default function WorldMapLeaflet() {
       // Route line
       const routeLatLngs = plane.route.map((p) => [p.lat, p.lng] as [number, number]);
       L.polyline(routeLatLngs, {
-        color: '#0ea5e9',
+        color: '#030d2f',
         weight: 1.5,
         opacity: 0.4,
       }).addTo(layerGroupRef.current!);
@@ -120,7 +120,7 @@ export default function WorldMapLeaflet() {
           <div style="
             width: 24px;
             height: 24px;
-            background: radial-gradient(circle, rgba(66, 165, 245, 0.8) 0%, rgba(66, 165, 245, 0) 70%);
+            background: radial-gradient(circle, rgba(0, 35, 63, 0.8) 0%, rgba(66, 165, 245, 0) 70%);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -128,7 +128,7 @@ export default function WorldMapLeaflet() {
             transform: rotate(${plane.heading}deg);
           ">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M6 0L8 8L6 6L4 8Z" fill="#42a5f5" stroke="white" stroke-width="0.5"/>
+              <path d="M6 0L8 8L6 6L4 8Z" fill="#ffffff" stroke="white" stroke-width="0.5"/>
             </svg>
           </div>
         `,
