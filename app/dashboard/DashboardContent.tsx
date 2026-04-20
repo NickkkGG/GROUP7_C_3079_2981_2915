@@ -89,7 +89,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="overflow-hidden">
                     <p className="text-slate-500 text-xs font-semibold leading-tight mb-2">{stat.label}</p>
-                    <p className="text-2xl font-black text-slate-899 leading-tight">{stat.value}</p>
+                    <p className="text-2xl font-black text-slate-900 leading-tight">{stat.value}</p>
                   </div>
                 </div>
               </div>
