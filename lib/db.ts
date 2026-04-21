@@ -3,6 +3,9 @@ import { sql } from '@vercel/postgres';
 export async function createTables() {
   try {
     // Drop existing tables if they exist (for clean reset)
+    await sql`DROP TABLE IF EXISTS shipments CASCADE;`;
+    await sql`DROP TABLE IF EXISTS flights CASCADE;`;
+    await sql`DROP TABLE IF EXISTS aircraft CASCADE;`;
     await sql`DROP TABLE IF EXISTS verification_codes CASCADE;`;
     await sql`DROP TABLE IF EXISTS users CASCADE;`;
 
