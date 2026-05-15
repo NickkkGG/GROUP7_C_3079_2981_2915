@@ -1,4 +1,5 @@
 import { sql } from '@vercel/postgres';
+import { seedDatabase } from './seed';
 
 export async function createTables() {
   try {
