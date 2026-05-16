@@ -10,9 +10,10 @@ import TopNavbar from '@/components/TopNavbar';
 export default function TrackingContent() {
   const { user, loginAsGuest } = useAuth();
   const searchParams = useSearchParams();
-  const [awb, setAwb] = useState(searchParams.get('awb') || 'AWB-EP-24001');
+  const [awb, setAwb] = useState(''); // Default kosong
   const [shipment, setShipment] = useState<any>(null);
   const [notFound, setNotFound] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false); // Track if user has searched
 
   useEffect(() => {
     if (!user) {
@@ -20,17 +21,11 @@ export default function TrackingContent() {
     }
   }, [user, loginAsGuest]);
 
-  useEffect(() => {
-    // Auto-search with default AWB on load
-    const found = mockShipments.find((s) => s.awb.toLowerCase() === awb.toLowerCase());
-    if (found) {
-      setShipment(found);
-      setNotFound(false);
-    }
-  }, []);
+  // Remove auto-search on load
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    setHasSearched(true);
     const found = mockShipments.find((s) => s.awb.toLowerCase() === awb.toLowerCase());
     if (found) {
       setShipment(found);
@@ -42,7 +37,7 @@ export default function TrackingContent() {
   };
 
   return (
-    <div className="h-full flex flex-col animate-fade-in bg-[#ffe9d4]">
+    <div className="h-full flex flex-col bg-[#ffe9d4] animate-fade-in">
       <TopNavbar
         title="Track Airway Bill"
         subtitle="Locate and track specific airway bills."
@@ -56,15 +51,15 @@ export default function TrackingContent() {
             <p className="text-slate-600 text-xs">Enter your 10-12 digit AWB number to get real-time status updates.</p>
           </div>
 
-          <form onSubmit={handleSearch} className="flex gap-2">
-            <div className="flex-1 bg-white border-[2px] border-black/33 rounded-[12px] px-3 py-2 flex items-center gap-2">
+          <form onSubmit={handleSearch} className="flex gap-1.5 items-center">
+            <div className="flex-1 max-w-md bg-white border-[2px] border-black/33 rounded-[12px] px-3 py-2 flex items-center gap-2">
               <span className="text-sm">🔍</span>
               <input
                 type="text"
                 value={awb}
                 onChange={(e) => setAwb(e.target.value)}
-                className="flex-1 bg-transparent text-slate-900 text-xs outline-none placeholder-slate-500 placeholder-opacity-60"
-                placeholder="AWB-EP-24001"
+                className="flex-1 bg-transparent text-slate-900 text-xs outline-none placeholder-slate-400"
+                placeholder="Enter AWB number..."
               />
               {awb && (
                 <button
@@ -78,7 +73,7 @@ export default function TrackingContent() {
             </div>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-lg transition-all duration-300 hover:bg-blue-700 active:scale-95 whitespace-nowrap"
+              className="px-5 py-2 bg-blue-600 text-white font-bold text-xs rounded-lg transition-all duration-300 hover:bg-blue-700 active:scale-95 whitespace-nowrap"
             >
               Track AWB
             </button>
@@ -86,7 +81,7 @@ export default function TrackingContent() {
         </div>
       </div>
 
-      {/* SECTION 2 & 3: Details and Timeline (stacked vertically) */}
+      {/* SECTION 2 & 3: Details and Timeline */}
       {notFound ? (
         <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[20px] p-4 flex items-center justify-center flex-1">
           <div className="flex items-start gap-2 bg-orange-100 border border-orange-400 rounded-lg p-3 w-full max-w-sm">
@@ -99,7 +94,7 @@ export default function TrackingContent() {
             </div>
           </div>
         </div>
-      ) : shipment ? (
+      ) : (
         <div className="flex flex-col gap-3 flex-1 overflow-hidden">
           {/* SECTION 2: Shipment Details */}
           <div className="border-[2px] border-black/20 rounded-[20px] overflow-hidden flex flex-col">
@@ -110,41 +105,50 @@ export default function TrackingContent() {
             >
               <div>
                 <p className="text-xs opacity-80">Airway Bill Number</p>
-                <h2 className="font-bold text-base font-mono mt-1">{shipment.awb}</h2>
+                {!hasSearched || !shipment ? (
+                  <div className="h-5 bg-white/30 rounded w-40 mt-1"></div>
+                ) : (
+                  <h2 className="font-bold text-base font-mono mt-1">{shipment.awb}</h2>
+                )}
               </div>
               <div className="text-right">
-                <div
-                  style={{ backgroundColor: 'rgba(18, 60, 149, 0.3)' }}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium mb-2"
-                >
-                  Loaded to Aircraft
-                </div>
-                <div className="flex items-center gap-1 justify-end text-xs opacity-80">
-                  <span>⏱</span>
-                  <span>Last Update: 09:47</span>
-                </div>
+                {!hasSearched || !shipment ? (
+                  <>
+                    <div className="h-6 bg-white/30 rounded-full w-32 mb-2"></div>
+                    <div className="h-3 bg-white/20 rounded w-28"></div>
+                  </>
+                ) : (
+                  <>
+                    <div
+                      style={{ backgroundColor: 'rgba(18, 60, 149, 0.3)' }}
+                      className="px-3 py-1.5 rounded-full text-xs font-medium mb-2"
+                    >
+                      Loaded to Aircraft
+                    </div>
+                    <div className="flex items-center gap-1 justify-end text-xs opacity-80">
+                      <span>⏱</span>
+                      <span>Last Update: 09:47</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
             {/* Bottom White Section */}
             <div className="bg-white px-4 py-6">
               <div className="grid grid-cols-4 gap-4 text-xs">
-                <div className="text-center">
-                  <p className="text-slate-600 font-bold opacity-70 mb-1.5">ORIGIN</p>
-                  <p className="text-slate-900 font-medium">{shipment.origin}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-slate-600 font-bold opacity-70 mb-1.5">DESTINATION</p>
-                  <p className="text-slate-900 font-medium">{shipment.destination}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-slate-600 font-bold opacity-70 mb-1.5">FLIGHT</p>
-                  <p className="text-slate-900 font-medium">{shipment.flight}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-slate-600 font-bold opacity-70 mb-1.5">EST.ARRIVAL</p>
-                  <p className="text-slate-900 font-medium">Today, 14:30</p>
-                </div>
+                {['ORIGIN', 'DESTINATION', 'FLIGHT', 'EST.ARRIVAL'].map((label, idx) => (
+                  <div key={idx} className="text-center">
+                    <p className="text-slate-600 font-bold opacity-70 mb-1.5">{label}</p>
+                    {!hasSearched || !shipment ? (
+                      <div className="h-4 bg-slate-300 rounded w-16 mx-auto"></div>
+                    ) : (
+                      <p className="text-slate-900 font-medium">
+                        {idx === 0 ? shipment.origin : idx === 1 ? shipment.destination : idx === 2 ? shipment.flight : 'Today, 14:30'}
+                      </p>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -171,16 +175,18 @@ export default function TrackingContent() {
                     <div key={idx} className="flex-1 flex flex-col items-center">
                       {/* Icon */}
                       <div className="relative z-10 mb-3">
-                        {item.status === 'completed' ? (
+                        {!hasSearched || !shipment || item.status !== 'completed' ? (
+                          // Gray placeholder or not completed
+                          <div className="w-11 h-11 bg-slate-300 rounded-full border-4 border-white flex items-center justify-center">
+                            <div className="w-3 h-3 bg-slate-400 rounded-full" />
+                          </div>
+                        ) : (
+                          // Completed - blue checkmark
                           <div
                             style={{ backgroundColor: '#2563eb' }}
                             className="w-11 h-11 rounded-full flex items-center justify-center text-white text-lg font-bold border-4 border-white"
                           >
                             ✓
-                          </div>
-                        ) : (
-                          <div className="w-11 h-11 bg-slate-300 rounded-full border-4 border-white flex items-center justify-center">
-                            <div className="w-3 h-3 bg-slate-400 rounded-full" />
                           </div>
                         )}
                       </div>
@@ -189,7 +195,12 @@ export default function TrackingContent() {
                       <h4 className="text-slate-900 font-bold text-xs text-center mb-1.5">{item.step}</h4>
 
                       {/* Timestamp */}
-                      {item.timestamp && (
+                      {!hasSearched || !shipment || !item.timestamp ? (
+                        <div className="text-center mb-1 space-y-1">
+                          <div className="h-3 bg-slate-300 rounded w-16 mx-auto"></div>
+                          <div className="h-3 bg-slate-200 rounded w-12 mx-auto"></div>
+                        </div>
+                      ) : (
                         <div className="text-center mb-1">
                           <p className="text-slate-600 text-xs opacity-70 font-mono">{item.timestamp.split(' ')[0]}</p>
                           <p className="text-slate-600 text-xs opacity-70 font-mono">{item.timestamp.split(' ')[1]}</p>
@@ -197,7 +208,9 @@ export default function TrackingContent() {
                       )}
 
                       {/* Location */}
-                      {item.location && (
+                      {!hasSearched || !shipment || !item.location ? (
+                        <div className="h-3 bg-slate-200 rounded w-20 mx-auto"></div>
+                      ) : (
                         <p className="text-slate-600 text-xs opacity-60 text-center">
                           📍 {item.location}
                         </p>
@@ -209,7 +222,7 @@ export default function TrackingContent() {
             </div>
           </div>
         </div>
-      ) : null}
+      )}
       </div>
     </div>
   );

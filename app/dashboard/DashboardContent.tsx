@@ -12,7 +12,26 @@ const WorldMapLeaflet = dynamic(() => import('@/components/WorldMapLeaflet'), {
   loading: () => <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-600">Loading map...</div>,
 });
 
-export default function DashboardPage() {
+// Simulate async data fetching to trigger Suspense properly
+async function fetchDashboardData() {
+  const [statsRes, shipmentsRes, flightsRes] = await Promise.all([
+    fetch('/api/dashboard/stats'),
+    fetch('/api/shipments'),
+    fetch('/api/flights'),
+  ]);
+
+  const statsData = await statsRes.json();
+  const shipmentsData = await shipmentsRes.json();
+  const flightsData = await flightsRes.json();
+
+  return {
+    stats: statsData,
+    shipments: Array.isArray(shipmentsData) ? shipmentsData.slice(0, 5) : [],
+    flights: Array.isArray(flightsData) ? flightsData.slice(0, 4) : [],
+  };
+}
+
+export default function DashboardContent() {
   const { user, setUser } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -35,21 +54,12 @@ export default function DashboardPage() {
   }, [searchParams, user, setUser]);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const loadData = async () => {
       try {
-        const [statsRes, shipmentsRes, flightsRes] = await Promise.all([
-          fetch('/api/dashboard/stats'),
-          fetch('/api/shipments'),
-          fetch('/api/flights'),
-        ]);
-
-        const statsData = await statsRes.json();
-        const shipmentsData = await shipmentsRes.json();
-        const flightsData = await flightsRes.json();
-
-        setStats(statsData);
-        setShipments(Array.isArray(shipmentsData) ? shipmentsData.slice(0, 5) : []);
-        setFlights(Array.isArray(flightsData) ? flightsData.slice(0, 4) : []);
+        const data = await fetchDashboardData();
+        setStats(data.stats);
+        setShipments(data.shipments);
+        setFlights(data.flights);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -57,54 +67,52 @@ export default function DashboardPage() {
       }
     };
 
-    fetchDashboardData();
+    loadData();
   }, []);
 
-  const statCards = stats
-    ? [
-        {
-          label: 'Total Shipments Today',
-          value: stats.totalShipments || 0,
-          change: stats.shipmentsChange || '+0%',
-          icon: <Package className="text-blue-500" size={32} />,
-          isPositive: true,
-        },
-        {
-          label: 'Flight On Time',
-          value: stats.onTime || 0,
-          change: stats.onTimeChange || '+0%',
-          icon: <Clock className="text-green-500" size={32} />,
-          isPositive: true,
-        },
-        {
-          label: 'Flight Delay',
-          value: stats.delayed || 0,
-          change: stats.delayedChange || '0%',
-          icon: <AlertCircle className="text-orange-500" size={32} />,
-          isPositive: false,
-        },
-        {
-          label: 'Ready To Load',
-          value: stats.readyToLoad || 0,
-          change: '+0%',
-          icon: <TrendingUp className="text-purple-500" size={32} />,
-          isPositive: true,
-        },
-      ]
-    : [];
+  // Don't wait for data - render immediately with loading placeholders
+  const statCards = [
+    {
+      label: 'Total Shipments Today',
+      value: stats?.totalShipments || 0,
+      change: stats?.shipmentsChange || '+0%',
+      icon: <Package className="text-blue-500" size={32} />,
+      isPositive: true,
+    },
+    {
+      label: 'Flight On Time',
+      value: stats?.onTime || 0,
+      change: stats?.onTimeChange || '+0%',
+      icon: <Clock className="text-green-500" size={32} />,
+      isPositive: true,
+    },
+    {
+      label: 'Flight Delay',
+      value: stats?.delayed || 0,
+      change: stats?.delayedChange || '0%',
+      icon: <AlertCircle className="text-orange-500" size={32} />,
+      isPositive: false,
+    },
+    {
+      label: 'Ready To Load',
+      value: stats?.readyToLoad || 0,
+      change: '+0%',
+      icon: <TrendingUp className="text-purple-500" size={32} />,
+      isPositive: true,
+    },
+  ];
 
   return (
-    <div className="p-3 h-full bg-[#ffe9d4]">
+    <div className="p-3 h-full bg-[#ffe9d4] animate-fade-in">
       <div className="grid grid-cols-3 gap-2 h-full" style={{ gridTemplateRows: 'repeat(5, 1fr)' }}>
         {/* Overview - div1: col 1, rows 1-3 */}
-        <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-3 animate-fade-in overflow-hidden flex flex-col" style={{ gridColumn: '1', gridRow: '1 / span 3', animationDelay: '0.15s' }}>
+        <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-3 overflow-hidden flex flex-col" style={{ gridColumn: '1', gridRow: '1 / span 3' }}>
           <h3 className="text-xs font-bold text-slate-900 mb-2 flex-shrink-0">Overview</h3>
           <div className="grid grid-cols-2 gap-3 flex-1 overflow-hidden">
             {statCards.map((stat, idx) => (
               <div
                 key={idx}
-                className="relative group animate-fade-in overflow-hidden"
-                style={{ animationDelay: `${0.2 + idx * 0.03}s` }}
+                className="relative group overflow-hidden"
               >
                 <div className="relative bg-gradient-to-br from-slate-100 to-slate-50 border-[2px] border-black/15 rounded-[14px] p-4 hover:border-black/30 hover:shadow-md transition-all duration-300 cursor-pointer h-full flex flex-col justify-between hover:scale-105">
                   <div className="flex items-start justify-between">
@@ -122,7 +130,11 @@ export default function DashboardPage() {
                   </div>
                   <div className="overflow-hidden">
                     <p className="text-slate-500 text-xs font-semibold leading-tight mb-2">{stat.label}</p>
-                    <p className="text-2xl font-black text-slate-900 leading-tight">{stat.value}</p>
+                    {loading ? (
+                      <div className="h-8 bg-slate-300 rounded w-16 animate-pulse"></div>
+                    ) : (
+                      <p className="text-2xl font-black text-slate-900 leading-tight">{stat.value}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -131,7 +143,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Tracking Map - div3: cols 2-3, rows 1-3 */}
-        <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-2 animate-fade-in overflow-hidden w-full h-full flex flex-col" style={{ gridColumn: '2 / span 2', gridRow: '1 / span 3', animationDelay: '0.25s' }}>
+        <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-2 overflow-hidden w-full h-full flex flex-col" style={{ gridColumn: '2 / span 2', gridRow: '1 / span 3' }}>
           <h3 className="text-xs font-bold text-slate-900 mb-2 flex-shrink-0">Live Flight Tracking Map</h3>
           <div className="w-full h-full overflow-hidden flex-1">
             <WorldMapLeaflet />
@@ -139,11 +151,20 @@ export default function DashboardPage() {
         </div>
 
         {/* Flight Status - div2: col 1, rows 4-5 */}
-        <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-2 animate-fade-in overflow-hidden flex flex-col" style={{ gridColumn: '1', gridRow: '4 / span 2', animationDelay: '0.3s' }}>
+        <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-2 overflow-hidden flex flex-col" style={{ gridColumn: '1', gridRow: '4 / span 2' }}>
           <h3 className="text-xs font-bold text-slate-900 mb-1.5 flex-shrink-0">Flight Status</h3>
           <div className="overflow-y-auto flex-1 space-y-1 mb-2">
             {loading ? (
-              <div className="text-slate-500 text-[9px] py-2 text-center">Loading flights...</div>
+              // Loading state - gray placeholders
+              [...Array(4)].map((_, idx) => (
+                <div key={idx} className="flex items-center justify-between p-1.5 bg-gradient-to-r from-slate-50 to-white rounded-lg border-[1px] border-black/20 gap-1">
+                  <div className="flex-1 min-w-0">
+                    <div className="h-3 bg-slate-300 rounded w-16 mb-1 animate-pulse"></div>
+                    <div className="h-2 bg-slate-200 rounded w-24 animate-pulse"></div>
+                  </div>
+                  <div className="w-14 h-4 bg-slate-300 rounded-full animate-pulse"></div>
+                </div>
+              ))
             ) : flights.length === 0 ? (
               <div className="text-slate-500 text-[9px] py-2 text-center">No flights available</div>
             ) : (
@@ -170,7 +191,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Active Shipments - div4: cols 2-3, rows 4-5 */}
-        <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-2 animate-fade-in overflow-hidden flex flex-col" style={{ gridColumn: '2 / span 2', gridRow: '4 / span 2', animationDelay: '0.35s' }}>
+        <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-2 overflow-hidden flex flex-col" style={{ gridColumn: '2 / span 2', gridRow: '4 / span 2' }}>
           <div className="flex items-center justify-between mb-2 gap-2 flex-shrink-0">
             <h2 className="text-xs font-bold text-slate-900 whitespace-nowrap">Active Shipments</h2>
             <div className="flex gap-1 flex-1">
@@ -200,11 +221,32 @@ export default function DashboardPage() {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={7} className="py-3 text-center text-slate-400 text-[9px]">
-                      Loading shipments...
-                    </td>
-                  </tr>
+                  // Loading state - gray placeholders
+                  [...Array(5)].map((_, idx) => (
+                    <tr key={idx} className="border-b-[1px] border-black/20">
+                      <td className="py-1.5 px-2">
+                        <div className="h-3 bg-slate-300 rounded w-24 animate-pulse"></div>
+                      </td>
+                      <td className="py-1.5 px-2">
+                        <div className="h-3 bg-slate-200 rounded w-16 animate-pulse"></div>
+                      </td>
+                      <td className="py-1.5 px-2">
+                        <div className="h-3 bg-slate-200 rounded w-16 animate-pulse"></div>
+                      </td>
+                      <td className="py-1.5 px-2">
+                        <div className="h-3 bg-slate-200 rounded w-12 animate-pulse"></div>
+                      </td>
+                      <td className="py-1.5 px-2">
+                        <div className="h-4 bg-slate-300 rounded-full w-16 animate-pulse"></div>
+                      </td>
+                      <td className="py-1.5 px-2">
+                        <div className="h-3 bg-slate-200 rounded w-12 animate-pulse"></div>
+                      </td>
+                      <td className="py-1.5 px-2">
+                        <div className="h-5 bg-slate-300 rounded-lg w-16 animate-pulse"></div>
+                      </td>
+                    </tr>
+                  ))
                 ) : shipments.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-3 text-center text-slate-400 text-[9px]">

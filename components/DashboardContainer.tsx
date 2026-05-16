@@ -113,7 +113,7 @@ export default function DashboardContainer({ children }: DashboardContainerProps
 
           {/* Profile Section */}
           <div className="w-full border-t-[2px] border-black/20 bg-gradient-to-b from-white/40 via-white/20 to-transparent transition-all duration-300 pt-5">
-            <label className={`flex cursor-pointer group gap-3 items-center transition-all duration-300 ${sidebarExpanded ? 'flex-row px-3 py-1' : 'flex-col justify-center px-2 py-1'}`}>
+            <Link href="/dashboard/settings" className={`flex cursor-pointer group gap-3 items-center transition-all duration-300 ${sidebarExpanded ? 'flex-row px-3 py-1' : 'flex-col justify-center px-2 py-1'}`}>
               <div className="w-10 h-10 flex-shrink-0 bg-gradient-to-br from-emerald-500 via-cyan-500 to-blue-500 rounded-full flex items-center justify-center text-white font-black shadow-md shadow-cyan-500/30 text-sm transition-all duration-300 hover:scale-110 border-[2px] border-white/40 hover:border-white/60 group-hover:shadow-lg group-hover:shadow-cyan-500/50 overflow-hidden relative">
                 {user?.profileImage && (
                   <Image
@@ -131,13 +131,7 @@ export default function DashboardContainer({ children }: DashboardContainerProps
                   <p className="text-slate-500 text-[10px] font-medium capitalize">{user?.role}</p>
                 </div>
               )}
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                title="Upload profile photo"
-              />
-            </label>
+            </Link>
           </div>
         </div>
 
