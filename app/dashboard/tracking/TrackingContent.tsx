@@ -3,17 +3,18 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { mockShipments, mockTrackingTimeline } from '@/lib/mockData';
 import { Settings, Info, MapPin } from 'lucide-react';
 import TopNavbar from '@/components/TopNavbar';
 
 export default function TrackingContent() {
   const { user, loginAsGuest } = useAuth();
   const searchParams = useSearchParams();
-  const [awb, setAwb] = useState(''); // Default kosong
+  const [awb, setAwb] = useState('');
   const [shipment, setShipment] = useState<any>(null);
+  const [trackingHistory, setTrackingHistory] = useState<any[]>([]);
   const [notFound, setNotFound] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false); // Track if user has searched
+  const [hasSearched, setHasSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -21,18 +22,34 @@ export default function TrackingContent() {
     }
   }, [user, loginAsGuest]);
 
-  // Remove auto-search on load
-
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!awb.trim()) return;
+
     setHasSearched(true);
-    const found = mockShipments.find((s) => s.awb.toLowerCase() === awb.toLowerCase());
-    if (found) {
-      setShipment(found);
-      setNotFound(false);
-    } else {
+    setLoading(true);
+    setNotFound(false);
+
+    try {
+      const response = await fetch(`/api/tracking?awb=${encodeURIComponent(awb)}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        setShipment(data.shipment);
+        setTrackingHistory(data.history || []);
+        setNotFound(false);
+      } else {
+        setShipment(null);
+        setTrackingHistory([]);
+        setNotFound(true);
+      }
+    } catch (error) {
+      console.error('Error fetching tracking data:', error);
       setShipment(null);
+      setTrackingHistory([]);
       setNotFound(true);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -105,14 +122,14 @@ export default function TrackingContent() {
             >
               <div>
                 <p className="text-xs opacity-80">Airway Bill Number</p>
-                {!hasSearched || !shipment ? (
+                {loading || (!hasSearched || !shipment) ? (
                   <div className="h-5 bg-white/30 rounded w-40 mt-1"></div>
                 ) : (
-                  <h2 className="font-bold text-base font-mono mt-1">{shipment.awb}</h2>
+                  <h2 className="font-bold text-base font-mono mt-1">{shipment.tracking_number}</h2>
                 )}
               </div>
               <div className="text-right">
-                {!hasSearched || !shipment ? (
+                {loading || (!hasSearched || !shipment) ? (
                   <>
                     <div className="h-6 bg-white/30 rounded-full w-32 mb-2"></div>
                     <div className="h-3 bg-white/20 rounded w-28"></div>
@@ -123,11 +140,11 @@ export default function TrackingContent() {
                       style={{ backgroundColor: 'rgba(18, 60, 149, 0.3)' }}
                       className="px-3 py-1.5 rounded-full text-xs font-medium mb-2"
                     >
-                      Loaded to Aircraft
+                      {shipment.status?.replace('_', ' ').charAt(0).toUpperCase() + shipment.status?.replace('_', ' ').slice(1)}
                     </div>
                     <div className="flex items-center gap-1 justify-end text-xs opacity-80">
                       <span>⏱</span>
-                      <span>Last Update: 09:47</span>
+                      <span>Last Update: {new Date(shipment.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   </>
                 )}
@@ -140,11 +157,14 @@ export default function TrackingContent() {
                 {['ORIGIN', 'DESTINATION', 'FLIGHT', 'EST.ARRIVAL'].map((label, idx) => (
                   <div key={idx} className="text-center">
                     <p className="text-slate-600 font-bold opacity-70 mb-1.5">{label}</p>
-                    {!hasSearched || !shipment ? (
+                    {loading || (!hasSearched || !shipment) ? (
                       <div className="h-4 bg-slate-300 rounded w-16 mx-auto"></div>
                     ) : (
                       <p className="text-slate-900 font-medium">
-                        {idx === 0 ? shipment.origin : idx === 1 ? shipment.destination : idx === 2 ? shipment.flight : 'Today, 14:30'}
+                        {idx === 0 ? shipment.origin :
+                         idx === 1 ? shipment.destination :
+                         idx === 2 ? (shipment.flight_number || 'N/A') :
+                         (shipment.arrival_time ? new Date(shipment.arrival_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'TBD')}
                       </p>
                     )}
                   </div>
@@ -164,61 +184,103 @@ export default function TrackingContent() {
             </div>
 
             {/* Timeline Content */}
-            <div className="bg-gradient-to-br from-white to-amber-50 px-4 py-6 flex-1">
-              <div className="relative">
-                {/* Timeline line background */}
-                <div className="absolute top-5 left-0 right-0 h-[2px] bg-slate-300" />
+            <div className="bg-gradient-to-br from-white to-amber-50 px-4 py-6 flex-1 overflow-y-auto">
+              {loading || (!hasSearched || trackingHistory.length === 0) ? (
+                <div className="relative">
+                  {/* Timeline line background */}
+                  <div className="absolute top-5 left-0 right-0 h-[2px] bg-slate-300" />
 
-                {/* Timeline items */}
-                <div className="flex justify-between items-start gap-2">
-                  {mockTrackingTimeline.map((item, idx) => (
-                    <div key={idx} className="flex-1 flex flex-col items-center">
-                      {/* Icon */}
-                      <div className="relative z-10 mb-3">
-                        {!hasSearched || !shipment || item.status !== 'completed' ? (
-                          // Gray placeholder or not completed
+                  {/* Timeline items - placeholders */}
+                  <div className="flex justify-between items-start gap-2">
+                    {['Booked', 'Received', 'In Transit', 'Arrived', 'Delivered'].map((step, idx) => (
+                      <div key={idx} className="flex-1 flex flex-col items-center">
+                        {/* Icon */}
+                        <div className="relative z-10 mb-3">
                           <div className="w-11 h-11 bg-slate-300 rounded-full border-4 border-white flex items-center justify-center">
                             <div className="w-3 h-3 bg-slate-400 rounded-full" />
                           </div>
-                        ) : (
-                          // Completed - blue checkmark
-                          <div
-                            style={{ backgroundColor: '#2563eb' }}
-                            className="w-11 h-11 rounded-full flex items-center justify-center text-white text-lg font-bold border-4 border-white"
-                          >
-                            ✓
-                          </div>
-                        )}
-                      </div>
+                        </div>
 
-                      {/* Label */}
-                      <h4 className="text-slate-900 font-bold text-xs text-center mb-1.5">{item.step}</h4>
+                        {/* Label */}
+                        <h4 className="text-slate-900 font-bold text-xs text-center mb-1.5">{step}</h4>
 
-                      {/* Timestamp */}
-                      {!hasSearched || !shipment || !item.timestamp ? (
+                        {/* Timestamp */}
                         <div className="text-center mb-1 space-y-1">
                           <div className="h-3 bg-slate-300 rounded w-16 mx-auto"></div>
                           <div className="h-3 bg-slate-200 rounded w-12 mx-auto"></div>
                         </div>
-                      ) : (
-                        <div className="text-center mb-1">
-                          <p className="text-slate-600 text-xs opacity-70 font-mono">{item.timestamp.split(' ')[0]}</p>
-                          <p className="text-slate-600 text-xs opacity-70 font-mono">{item.timestamp.split(' ')[1]}</p>
-                        </div>
-                      )}
 
-                      {/* Location */}
-                      {!hasSearched || !shipment || !item.location ? (
+                        {/* Location */}
                         <div className="h-3 bg-slate-200 rounded w-20 mx-auto"></div>
-                      ) : (
-                        <p className="text-slate-600 text-xs opacity-60 text-center">
-                          📍 {item.location}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="relative">
+                  {/* Timeline line background */}
+                  <div className="absolute top-5 left-0 right-0 h-[2px] bg-slate-300" />
+
+                  {/* Timeline items - real data */}
+                  <div className="flex justify-between items-start gap-2">
+                    {['booked', 'received', 'in_transit', 'arrived', 'delivered'].map((statusKey, idx) => {
+                      const historyItem = trackingHistory.find(h => h.status === statusKey);
+                      const isCompleted = !!historyItem;
+
+                      return (
+                        <div key={idx} className="flex-1 flex flex-col items-center">
+                          {/* Icon */}
+                          <div className="relative z-10 mb-3">
+                            {isCompleted ? (
+                              <div
+                                style={{ backgroundColor: '#2563eb' }}
+                                className="w-11 h-11 rounded-full flex items-center justify-center text-white text-lg font-bold border-4 border-white"
+                              >
+                                ✓
+                              </div>
+                            ) : (
+                              <div className="w-11 h-11 bg-slate-300 rounded-full border-4 border-white flex items-center justify-center">
+                                <div className="w-3 h-3 bg-slate-400 rounded-full" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Label */}
+                          <h4 className="text-slate-900 font-bold text-xs text-center mb-1.5">
+                            {statusKey.replace('_', ' ').charAt(0).toUpperCase() + statusKey.replace('_', ' ').slice(1)}
+                          </h4>
+
+                          {/* Timestamp */}
+                          {isCompleted ? (
+                            <div className="text-center mb-1">
+                              <p className="text-slate-600 text-xs opacity-70 font-mono">
+                                {new Date(historyItem.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </p>
+                              <p className="text-slate-600 text-xs opacity-70 font-mono">
+                                {new Date(historyItem.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="text-center mb-1 space-y-1">
+                              <div className="h-3 bg-slate-300 rounded w-16 mx-auto"></div>
+                              <div className="h-3 bg-slate-200 rounded w-12 mx-auto"></div>
+                            </div>
+                          )}
+
+                          {/* Location */}
+                          {isCompleted ? (
+                            <p className="text-slate-600 text-xs opacity-60 text-center">
+                              📍 {historyItem.location}
+                            </p>
+                          ) : (
+                            <div className="h-3 bg-slate-200 rounded w-20 mx-auto"></div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

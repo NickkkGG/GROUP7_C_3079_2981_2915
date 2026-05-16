@@ -4,6 +4,7 @@ import { seedDatabase } from './seed';
 export async function createTables() {
   try {
     // Drop existing tables if they exist (for clean reset)
+    await sql`DROP TABLE IF EXISTS tracking_history CASCADE;`;
     await sql`DROP TABLE IF EXISTS shipments CASCADE;`;
     await sql`DROP TABLE IF EXISTS flights CASCADE;`;
     await sql`DROP TABLE IF EXISTS aircraft CASCADE;`;
@@ -71,6 +72,18 @@ export async function createTables() {
         weight DECIMAL(10, 2),
         status VARCHAR(50) DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+
+    // Create tracking_history table
+    await sql`
+      CREATE TABLE tracking_history (
+        id SERIAL PRIMARY KEY,
+        tracking_number VARCHAR(20) NOT NULL REFERENCES shipments(tracking_number) ON DELETE CASCADE,
+        status VARCHAR(50) NOT NULL,
+        location VARCHAR(100) NOT NULL,
+        notes TEXT,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;
 
@@ -259,6 +272,35 @@ export async function getShipmentByTracking(trackingNumber: string) {
     return result.rows[0] || null;
   } catch (error) {
     console.error('Error getting shipment:', error);
+    throw error;
+  }
+}
+
+// Tracking History functions
+export async function insertTrackingHistory(trackingNumber: string, status: string, location: string, notes?: string) {
+  try {
+    const result = await sql`
+      INSERT INTO tracking_history (tracking_number, status, location, notes)
+      VALUES (${trackingNumber}, ${status}, ${location}, ${notes || ''})
+      RETURNING *;
+    `;
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error inserting tracking history:', error);
+    throw error;
+  }
+}
+
+export async function getTrackingHistory(trackingNumber: string) {
+  try {
+    const result = await sql`
+      SELECT * FROM tracking_history
+      WHERE tracking_number = ${trackingNumber}
+      ORDER BY timestamp ASC;
+    `;
+    return result.rows;
+  } catch (error) {
+    console.error('Error getting tracking history:', error);
     throw error;
   }
 }

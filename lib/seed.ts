@@ -28,7 +28,7 @@ export async function seedDatabase() {
     }
     console.log('✅ Aircraft seeded');
 
-    // 2. Seed Flights (30 flights)
+    // 2. Seed Flights (60 flights with various statuses)
     console.log('✈️ Seeding flights...');
     const cities = [
       'CGK (Jakarta)', 'SUB (Surabaya)', 'DPS (Bali)', 'UPG (Makassar)',
@@ -36,9 +36,9 @@ export async function seedDatabase() {
       'BKK (Bangkok)', 'PEN (Penang)', 'HKG (Hong Kong)', 'SYD (Sydney)'
     ];
 
-    const statuses = ['on-time', 'on-time', 'on-time', 'on-time', 'delayed', 'departed'];
+    const flightStatuses = ['on-time', 'on-time', 'on-time', 'on-time', 'on-time', 'delayed', 'delayed', 'boarding', 'departed'];
 
-    for (let i = 1; i <= 30; i++) {
+    for (let i = 1; i <= 60; i++) {
       const flightNumber = `EP${200 + i}`;
       const aircraftId = (i % 10) + 1;
       const departureCity = cities[Math.floor(Math.random() * cities.length)];
@@ -51,7 +51,7 @@ export async function seedDatabase() {
 
       const departureTime = new Date(2026, 4, 16, 8 + (i % 12), (i * 15) % 60);
       const arrivalTime = new Date(departureTime.getTime() + (2 + Math.random() * 4) * 60 * 60 * 1000);
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
+      const status = flightStatuses[Math.floor(Math.random() * flightStatuses.length)];
 
       await sql`
         INSERT INTO flights (flight_number, aircraft_id, departure_city, arrival_city, departure_time, arrival_time, status)
@@ -61,7 +61,7 @@ export async function seedDatabase() {
     }
     console.log('✅ Flights seeded');
 
-    // 3. Seed Shipments (50 shipments)
+    // 3. Seed Shipments (120 shipments with proper statuses)
     console.log('📦 Seeding shipments...');
     const senders = [
       'PT Global Tech', 'Medicorp Logistics', 'Express Retail', 'Agro Nusantara',
@@ -70,11 +70,11 @@ export async function seedDatabase() {
       'Furniture Makers', 'Cosmetics Ltd.', 'Sports Equipment', 'Toy Factory'
     ];
 
-    const shipmentStatuses = ['pending', 'in-transit', 'in-transit', 'delivered', 'on-hold'];
+    const shipmentStatuses = ['booked', 'received', 'in_transit', 'in_transit', 'arrived', 'delivered'];
 
-    for (let i = 1; i <= 50; i++) {
+    for (let i = 1; i <= 120; i++) {
       const trackingNumber = `AWB-EP-${24000 + i}`;
-      const flightId = (i % 30) + 1;
+      const flightId = (i % 60) + 1;
       const sender = senders[Math.floor(Math.random() * senders.length)];
       const origin = cities[Math.floor(Math.random() * cities.length)];
       let destination = cities[Math.floor(Math.random() * cities.length)];
@@ -94,7 +94,50 @@ export async function seedDatabase() {
     }
     console.log('✅ Shipments seeded');
 
-    // 4. Seed Users (5 test users)
+    // 4. Seed Tracking History (bulk insert for better performance)
+    console.log('📍 Seeding tracking history...');
+
+    const trackingStatuses = [
+      { status: 'booked', location: 'Origin Warehouse', notes: 'Shipment booked and awaiting pickup' },
+      { status: 'received', location: 'Origin Hub', notes: 'Package received at origin facility' },
+      { status: 'in_transit', location: 'In Flight', notes: 'Package loaded on aircraft' },
+      { status: 'arrived', location: 'Destination Hub', notes: 'Package arrived at destination facility' },
+      { status: 'delivered', location: 'Final Destination', notes: 'Package delivered to recipient' }
+    ];
+
+    // Build bulk insert values
+    const historyValues: string[] = [];
+
+    for (let i = 1; i <= 120; i++) {
+      const trackingNumber = `AWB-EP-${24000 + i}`;
+
+      // Determine status index based on shipment number (for variety)
+      let statusIndex = 1;
+      if (i % 5 === 0) statusIndex = 5; // delivered
+      else if (i % 4 === 0) statusIndex = 4; // arrived
+      else if (i % 3 === 0) statusIndex = 3; // in_transit
+      else if (i % 2 === 0) statusIndex = 2; // received
+
+      // Add tracking history entries up to current status
+      for (let j = 0; j < statusIndex; j++) {
+        const historyEntry = trackingStatuses[j];
+        const timestamp = new Date(2026, 4, 14 + j, 10 + (i % 8), (i * 10) % 60);
+        historyValues.push(`('${trackingNumber}', '${historyEntry.status}', '${historyEntry.location}', '${historyEntry.notes}', '${timestamp.toISOString()}')`);
+      }
+    }
+
+    // Bulk insert all tracking history
+    if (historyValues.length > 0) {
+      await sql.query(`
+        INSERT INTO tracking_history (tracking_number, status, location, notes, timestamp)
+        VALUES ${historyValues.join(', ')}
+        ON CONFLICT DO NOTHING;
+      `);
+    }
+
+    console.log('✅ Tracking history seeded');
+
+    // 5. Seed Users (5 test users)
     console.log('👥 Seeding users...');
     const users = [
       { fullname: 'Admin User', email: 'admin@altus.com', password: 'admin123', role: 'operator' },

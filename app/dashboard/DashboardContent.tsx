@@ -39,6 +39,8 @@ export default function DashboardContent() {
   const [shipments, setShipments] = useState<any[]>([]);
   const [flights, setFlights] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   useEffect(() => {
     // Jika ada ?role=guest parameter dan belum ada user, set guest
@@ -53,22 +55,47 @@ export default function DashboardContent() {
     }
   }, [searchParams, user, setUser]);
 
+  // Debounce search query
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await fetchDashboardData();
-        setStats(data.stats);
-        setShipments(data.shipments);
-        setFlights(data.flights);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
 
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
     loadData();
-  }, []);
+  }, [debouncedSearch]);
+
+  const loadData = async () => {
+    try {
+      // Don't show loading if we already have data (optimistic UI)
+      if (shipments.length === 0) {
+        setLoading(true);
+      }
+
+      const [statsRes, flightsRes] = await Promise.all([
+        fetch(`/api/dashboard/stats?search=${debouncedSearch}`),
+        fetch('/api/flights?limit=4'),
+      ]);
+
+      const statsData = await statsRes.json();
+      const flightsData = await flightsRes.json();
+
+      setStats(statsData);
+      setShipments(statsData.activeShipments || []);
+      setFlights(Array.isArray(flightsData.flights) ? flightsData.flights : []);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = () => {
+    setDebouncedSearch(searchQuery);
+  };
 
   // Don't wait for data - render immediately with loading placeholders
   const statCards = [
@@ -94,8 +121,8 @@ export default function DashboardContent() {
       isPositive: false,
     },
     {
-      label: 'Ready To Load',
-      value: stats?.readyToLoad || 0,
+      label: 'Ready To Land',
+      value: stats?.readyToLand || 0,
       change: '+0%',
       icon: <TrendingUp className="text-purple-500" size={32} />,
       isPositive: true,
@@ -198,9 +225,14 @@ export default function DashboardContent() {
               <input
                 type="text"
                 placeholder="Search AWB..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 className="px-2 py-1 bg-white border-[2px] border-black/20 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200 text-[10px] flex-1 transition-all"
               />
-              <button className="px-3 py-1 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white text-[10px] font-bold rounded-lg transition-all duration-300 hover:shadow-md active:scale-95 flex-shrink-0">
+              <button
+                onClick={handleSearch}
+                className="px-3 py-1 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white text-[10px] font-bold rounded-lg transition-all duration-300 hover:shadow-md active:scale-95 flex-shrink-0">
                 Search
               </button>
             </div>
@@ -267,14 +299,18 @@ export default function DashboardContent() {
                       <td className="py-1.5 px-2">
                         <span
                           className={`px-2 py-0.5 rounded-full text-[9px] font-bold inline-block whitespace-nowrap transition-all ${
-                            shipment.status === 'pending'
+                            shipment.status === 'booked'
                               ? 'bg-blue-100 text-blue-700 border border-blue-400'
-                              : shipment.status === 'departed'
-                                ? 'bg-emerald-100 text-emerald-700 border border-emerald-400'
-                                : 'bg-orange-100 text-orange-700 border border-orange-400'
+                              : shipment.status === 'received'
+                                ? 'bg-purple-100 text-purple-700 border border-purple-400'
+                                : shipment.status === 'in_transit'
+                                  ? 'bg-orange-100 text-orange-700 border border-orange-400'
+                                  : shipment.status === 'arrived'
+                                    ? 'bg-cyan-100 text-cyan-700 border border-cyan-400'
+                                    : 'bg-emerald-100 text-emerald-700 border border-emerald-400'
                           }`}
                         >
-                          {shipment.status?.charAt(0).toUpperCase() + shipment.status?.slice(1) || 'Pending'}
+                          {shipment.status?.replace('_', ' ').charAt(0).toUpperCase() + shipment.status?.replace('_', ' ').slice(1) || 'Pending'}
                         </span>
                       </td>
                       <td className="py-1.5 px-2 text-slate-700 whitespace-nowrap text-[9px] font-medium">{shipment.weight || 'N/A'} kg</td>

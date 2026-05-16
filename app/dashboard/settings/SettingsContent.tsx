@@ -15,6 +15,13 @@ import {
   Phone,
   Camera,
   Lock,
+  Package,
+  Plane,
+  Calendar,
+  Smartphone,
+  UserPlus,
+  Volume2,
+  Users,
 } from 'lucide-react';
 
 type Tab = 'account' | 'notifications' | 'display' | 'security';
@@ -23,16 +30,18 @@ interface ToggleItem {
   label: string;
   key: string;
   defaultOn: boolean;
+  icon: any;
+  description: string;
 }
 
 const notificationItems: ToggleItem[] = [
-  { label: 'Email me when a shipment status is updated', key: 'shipment', defaultOn: true },
-  { label: 'Notify me about flight delays and schedule changes', key: 'flight', defaultOn: true },
-  { label: 'Send me a weekly operational summary', key: 'weekly', defaultOn: true },
-  { label: 'Show push notifications when I am logged in', key: 'push', defaultOn: false },
-  { label: 'Notify me when a guest session ends', key: 'guest_session', defaultOn: true },
-  { label: 'Enable sound and badge indicators for new notifications', key: 'sound', defaultOn: true },
-  { label: 'Notify me when a new user account is created', key: 'new_user', defaultOn: false },
+  { label: 'Shipment Updates', key: 'shipment', defaultOn: true, icon: Package, description: 'Get notified when shipment status changes' },
+  { label: 'Flight Alerts', key: 'flight', defaultOn: true, icon: Plane, description: 'Receive alerts for flight delays and changes' },
+  { label: 'Weekly Summary', key: 'weekly', defaultOn: true, icon: Calendar, description: 'Get weekly operational reports via email' },
+  { label: 'Push Notifications', key: 'push', defaultOn: false, icon: Smartphone, description: 'Show browser notifications when logged in' },
+  { label: 'Email Notifications', key: 'emailNotifications', defaultOn: true, icon: Mail, description: 'Receive all notifications via email' },
+  { label: 'Sound & Badges', key: 'sound', defaultOn: true, icon: Volume2, description: 'Enable sound alerts and badge indicators' },
+  { label: 'New User Alerts', key: 'new_user', defaultOn: false, icon: UserPlus, description: 'Notify when new accounts are created' },
 ];
 
 export default function SettingsContent() {
@@ -359,28 +368,70 @@ function NotificationsTab({
     setToggles({ ...toggles, [key]: !toggles[key] });
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-slate-900 mb-6">Notification Preferences</h2>
-      <div className="space-y-4">
-        {notificationItems.map(({ label, key }) => (
-          <div key={key} className="flex items-center justify-between">
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-xl font-bold text-slate-900 mb-1">Notification Preferences</h2>
+        <p className="text-xs text-slate-500">Manage how you receive notifications</p>
+      </div>
+
+      <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/10 rounded-[20px] p-5 shadow-sm space-y-3">
+        {notificationItems.map(({ label, key, icon: Icon, description }) => (
+          <div key={key} className="flex items-center justify-between p-3 bg-white border-2 border-slate-100 rounded-[16px] hover:border-cyan-200 transition-all">
+            <div className="flex items-center gap-3 flex-1">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                toggles[key]
+                  ? 'bg-gradient-to-br from-emerald-500 to-cyan-500'
+                  : 'bg-gray-200'
+              }`}>
+                <Icon size={18} className={toggles[key] ? 'text-white' : 'text-gray-400'} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-900">{label}</p>
+                <p className="text-xs text-slate-500">{description}</p>
+              </div>
+            </div>
             <button
               role="switch"
               aria-checked={toggles[key]}
               onClick={() => flip(key)}
-              className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
-                toggles[key] ? 'bg-green-500' : 'bg-red-400'
+              className={`relative w-12 h-6 rounded-full transition-all flex-shrink-0 shadow-inner ${
+                toggles[key] ? 'bg-gradient-to-r from-emerald-500 to-cyan-500' : 'bg-gray-300'
               }`}
             >
               <span
-                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                  toggles[key] ? 'translate-x-5' : 'translate-x-0'
+                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform ${
+                  toggles[key] ? 'translate-x-6' : 'translate-x-0'
                 }`}
               />
             </button>
-            <span className="ml-4 text-sm text-slate-700 flex-1">{label}</span>
           </div>
         ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-[16px] p-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <Bell size={18} className="text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-blue-600 font-semibold">Active Notifications</p>
+              <p className="text-sm font-bold text-blue-900">{Object.values(toggles).filter(Boolean).length} / {notificationItems.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-[16px] p-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <Mail size={18} className="text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-purple-600 font-semibold">Email Alerts</p>
+              <p className="text-sm font-bold text-purple-900">{toggles.emailNotifications ? 'Enabled' : 'Disabled'}</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -389,9 +440,102 @@ function NotificationsTab({
 /* ───────────── Display Tab ───────────── */
 function DisplayTab() {
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-slate-900 mb-6">Display</h2>
-      <p className="text-slate-500 text-sm">Display preferences coming soon.</p>
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-xl font-bold text-slate-900 mb-1">Display Settings</h2>
+        <p className="text-xs text-slate-500">Customize your visual experience</p>
+      </div>
+
+      {/* Current Theme Preview */}
+      <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/10 rounded-[20px] p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Current Theme</h3>
+            <p className="text-xs text-slate-500">Light Mode (Active)</p>
+          </div>
+          <div className="px-3 py-1 bg-emerald-100 text-emerald-700 border-2 border-emerald-300 rounded-full text-xs font-bold">
+            ACTIVE
+          </div>
+        </div>
+
+        {/* Theme Preview Card */}
+        <div className="bg-gradient-to-br from-[#ffe9d4] to-[#ffd9b8] border-2 border-black/20 rounded-[16px] p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold">
+              A
+            </div>
+            <div className="flex-1">
+              <div className="h-3 bg-slate-300 rounded w-24 mb-1.5"></div>
+              <div className="h-2 bg-slate-200 rounded w-16"></div>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="h-16 bg-white border-2 border-black/10 rounded-lg"></div>
+            <div className="h-16 bg-gradient-to-r from-emerald-500 to-cyan-500 border-2 border-white/20 rounded-lg"></div>
+            <div className="h-16 bg-white border-2 border-black/10 rounded-lg"></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Coming Soon Cards */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Dark Mode */}
+        <div className="bg-gradient-to-br from-slate-800 to-slate-900 border-[2px] border-slate-700 rounded-[20px] p-5 shadow-sm relative overflow-hidden">
+          <div className="absolute top-2 right-2 px-2 py-0.5 bg-cyan-500 text-white rounded-full text-[10px] font-bold">
+            SOON
+          </div>
+          <div className="space-y-3">
+            <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center">
+              <Monitor size={20} className="text-slate-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white mb-1">Dark Mode</h3>
+              <p className="text-xs text-slate-400">Easy on the eyes, perfect for night work</p>
+            </div>
+            {/* Mini Preview */}
+            <div className="bg-slate-950 border-2 border-slate-700 rounded-lg p-2 space-y-1.5">
+              <div className="h-2 bg-slate-700 rounded w-16"></div>
+              <div className="h-2 bg-slate-800 rounded w-12"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Custom Themes */}
+        <div className="bg-gradient-to-br from-purple-100 to-pink-100 border-[2px] border-purple-300 rounded-[20px] p-5 shadow-sm relative overflow-hidden">
+          <div className="absolute top-2 right-2 px-2 py-0.5 bg-purple-500 text-white rounded-full text-[10px] font-bold">
+            SOON
+          </div>
+          <div className="space-y-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+              <Camera size={20} className="text-white" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-purple-900 mb-1">Custom Themes</h3>
+              <p className="text-xs text-purple-700">Personalize colors and styles</p>
+            </div>
+            {/* Color Palette Preview */}
+            <div className="flex gap-1.5">
+              <div className="w-6 h-6 bg-gradient-to-br from-red-400 to-orange-400 rounded-full border-2 border-white"></div>
+              <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full border-2 border-white"></div>
+              <div className="w-6 h-6 bg-gradient-to-br from-green-400 to-emerald-400 rounded-full border-2 border-white"></div>
+              <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full border-2 border-white"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Info Card */}
+      <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-[16px] p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <Bell size={18} className="text-white" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-blue-900 mb-1">More Display Options Coming Soon</p>
+            <p className="text-xs text-blue-700">We're working on dark mode, custom themes, and more personalization options to make ALTUS truly yours.</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -448,79 +592,112 @@ function SecurityTab({
   };
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-slate-900 mb-6">Security</h2>
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-xl font-bold text-slate-900 mb-1">Security Settings</h2>
+        <p className="text-xs text-slate-500">Manage your password and account security</p>
+      </div>
 
-      <div className="flex gap-10 items-start">
-        <div className="flex-1 space-y-4 max-w-sm">
-          <h3 className="text-base font-bold text-slate-800">Change Password</h3>
-
-          <div>
-            <label className="block text-xs text-gray-400 mb-1 ml-1">Current Password</label>
-            <input
-              type="password"
-              value={passwords.current}
-              onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-400 bg-white"
-            />
+      <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/10 rounded-[20px] p-5 shadow-sm">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center">
+            <Lock size={24} className="text-white" />
           </div>
-
           <div>
-            <label className="block text-xs text-gray-400 mb-1 ml-1">New Password</label>
-            <input
-              type="password"
-              value={passwords.newPass}
-              onChange={(e) => setPasswords({ ...passwords, newPass: e.target.value })}
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-400 bg-white"
-            />
+            <h3 className="text-sm font-bold text-slate-900">Change Password</h3>
+            <p className="text-xs text-slate-500">Update your account password</p>
           </div>
-
-          <div>
-            <label className="block text-xs text-gray-400 mb-1 ml-1">Confirm Password</label>
-            <input
-              type="password"
-              value={passwords.confirm}
-              onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-400 bg-white"
-            />
-          </div>
-
-          <button
-            onClick={handleChangePassword}
-            disabled={isChanging}
-            className="px-8 py-2.5 rounded-xl text-white text-sm font-semibold bg-blue-600 hover:bg-blue-700 transition-all disabled:opacity-50"
-          >
-            {isChanging ? 'Changing...' : 'Change Password'}
-          </button>
         </div>
 
-        <div className="flex-1 flex items-center justify-center pt-6">
-          <div className="relative w-96 h-96 flex items-center justify-center">
-            {/* Professional Padlock Icon */}
-            <svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" className="relative z-10">
-              {/* Main Lock Body - Clean Professional Design */}
-              <rect x="60" y="90" width="120" height="110" rx="12" fill="#e5e7eb" stroke="#1f2937" strokeWidth="2"/>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5 ml-1">Current Password</label>
+            <div className="relative">
+              <input
+                type="password"
+                value={passwords.current}
+                onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
+                placeholder="Enter current password"
+                className="w-full border-2 rounded-xl px-3 py-2 text-sm text-slate-800 outline-none pr-9 bg-white border-slate-200 focus:border-red-400 focus:ring-4 focus:ring-red-100 transition-all"
+              />
+              <Lock size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            </div>
+          </div>
 
-              {/* Lock Shackle - Curved Arc */}
-              <path d="M 90 90 Q 90 30 120 30 Q 150 30 150 90" fill="none" stroke="#1f2937" strokeWidth="6" strokeLinecap="round"/>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5 ml-1">New Password</label>
+            <div className="relative">
+              <input
+                type="password"
+                value={passwords.newPass}
+                onChange={(e) => setPasswords({ ...passwords, newPass: e.target.value })}
+                placeholder="Enter new password (min 6 characters)"
+                className="w-full border-2 rounded-xl px-3 py-2 text-sm text-slate-800 outline-none pr-9 bg-white border-slate-200 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition-all"
+              />
+              <Lock size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            </div>
+          </div>
 
-              {/* Keyhole Circle */}
-              <circle cx="120" cy="140" r="14" fill="white" stroke="#1f2937" strokeWidth="2"/>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5 ml-1">Confirm New Password</label>
+            <div className="relative">
+              <input
+                type="password"
+                value={passwords.confirm}
+                onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
+                placeholder="Re-enter new password"
+                className="w-full border-2 rounded-xl px-3 py-2 text-sm text-slate-800 outline-none pr-9 bg-white border-slate-200 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition-all"
+              />
+              <BadgeCheck size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            </div>
+          </div>
 
-              {/* Keyhole Shaft */}
-              <rect x="116" y="155" width="8" height="25" fill="#1f2937" rx="4"/>
+          <div className="flex justify-end pt-1">
+            <button
+              onClick={handleChangePassword}
+              disabled={isChanging}
+              className="px-6 py-2 rounded-xl text-white text-sm font-bold bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 transition-all shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isChanging ? 'Changing...' : 'Change Password'}
+            </button>
+          </div>
+        </div>
+      </div>
 
-              {/* Checkmark Badge - Top Right */}
-              <g transform="translate(170, 50)">
-                <circle cx="0" cy="0" r="35" fill="#10b981" opacity="0.95"/>
-                <path d="M -12 0 L -3 10 L 16 -10" stroke="white" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-              </g>
-            </svg>
+      {/* Security Info Cards */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-[16px] p-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <BadgeCheck size={18} className="text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-emerald-600 font-semibold">Account Status</p>
+              <p className="text-sm font-bold text-emerald-900">Secure</p>
+            </div>
+          </div>
+        </div>
 
-            {/* Status Text with Icon */}
-            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-center">
-              <p className="text-slate-700 font-semibold text-sm">Secure & Protected</p>
-              <p className="text-slate-500 text-xs mt-1">Your password is encrypted</p>
+        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-[16px] p-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <Lock size={18} className="text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-blue-600 font-semibold">Encryption</p>
+              <p className="text-sm font-bold text-blue-900">AES-256</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-[16px] p-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <Mail size={18} className="text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-purple-600 font-semibold">Last Changed</p>
+              <p className="text-sm font-bold text-purple-900">Never</p>
             </div>
           </div>
         </div>
