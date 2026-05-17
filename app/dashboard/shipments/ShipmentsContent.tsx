@@ -177,7 +177,7 @@ export default function ShipmentsContent() {
                         <td className="py-3 px-4">
                           <span className="font-bold text-slate-900 text-xs">{shipment.tracking_number}</span>
                         </td>
-                        <td className="py-3 px-4 text-slate-700 text-xs">{shipment.origin}</td>
+                        <td className="py-3 px-4 text-slate-700 text-xs">{shipment.sender}</td>
                         <td className="py-3 px-4 text-slate-700 text-xs">{shipment.destination}</td>
                         <td className="py-3 px-4 text-slate-700 text-xs">{shipment.flight_number || 'N/A'}</td>
                         <td className="py-3 px-4">

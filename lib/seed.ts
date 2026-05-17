@@ -87,8 +87,8 @@ export async function seedDatabase() {
       const status = shipmentStatuses[Math.floor(Math.random() * shipmentStatuses.length)];
 
       await sql`
-        INSERT INTO shipments (tracking_number, flight_id, origin, destination, weight, status)
-        VALUES (${trackingNumber}, ${flightId}, ${origin}, ${destination}, ${weight}, ${status})
+        INSERT INTO shipments (tracking_number, flight_id, sender, origin, destination, weight, status)
+        VALUES (${trackingNumber}, ${flightId}, ${sender}, ${origin}, ${destination}, ${weight}, ${status})
         ON CONFLICT (tracking_number) DO NOTHING;
       `;
     }

@@ -67,6 +67,7 @@ export async function createTables() {
         id SERIAL PRIMARY KEY,
         tracking_number VARCHAR(20) UNIQUE NOT NULL,
         flight_id INTEGER REFERENCES flights(id),
+        sender VARCHAR(100) NOT NULL,
         origin VARCHAR(100) NOT NULL,
         destination VARCHAR(100) NOT NULL,
         weight DECIMAL(10, 2),
