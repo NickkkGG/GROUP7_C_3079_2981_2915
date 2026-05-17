@@ -5,6 +5,7 @@ import { Package, Plus, Download, ChevronLeft, ChevronRight } from 'lucide-react
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import TopNavbar from '@/components/TopNavbar';
+import ShipmentDetailDrawer from './ShipmentDetailDrawer';
 
 export default function ShipmentsContent() {
   const { user } = useAuth();
@@ -16,6 +17,8 @@ export default function ShipmentsContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedTracking, setSelectedTracking] = useState('');
   const limit = 10;
 
   useEffect(() => {
@@ -40,8 +43,9 @@ export default function ShipmentsContent() {
 
   const loadShipments = async () => {
     try {
-      // Don't show loading if we already have data (optimistic UI)
-      if (shipments.length === 0) {
+      // Don't show loading skeleton if we already have data (optimistic UI)
+      const shouldShowLoading = shipments.length === 0;
+      if (shouldShowLoading) {
         setLoading(true);
       }
 
@@ -51,9 +55,12 @@ export default function ShipmentsContent() {
       setShipments(data.shipments || []);
       setTotalPages(data.pagination?.totalPages || 1);
       setTotalItems(data.pagination?.totalItems || 0);
+
+      if (shouldShowLoading) {
+        setLoading(false);
+      }
     } catch (error) {
       console.error('Error fetching shipments:', error);
-    } finally {
       setLoading(false);
     }
   };
@@ -62,6 +69,11 @@ export default function ShipmentsContent() {
     e.preventDefault();
     setDebouncedSearch(searchQuery);
     setCurrentPage(1);
+  };
+
+  const handleViewShipment = (trackingNumber: string) => {
+    setSelectedTracking(trackingNumber);
+    setDrawerOpen(true);
   };
 
   if (!user || user.role === 'guest') {
@@ -199,7 +211,12 @@ export default function ShipmentsContent() {
                         </td>
                         <td className="py-3 px-4 text-slate-700 text-xs">{shipment.weight} kg</td>
                         <td className="py-3 px-4">
-                          <button className="text-cyan-600 hover:text-cyan-700 font-bold text-xs">View →</button>
+                          <button
+                            onClick={() => handleViewShipment(shipment.tracking_number)}
+                            className="text-cyan-600 hover:text-cyan-700 font-bold text-xs"
+                          >
+                            View →
+                          </button>
                         </td>
                       </tr>
                     ))
@@ -268,6 +285,13 @@ export default function ShipmentsContent() {
         </div>
         </div>
       </div>
+
+      {/* Shipment Detail Drawer */}
+      <ShipmentDetailDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        trackingNumber={selectedTracking}
+      />
     </div>
   );
 }

@@ -28,7 +28,7 @@ export async function seedDatabase() {
     }
     console.log('✅ Aircraft seeded');
 
-    // 2. Seed Flights (60 flights with various statuses)
+    // 2. Seed Flights (60 flights with various statuses) - Bulk insert
     console.log('✈️ Seeding flights...');
     const cities = [
       'CGK (Jakarta)', 'SUB (Surabaya)', 'DPS (Bali)', 'UPG (Makassar)',
@@ -38,13 +38,13 @@ export async function seedDatabase() {
 
     const flightStatuses = ['on-time', 'on-time', 'on-time', 'on-time', 'on-time', 'delayed', 'delayed', 'boarding', 'departed'];
 
+    const flightValues: string[] = [];
     for (let i = 1; i <= 60; i++) {
       const flightNumber = `EP${200 + i}`;
       const aircraftId = (i % 10) + 1;
       const departureCity = cities[Math.floor(Math.random() * cities.length)];
       let arrivalCity = cities[Math.floor(Math.random() * cities.length)];
 
-      // Ensure departure and arrival are different
       while (arrivalCity === departureCity) {
         arrivalCity = cities[Math.floor(Math.random() * cities.length)];
       }
@@ -53,15 +53,19 @@ export async function seedDatabase() {
       const arrivalTime = new Date(departureTime.getTime() + (2 + Math.random() * 4) * 60 * 60 * 1000);
       const status = flightStatuses[Math.floor(Math.random() * flightStatuses.length)];
 
-      await sql`
+      flightValues.push(`('${flightNumber}', ${aircraftId}, '${departureCity}', '${arrivalCity}', '${departureTime.toISOString()}', '${arrivalTime.toISOString()}', '${status}')`);
+    }
+
+    if (flightValues.length > 0) {
+      await sql.query(`
         INSERT INTO flights (flight_number, aircraft_id, departure_city, arrival_city, departure_time, arrival_time, status)
-        VALUES (${flightNumber}, ${aircraftId}, ${departureCity}, ${arrivalCity}, ${departureTime.toISOString()}, ${arrivalTime.toISOString()}, ${status})
+        VALUES ${flightValues.join(', ')}
         ON CONFLICT (flight_number) DO NOTHING;
-      `;
+      `);
     }
     console.log('✅ Flights seeded');
 
-    // 3. Seed Shipments (120 shipments with proper statuses)
+    // 3. Seed Shipments (120 shipments with proper statuses) - Bulk insert
     console.log('📦 Seeding shipments...');
     const senders = [
       'PT Global Tech', 'Medicorp Logistics', 'Express Retail', 'Agro Nusantara',
@@ -70,12 +74,41 @@ export async function seedDatabase() {
       'Furniture Makers', 'Cosmetics Ltd.', 'Sports Equipment', 'Toy Factory'
     ];
 
-    const shipmentStatuses = ['booked', 'received', 'in_transit', 'in_transit', 'arrived', 'delivered'];
+    const recipients = [
+      'John Anderson', 'Sarah Williams', 'Michael Chen', 'Emily Rodriguez',
+      'David Kim', 'Lisa Thompson', 'James Wilson', 'Maria Garcia',
+      'Robert Lee', 'Jennifer Martinez', 'William Brown', 'Patricia Davis',
+      'Richard Taylor', 'Linda Johnson', 'Thomas Moore', 'Barbara White'
+    ];
 
+    const addresses = [
+      'Jl. Sudirman No. 123, Jakarta', 'Jl. Gatot Subroto 456, Surabaya',
+      'Jl. Ahmad Yani 789, Bali', 'Jl. Diponegoro 321, Makassar',
+      'Jl. Imam Bonjol 654, Medan', 'Jl. Veteran 987, Balikpapan',
+      '123 Orchard Road, Singapore', '456 Jalan Sultan, Kuala Lumpur',
+      '789 Sukhumvit Road, Bangkok', '321 Penang Road, Penang',
+      '654 Nathan Road, Hong Kong', '987 George Street, Sydney'
+    ];
+
+    const notesList = [
+      'Handle with care - fragile items',
+      'Temperature sensitive - keep cool',
+      'Urgent delivery required',
+      'Signature required upon delivery',
+      'Contains electronic equipment',
+      'Perishable goods - expedite delivery',
+      'High value shipment - extra security',
+      'Medical supplies - priority handling',
+      null, null, null, null
+    ];
+
+    const shipmentValues: string[] = [];
     for (let i = 1; i <= 120; i++) {
       const trackingNumber = `AWB-EP-${24000 + i}`;
       const flightId = (i % 60) + 1;
-      const sender = senders[Math.floor(Math.random() * senders.length)];
+      const sender = senders[Math.floor(Math.random() * senders.length)].replace(/'/g, "''");
+      const senderContact = `+62 ${Math.floor(Math.random() * 900000000 + 100000000)}`;
+      const senderAddress = addresses[Math.floor(Math.random() * addresses.length)].replace(/'/g, "''");
       const origin = cities[Math.floor(Math.random() * cities.length)];
       let destination = cities[Math.floor(Math.random() * cities.length)];
 
@@ -83,18 +116,32 @@ export async function seedDatabase() {
         destination = cities[Math.floor(Math.random() * cities.length)];
       }
 
+      const recipientName = recipients[Math.floor(Math.random() * recipients.length)];
+      const recipientContact = `+62 ${Math.floor(Math.random() * 900000000 + 100000000)}`;
+      const recipientAddress = addresses[Math.floor(Math.random() * addresses.length)].replace(/'/g, "''");
       const weight = (Math.random() * 200 + 20).toFixed(2);
-      const status = shipmentStatuses[Math.floor(Math.random() * shipmentStatuses.length)];
+      const notes = notesList[Math.floor(Math.random() * notesList.length)];
+      const notesEscaped = notes ? `'${notes.replace(/'/g, "''")}'` : 'NULL';
 
-      await sql`
-        INSERT INTO shipments (tracking_number, flight_id, sender, origin, destination, weight, status)
-        VALUES (${trackingNumber}, ${flightId}, ${sender}, ${origin}, ${destination}, ${weight}, ${status})
+      let status = 'booked';
+      if (i % 5 === 0) status = 'delivered';
+      else if (i % 4 === 0) status = 'arrived';
+      else if (i % 3 === 0) status = 'in_transit';
+      else if (i % 2 === 0) status = 'received';
+
+      shipmentValues.push(`('${trackingNumber}', ${flightId}, '${sender}', '${senderContact}', '${senderAddress}', '${origin}', '${destination}', '${recipientName}', '${recipientContact}', '${recipientAddress}', ${weight}, '${status}', ${notesEscaped})`);
+    }
+
+    if (shipmentValues.length > 0) {
+      await sql.query(`
+        INSERT INTO shipments (tracking_number, flight_id, sender, sender_contact, sender_address, origin, destination, recipient_name, recipient_contact, recipient_address, weight, status, notes)
+        VALUES ${shipmentValues.join(', ')}
         ON CONFLICT (tracking_number) DO NOTHING;
-      `;
+      `);
     }
     console.log('✅ Shipments seeded');
 
-    // 4. Seed Tracking History (bulk insert for better performance)
+    // 4. Seed Tracking History (synchronized with shipment status) - Bulk insert
     console.log('📍 Seeding tracking history...');
 
     const trackingStatuses = [
@@ -105,28 +152,25 @@ export async function seedDatabase() {
       { status: 'delivered', location: 'Final Destination', notes: 'Package delivered to recipient' }
     ];
 
-    // Build bulk insert values
     const historyValues: string[] = [];
-
     for (let i = 1; i <= 120; i++) {
       const trackingNumber = `AWB-EP-${24000 + i}`;
 
-      // Determine status index based on shipment number (for variety)
-      let statusIndex = 1;
-      if (i % 5 === 0) statusIndex = 5; // delivered
-      else if (i % 4 === 0) statusIndex = 4; // arrived
-      else if (i % 3 === 0) statusIndex = 3; // in_transit
-      else if (i % 2 === 0) statusIndex = 2; // received
+      // Determine status level (same logic as shipment status)
+      let statusLevel = 1;
+      if (i % 5 === 0) statusLevel = 5;
+      else if (i % 4 === 0) statusLevel = 4;
+      else if (i % 3 === 0) statusLevel = 3;
+      else if (i % 2 === 0) statusLevel = 2;
 
       // Add tracking history entries up to current status
-      for (let j = 0; j < statusIndex; j++) {
+      for (let j = 0; j < statusLevel; j++) {
         const historyEntry = trackingStatuses[j];
         const timestamp = new Date(2026, 4, 14 + j, 10 + (i % 8), (i * 10) % 60);
         historyValues.push(`('${trackingNumber}', '${historyEntry.status}', '${historyEntry.location}', '${historyEntry.notes}', '${timestamp.toISOString()}')`);
       }
     }
 
-    // Bulk insert all tracking history
     if (historyValues.length > 0) {
       await sql.query(`
         INSERT INTO tracking_history (tracking_number, status, location, notes, timestamp)

@@ -22,16 +22,15 @@ export default function TrackingContent() {
     }
   }, [user, loginAsGuest]);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!awb.trim()) return;
+  const handleSearchWithAwb = async (awbNumber: string) => {
+    if (!awbNumber.trim()) return;
 
     setHasSearched(true);
     setLoading(true);
     setNotFound(false);
 
     try {
-      const response = await fetch(`/api/tracking?awb=${encodeURIComponent(awb)}`);
+      const response = await fetch(`/api/tracking?awb=${encodeURIComponent(awbNumber)}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -51,6 +50,21 @@ export default function TrackingContent() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Auto-fill search from URL parameter
+  useEffect(() => {
+    const searchParam = searchParams.get('search');
+    if (searchParam && searchParam !== awb) {
+      setAwb(searchParam);
+      // Auto-submit search immediately
+      handleSearchWithAwb(searchParam);
+    }
+  }, [searchParams, awb]);
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSearchWithAwb(awb);
   };
 
   return (

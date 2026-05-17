@@ -68,10 +68,16 @@ export async function createTables() {
         tracking_number VARCHAR(20) UNIQUE NOT NULL,
         flight_id INTEGER REFERENCES flights(id),
         sender VARCHAR(100) NOT NULL,
+        sender_contact VARCHAR(50),
+        sender_address TEXT,
         origin VARCHAR(100) NOT NULL,
         destination VARCHAR(100) NOT NULL,
+        recipient_name VARCHAR(100),
+        recipient_contact VARCHAR(50),
+        recipient_address TEXT,
         weight DECIMAL(10, 2),
         status VARCHAR(50) DEFAULT 'pending',
+        notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;
