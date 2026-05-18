@@ -352,7 +352,7 @@ export default function RegisterPage() {
                 disabled={isLoading}
                 className="w-full px-6 py-3 bg-gradient-to-r from-[#003fcc] to-[#0b499a] rounded-[12px] shadow-[0_0_20px_rgba(0,63,204,0.4)] font-bold text-white text-base tracking-wide uppercase btn-enhanced-hover hover:shadow-[0_0_50px_rgba(0,63,204,0.8)] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
               >
-                {isLoading ? 'Creating Account...' : 'Create Account'}
+                {isLoading ? 'Creating Account...' : 'Get verification code'}
               </button>
             </form>
 

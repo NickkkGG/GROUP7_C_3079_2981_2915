@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Plane, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import TopNavbar from '@/components/TopNavbar';
+import FlightCargoManifest from './FlightCargoManifest';
 
 export default function FlightStatusContent() {
   const { user, loginAsGuest } = useAuth();
@@ -14,6 +15,8 @@ export default function FlightStatusContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [manifestOpen, setManifestOpen] = useState(false);
+  const [selectedFlight, setSelectedFlight] = useState('');
   const limit = 10;
 
   useEffect(() => {
@@ -60,6 +63,11 @@ export default function FlightStatusContent() {
     e.preventDefault();
     setDebouncedSearch(searchQuery);
     setCurrentPage(1);
+  };
+
+  const handleViewManifest = (flightNumber: string) => {
+    setSelectedFlight(flightNumber);
+    setManifestOpen(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -204,7 +212,10 @@ export default function FlightStatusContent() {
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <button className="text-cyan-600 hover:text-cyan-700 font-bold text-xs">
+                          <button
+                            onClick={() => handleViewManifest(flight.flight_number)}
+                            className="text-cyan-600 hover:text-cyan-700 font-bold text-xs"
+                          >
                             Details →
                           </button>
                         </td>
@@ -275,6 +286,13 @@ export default function FlightStatusContent() {
         </div>
         </div>
       </div>
+
+      {/* Flight Cargo Manifest Modal */}
+      <FlightCargoManifest
+        isOpen={manifestOpen}
+        onClose={() => setManifestOpen(false)}
+        flightNumber={selectedFlight}
+      />
     </div>
   );
 }
