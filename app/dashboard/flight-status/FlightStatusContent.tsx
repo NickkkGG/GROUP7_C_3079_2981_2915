@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/context/AuthContext';
-import { Plane, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plane, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import TopNavbar from '@/components/TopNavbar';
 import FlightCargoManifest from './FlightCargoManifest';
@@ -110,7 +110,7 @@ export default function FlightStatusContent() {
             </p>
             <div className="flex gap-2">
               <div className="flex-1 bg-white border-[2px] border-black/20 rounded-[16px] px-3.5 py-2 flex items-center gap-2">
-                <span className="text-base">🔍</span>
+                <Search size={16} className="text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search flight number, city, or airline..."

@@ -88,7 +88,7 @@ export default function ShipmentDetailDrawer({ isOpen, onClose, trackingNumber }
 
       {/* Drawer */}
       <div
-        className={`fixed top-0 right-0 h-full w-full max-w-2xl bg-white rounded-l-[24px] shadow-2xl z-50 overflow-y-auto transition-transform duration-500 ease-out ${
+        className={`fixed top-0 right-0 h-full w-full max-w-lg bg-white rounded-l-[24px] shadow-2xl z-50 overflow-y-auto transition-transform duration-500 ease-out ${
           isOpen && isAnimating ? 'translate-x-0' : 'translate-x-full'
         }`}
       >

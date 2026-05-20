@@ -34,24 +34,25 @@ export async function createTables() {
       );
     `;
 
-    // Create aircraft table
+    // Create aircraft table (Data Master)
     await sql`
       CREATE TABLE aircraft (
         id SERIAL PRIMARY KEY,
         registration VARCHAR(20) UNIQUE NOT NULL,
         model VARCHAR(100) NOT NULL,
         airline VARCHAR(100),
+        capacity INTEGER DEFAULT 0,
         status VARCHAR(50) DEFAULT 'active',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;
 
-    // Create flights table
+    // Create flights table (Transaksi)
     await sql`
       CREATE TABLE flights (
         id SERIAL PRIMARY KEY,
         flight_number VARCHAR(10) UNIQUE NOT NULL,
-        aircraft_id INTEGER REFERENCES aircraft(id),
+        aircraft_id INTEGER REFERENCES aircraft(id) ON DELETE SET NULL,
         departure_city VARCHAR(100) NOT NULL,
         arrival_city VARCHAR(100) NOT NULL,
         departure_time TIMESTAMP,
@@ -61,22 +62,22 @@ export async function createTables() {
       );
     `;
 
-    // Create shipments table
+    // Create shipments table (Transaksi)
     await sql`
       CREATE TABLE shipments (
         id SERIAL PRIMARY KEY,
         tracking_number VARCHAR(20) UNIQUE NOT NULL,
-        flight_id INTEGER REFERENCES flights(id),
+        flight_id INTEGER REFERENCES flights(id) ON DELETE SET NULL,
         sender VARCHAR(100) NOT NULL,
         sender_contact VARCHAR(50),
         sender_address TEXT,
-        origin VARCHAR(100) NOT NULL,
-        destination VARCHAR(100) NOT NULL,
         recipient_name VARCHAR(100),
         recipient_contact VARCHAR(50),
         recipient_address TEXT,
+        origin VARCHAR(100) NOT NULL,
+        destination VARCHAR(100) NOT NULL,
         weight DECIMAL(10, 2),
-        status VARCHAR(50) DEFAULT 'pending',
+        status VARCHAR(50) DEFAULT 'booked',
         notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -94,10 +95,10 @@ export async function createTables() {
       );
     `;
 
-    console.log('Tables created/reset successfully');
+    console.log('✅ Tables created successfully');
     return { success: true, message: 'Tables created' };
   } catch (error) {
-    console.error('Error creating tables:', error);
+    console.error('❌ Error creating tables:', error);
     throw error;
   }
 }

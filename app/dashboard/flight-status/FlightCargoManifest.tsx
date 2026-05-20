@@ -86,13 +86,13 @@ export default function FlightCargoManifest({ isOpen, onClose, flightNumber }: F
           ) : flight ? (
             <div className="p-6 space-y-5">
               {/* Header with Plane Image */}
-              <div className="flex items-start gap-4">
+              <div className="flex items-center gap-4">
                 <div className="flex-shrink-0">
                   <Image
                     src="/images/pesawat_flight_detail.png"
                     alt="Aircraft"
-                    width={120}
-                    height={80}
+                    width={140}
+                    height={100}
                     className="object-contain"
                   />
                 </div>
