@@ -51,7 +51,7 @@ export default function DashboardContainer({ children }: DashboardContainerProps
   ) : guestNavItems;
 
   return (
-    <div className="w-screen h-screen bg-gradient-to-br from-[#0d1c32] via-[#1a2f4a] to-[#0d1c32] flex items-center justify-center px-4 py-2">
+    <div className="w-screen h-screen bg-gradient-to-br from-[#0d1c32] via-[#1a2f4a] to-[#0d1c32] flex flex-col items-center justify-center px-4 py-2">
       {/* Modern Container */}
       <div className="w-full bg-[#ffe9d4] rounded-[24px] border-[2px] border-black/30 overflow-hidden flex h-[92vh] shadow-2xl shadow-black/30 hover:shadow-2xl hover:shadow-cyan-500/10">
         {/* LEFT SIDEBAR */}
@@ -139,6 +139,17 @@ export default function DashboardContainer({ children }: DashboardContainerProps
         <div className="flex-1 bg-[#ffe9d4] overflow-y-auto overflow-x-hidden" style={{ contain: 'layout style paint' }}>
           {children}
         </div>
+      </div>
+
+      {/* Footer - Fixed at bottom */}
+      <div className="w-full absolute bottom-0 left-0 right-0 bg-[#0d1c32] py-1.5">
+        <p className="text-[#ffe9d4] text-center text-[10px] font-medium opacity-70">
+          © 2025 PT Altus Air Logistics. All Rights Reserved.
+          <span className="mx-1.5">·</span>
+          <a href="#" className="hover:opacity-100 transition-opacity duration-200">Terms of Service</a>
+          <span className="mx-1.5">·</span>
+          <a href="#" className="hover:opacity-100 transition-opacity duration-200">Privacy Policy</a>
+        </p>
       </div>
     </div>
   );

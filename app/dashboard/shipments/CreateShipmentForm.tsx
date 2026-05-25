@@ -54,13 +54,49 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
 
   const loadFlights = async () => {
     try {
-      const response = await fetch('/api/flights');
+      const response = await fetch('/api/flights?limit=100');
       const data = await response.json();
       setFlights(data.flights || []);
     } catch (error) {
       console.error('Error loading flights:', error);
     }
   };
+
+  // Filter flights based on selected origin and destination
+  const getAvailableFlights = () => {
+    if (!formData.origin || !formData.destination) {
+      return [];
+    }
+
+    // Extract airport codes from the selected cities (e.g., "Medan, Sumatera Utara, Indonesia (KNO)" -> "KNO")
+    const extractCode = (cityString: string) => {
+      const match = cityString.match(/\(([A-Z]{3})\)/);
+      return match ? match[1] : '';
+    };
+
+    const originCode = extractCode(formData.origin);
+    const destCode = extractCode(formData.destination);
+
+    console.log('Origin:', formData.origin, '-> Code:', originCode);
+    console.log('Destination:', formData.destination, '-> Code:', destCode);
+    console.log('Total flights:', flights.length);
+
+    const filtered = flights.filter(flight => {
+      // Check if flight departure/arrival cities contain the airport codes
+      const departureMatch = originCode && flight.departure_city?.includes(originCode);
+      const arrivalMatch = destCode && flight.arrival_city?.includes(destCode);
+
+      console.log(`Flight ${flight.flight_number}: ${flight.departure_city} -> ${flight.arrival_city}`,
+                  `Departure match: ${departureMatch}, Arrival match: ${arrivalMatch}`);
+
+      return departureMatch && arrivalMatch;
+    });
+
+    console.log('Filtered flights:', filtered.length);
+    return filtered;
+  };
+
+  const availableFlights = getAvailableFlights();
 
   const handleOriginChange = (value: string) => {
     setFormData({ ...formData, origin: value });
@@ -367,15 +403,28 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
             <select
               value={formData.flight_id}
               onChange={(e) => setFormData({ ...formData, flight_id: e.target.value })}
-              className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+              disabled={!formData.origin || !formData.destination}
+              className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition disabled:bg-slate-100 disabled:cursor-not-allowed"
             >
-              <option value="">No flight assigned</option>
-              {flights.map((flight) => (
+              <option value="">
+                {!formData.origin || !formData.destination
+                  ? 'Select origin and destination first'
+                  : availableFlights.length === 0
+                    ? 'No flights available for this route'
+                    : 'Select a flight (optional)'}
+              </option>
+              {availableFlights.map((flight) => (
                 <option key={flight.id} value={flight.id}>
-                  {flight.flight_number} - {flight.departure_city} → {flight.arrival_city}
+                  {flight.flight_number} - {flight.departure_city} → {flight.arrival_city} ({new Date(flight.departure_time).toLocaleDateString()})
                 </option>
               ))}
             </select>
+            {formData.origin && formData.destination && availableFlights.length === 0 && (
+              <p className="text-orange-600 text-[10px] mt-1">⚠ No flights found for this route</p>
+            )}
+            {(!formData.origin || !formData.destination) && (
+              <p className="text-slate-500 text-[10px] mt-1">Select origin and destination to see available flights</p>
+            )}
           </div>
 
           <div>
