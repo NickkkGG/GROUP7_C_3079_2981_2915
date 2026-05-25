@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Package, User, MapPin } from 'lucide-react';
 import { indonesianCities } from '@/lib/cities';
+import Notification from '@/components/Notification';
 
 interface CreateShipmentFormProps {
   onClose: () => void;
@@ -16,6 +17,7 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
   const [destinationSuggestions, setDestinationSuggestions] = useState<typeof indonesianCities>([]);
   const [showOriginDropdown, setShowOriginDropdown] = useState(false);
   const [showDestinationDropdown, setShowDestinationDropdown] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null);
   const [formData, setFormData] = useState({
     tracking_number: '',
     sender: '',
@@ -114,21 +116,42 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
       });
 
       if (response.ok) {
-        onSuccess();
-        onClose();
+        const data = await response.json();
+        setNotification({
+          type: 'success',
+          message: `Shipment ${data.shipment.tracking_number} created successfully!`
+        });
+        setTimeout(() => {
+          onSuccess();
+          onClose();
+        }, 1500);
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to create shipment');
+        setNotification({
+          type: 'error',
+          message: error.error || 'Failed to create shipment'
+        });
       }
     } catch (error) {
       console.error('Error creating shipment:', error);
-      alert('Failed to create shipment');
+      setNotification({
+        type: 'error',
+        message: 'Failed to create shipment. Please try again.'
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
+    <>
+      {notification && (
+        <Notification
+          type={notification.type}
+          message={notification.message}
+          onClose={() => setNotification(null)}
+        />
+      )}
     <div className="bg-white border-[2px] border-black/20 rounded-[16px] p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-slate-200">
         <div className="w-12 h-12 bg-[#1e3a5f] rounded-full flex items-center justify-center shadow-md">
@@ -404,5 +427,6 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
         </div>
       </form>
     </div>
+    </>
   );
 }

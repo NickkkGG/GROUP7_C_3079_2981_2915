@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Package, User, MapPin } from 'lucide-react';
 import { indonesianCities } from '@/lib/cities';
+import Notification from '@/components/Notification';
 
 interface EditShipmentFormProps {
   shipment: any;
@@ -13,6 +14,7 @@ interface EditShipmentFormProps {
 export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditShipmentFormProps) {
   const [loading, setLoading] = useState(false);
   const [flights, setFlights] = useState<any[]>([]);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null);
   const [originSuggestions, setOriginSuggestions] = useState<typeof indonesianCities>([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState<typeof indonesianCities>([]);
   const [showOriginDropdown, setShowOriginDropdown] = useState(false);
@@ -103,21 +105,42 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
       });
 
       if (response.ok) {
-        onSuccess();
-        onClose();
+        const data = await response.json();
+        setNotification({
+          type: 'success',
+          message: `Shipment ${data.shipment.tracking_number} updated successfully!`
+        });
+        setTimeout(() => {
+          onSuccess();
+          onClose();
+        }, 1500);
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to update shipment');
+        setNotification({
+          type: 'error',
+          message: error.error || 'Failed to update shipment'
+        });
       }
     } catch (error) {
       console.error('Error updating shipment:', error);
-      alert('Failed to update shipment');
+      setNotification({
+        type: 'error',
+        message: 'Failed to update shipment. Please try again.'
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
+    <>
+      {notification && (
+        <Notification
+          type={notification.type}
+          message={notification.message}
+          onClose={() => setNotification(null)}
+        />
+      )}
     <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[16px] p-6">
       <div className="flex items-center gap-3 mb-6">
         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
@@ -393,5 +416,6 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
         </div>
       </form>
     </div>
+    </>
   );
 }
