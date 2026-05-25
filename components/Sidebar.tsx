@@ -63,7 +63,7 @@ const navItems: NavItem[] = [
     label: 'Settings',
     href: '/dashboard/settings',
     icon: <Settings size={20} />,
-    roles: ['guest', 'user', 'operator'],
+    roles: ['operator'],
   },
 ];
 
@@ -83,56 +83,68 @@ export default function Sidebar() {
   };
 
   return (
-    <aside
-      className={`fixed left-0 top-0 h-screen bg-gradient-to-b from-[#0d1c32] to-[#1a2847] border-r border-blue-500/20 transition-all duration-300 z-40 ${
-        isOpen ? 'w-64' : 'w-20'
-      }`}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-blue-500/20 h-20">
-        {isOpen && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded bg-blue-500 flex items-center justify-center font-bold text-white">
-              ✈
-            </div>
-            <span className="text-white font-bold text-lg">ALTUS</span>
+    <>
+      <style jsx>{`
+        .sidebar-container {
+          width: ${isOpen ? '256px' : '80px'};
+          transition: width 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .text-container {
+          max-width: ${isOpen ? '200px' : '0px'};
+          opacity: ${isOpen ? '1' : '0'};
+          transition: max-width 0.5s cubic-bezier(0.23, 1, 0.32, 1),
+                      opacity 0.3s ease ${isOpen ? '0.2s' : '0s'};
+        }
+      `}</style>
+
+      <aside className="sidebar-container fixed left-0 top-0 h-screen bg-gradient-to-b from-[#0d1c32] to-[#1a2847] border-r border-blue-500/20 z-40">
+        {/* Header */}
+        <div className="flex items-center p-4 border-b border-blue-500/20 h-20">
+          <div className="w-8 h-8 rounded bg-blue-500 flex items-center justify-center font-bold text-white flex-shrink-0">
+            ✈
           </div>
-        )}
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="p-1 hover:bg-blue-500/10 rounded transition-colors"
-        >
-          {isOpen ? <X size={20} className="text-white" /> : <Menu size={20} className="text-white" />}
-        </button>
-      </div>
-
-      {/* Navigation Items */}
-      <nav className="p-3 space-y-2 mt-4">
-        {visibleItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-              isActive(item.href)
-                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20'
-                : 'text-gray-300 hover:bg-blue-500/10 hover:text-white'
-            }`}
-            title={!isOpen ? item.label : undefined}
+          <span className="text-container text-white font-bold text-lg whitespace-nowrap ml-2 overflow-hidden">
+            ALTUS
+          </span>
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="p-1 hover:bg-blue-500/10 rounded transition-colors ml-auto flex-shrink-0"
           >
-            <span className="flex-shrink-0">{item.icon}</span>
-            {isOpen && <span className="font-medium text-sm">{item.label}</span>}
-          </Link>
-        ))}
-      </nav>
+            {isOpen ? <X size={20} className="text-white" /> : <Menu size={20} className="text-white" />}
+          </button>
+        </div>
 
-      {/* User Info */}
-      {isOpen && (
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-blue-500/20 bg-gradient-to-t from-[#0d1c32] to-transparent">
+        {/* Navigation Items */}
+        <nav className="p-3 space-y-2 mt-4">
+          {visibleItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center px-4 py-3 rounded-lg ${
+                isActive(item.href)
+                  ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20'
+                  : 'text-gray-300 hover:bg-blue-500/10 hover:text-white'
+              }`}
+              style={{ transition: 'background-color 0.2s, color 0.2s' }}
+              title={!isOpen ? item.label : undefined}
+            >
+              <span className="flex-shrink-0 w-5 flex items-center justify-center">
+                {item.icon}
+              </span>
+              <span className="text-container font-medium text-sm whitespace-nowrap ml-3 overflow-hidden">
+                {item.label}
+              </span>
+            </Link>
+          ))}
+        </nav>
+
+        {/* User Info */}
+        <div className="text-container absolute bottom-0 left-0 right-0 p-4 border-t border-blue-500/20 bg-gradient-to-t from-[#0d1c32] to-transparent overflow-hidden">
           <div className="text-xs text-gray-400 mb-2">Logged in as</div>
           <div className="text-white font-semibold text-sm truncate">{user.name}</div>
           <div className="text-xs text-blue-400 capitalize">{user.role}</div>
         </div>
-      )}
-    </aside>
+      </aside>
+    </>
   );
 }

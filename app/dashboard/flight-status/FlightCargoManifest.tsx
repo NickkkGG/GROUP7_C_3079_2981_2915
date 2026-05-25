@@ -69,7 +69,7 @@ export default function FlightCargoManifest({ isOpen, onClose, flightNumber }: F
 
       {/* Drawer */}
       <div
-        className={`fixed top-0 right-0 h-full w-full max-w-lg bg-white rounded-l-[24px] shadow-2xl z-50 overflow-y-auto transition-transform duration-500 ease-out ${
+        className={`fixed top-0 right-0 h-full w-full max-w-lg bg-white rounded-l-[24px] shadow-2xl z-50 flex flex-col transition-transform duration-500 ease-out ${
           isOpen && isAnimating ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -84,7 +84,8 @@ export default function FlightCargoManifest({ isOpen, onClose, flightNumber }: F
               </div>
             </div>
           ) : flight ? (
-            <div className="p-6 space-y-5">
+            <div className="flex flex-col h-full">
+              <div className="flex-1 overflow-y-auto p-6 space-y-5">
               {/* Header with Plane Image */}
               <div className="flex items-center gap-4">
                 <div className="flex-shrink-0">
@@ -219,21 +220,24 @@ export default function FlightCargoManifest({ isOpen, onClose, flightNumber }: F
                   </div>
                 </div>
               </div>
+              </div>
 
-              {/* Close Button */}
-              <button
-                onClick={handleClose}
-                className="w-full py-3 bg-blue-600 text-white font-bold text-sm rounded-full hover:bg-blue-700 transition shadow-md"
-              >
-                Close
-              </button>
+              {/* Close Button - Fixed at bottom */}
+              <div className="p-6 pt-0">
+                <button
+                  onClick={handleClose}
+                  className="w-full py-3 bg-[#1e3a5f] text-white font-bold text-sm rounded-full hover:bg-[#2c5282] transition shadow-md"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           ) : (
             <div className="p-8 text-center">
               <p className="text-slate-500">Flight not found</p>
             </div>
           )}
-        </div>
+      </div>
     </>
   );
 }

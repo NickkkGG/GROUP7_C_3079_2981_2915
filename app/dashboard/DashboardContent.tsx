@@ -68,6 +68,16 @@ export default function DashboardContent() {
     loadData();
   }, [debouncedSearch]);
 
+  // Listen for shipment created event
+  useEffect(() => {
+    const handleShipmentCreated = () => {
+      loadData();
+    };
+
+    window.addEventListener('shipment-created', handleShipmentCreated);
+    return () => window.removeEventListener('shipment-created', handleShipmentCreated);
+  }, []);
+
   const loadData = async () => {
     try {
       // Don't show loading if we already have data (optimistic UI)
@@ -135,13 +145,13 @@ export default function DashboardContent() {
         {/* Overview - div1: col 1, rows 1-3 */}
         <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-3 overflow-hidden flex flex-col" style={{ gridColumn: '1', gridRow: '1 / span 3' }}>
           <h3 className="text-xs font-bold text-slate-900 mb-2 flex-shrink-0">Overview</h3>
-          <div className="grid grid-cols-2 gap-3 flex-1 overflow-hidden">
+          <div className="grid grid-cols-2 gap-3 flex-1 overflow-visible">
             {statCards.map((stat, idx) => (
               <div
                 key={idx}
-                className="relative group overflow-hidden"
+                className="relative group"
               >
-                <div className="relative bg-gradient-to-br from-slate-100 to-slate-50 border-[2px] border-black/15 rounded-[14px] p-4 hover:border-black/30 hover:shadow-md transition-all duration-300 cursor-pointer h-full flex flex-col justify-between hover:scale-105">
+                <div className="relative bg-gradient-to-br from-slate-100 to-slate-50 border-[2px] border-black/15 rounded-[14px] p-4 transition-all duration-300 cursor-pointer h-full flex flex-col justify-between hover:shadow-lg hover:-translate-y-1">
                   <div className="flex items-start justify-between">
                     <div className="p-2.5 bg-slate-200/40 rounded-lg flex-shrink-0">
                       {stat.icon}
@@ -212,7 +222,7 @@ export default function DashboardContent() {
               ))
             )}
           </div>
-          <Link href="/dashboard/flight-status" className="w-full px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white text-xs font-bold rounded-lg transition-all duration-300 hover:shadow-lg active:scale-95 flex-shrink-0 text-center">
+          <Link href="/dashboard/flight-status" className="w-full px-3 py-1.5 bg-[#1e3a5f] hover:bg-[#2c5282] text-white text-xs font-bold rounded-lg transition-all duration-300 hover:shadow-lg active:scale-95 flex-shrink-0 text-center">
             More Details →
           </Link>
         </div>
@@ -232,7 +242,7 @@ export default function DashboardContent() {
               />
               <button
                 onClick={handleSearch}
-                className="px-3 py-1 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white text-[10px] font-bold rounded-lg transition-all duration-300 hover:shadow-md active:scale-95 flex-shrink-0">
+                className="px-3 py-1 bg-[#1e3a5f] hover:bg-[#2c5282] text-white text-[10px] font-bold rounded-lg transition-all duration-300 hover:shadow-md active:scale-95 flex-shrink-0">
                 Search
               </button>
             </div>
@@ -315,7 +325,7 @@ export default function DashboardContent() {
                       </td>
                       <td className="py-1.5 px-2 text-slate-700 whitespace-nowrap text-[9px] font-medium">{shipment.weight || 'N/A'} kg</td>
                       <td className="py-1.5 px-2">
-                        <Link href={`/dashboard/tracking?tracking=${shipment.tracking_number}`} className="px-2 py-1 rounded-lg text-white text-[9px] font-bold bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 transition-all duration-200 inline-block hover:shadow-md active:scale-95">
+                        <Link href={`/dashboard/tracking?tracking=${shipment.tracking_number}`} className="px-2 py-1 rounded-lg text-white text-[9px] font-bold bg-[#1e3a5f] hover:bg-[#2c5282] transition-all duration-200 inline-block hover:shadow-md active:scale-95">
                           Details →
                         </Link>
                       </td>

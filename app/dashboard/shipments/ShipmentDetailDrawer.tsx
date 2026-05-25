@@ -88,7 +88,7 @@ export default function ShipmentDetailDrawer({ isOpen, onClose, trackingNumber }
 
       {/* Drawer */}
       <div
-        className={`fixed top-0 right-0 h-full w-full max-w-lg bg-white rounded-l-[24px] shadow-2xl z-50 overflow-y-auto transition-transform duration-500 ease-out ${
+        className={`fixed top-0 right-0 h-full w-full max-w-lg bg-white rounded-l-[24px] shadow-2xl z-50 flex flex-col transition-transform duration-500 ease-out ${
           isOpen && isAnimating ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -133,7 +133,7 @@ export default function ShipmentDetailDrawer({ isOpen, onClose, trackingNumber }
             </div>
 
             {/* Content */}
-            <div className="p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {/* Current Status - Symmetrical */}
               <div className="bg-gradient-to-br from-white to-blue-50 border-[2px] border-black/20 rounded-[16px] p-4">
                 <div className="flex items-center justify-between">
@@ -256,14 +256,16 @@ export default function ShipmentDetailDrawer({ isOpen, onClose, trackingNumber }
                     <FileText size={14} className="text-amber-600" />
                     Additional Notes
                   </h3>
-                  <p className="text-slate-700 text-xs line-clamp-2">{shipment.notes}</p>
+                  <p className="text-slate-700 text-xs">{shipment.notes}</p>
                 </div>
               )}
+            </div>
 
-              {/* View Full Tracking Button */}
+            {/* View Full Tracking Button - Fixed at bottom */}
+            <div className="p-6 pt-0">
               <button
                 onClick={handleViewFullTracking}
-                className="w-full py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-xs rounded-full hover:from-blue-600 hover:to-blue-700 transition shadow-md flex items-center justify-center gap-2"
+                className="w-full py-2.5 bg-[#1e3a5f] text-white font-bold text-xs rounded-full hover:bg-[#2c5282] transition shadow-md flex items-center justify-center gap-2"
               >
                 View Full Tracking Timeline
                 <ArrowRight size={14} />

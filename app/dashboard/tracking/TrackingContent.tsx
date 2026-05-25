@@ -104,7 +104,7 @@ export default function TrackingContent() {
             </div>
             <button
               type="submit"
-              className="px-5 py-2 bg-blue-600 text-white font-bold text-xs rounded-lg transition-all duration-300 hover:bg-blue-700 active:scale-95 whitespace-nowrap"
+              className="px-5 py-2 bg-[#1e3a5f] text-white font-bold text-xs rounded-lg transition-all duration-300 hover:bg-[#2c5282] active:scale-95 whitespace-nowrap"
             >
               Track AWB
             </button>

@@ -1,11 +1,13 @@
 'use client';
 
 import { useAuth } from '@/context/AuthContext';
-import { Package, Plus, Download, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Package, Plus, Download, ChevronLeft, ChevronRight, Search, Edit, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import TopNavbar from '@/components/TopNavbar';
 import ShipmentDetailDrawer from './ShipmentDetailDrawer';
+import CreateShipmentForm from './CreateShipmentForm';
+import EditShipmentForm from './EditShipmentForm';
 
 export default function ShipmentsContent() {
   const { user } = useAuth();
@@ -19,6 +21,9 @@ export default function ShipmentsContent() {
   const [totalItems, setTotalItems] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedTracking, setSelectedTracking] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedShipment, setSelectedShipment] = useState<any>(null);
   const limit = 10;
 
   useEffect(() => {
@@ -76,6 +81,34 @@ export default function ShipmentsContent() {
     setDrawerOpen(true);
   };
 
+  const handleEditShipment = (shipment: any) => {
+    setSelectedShipment(shipment);
+    setIsEditing(true);
+  };
+
+  const handleDeleteShipment = async (shipment: any) => {
+    if (!confirm(`Are you sure you want to delete shipment ${shipment.tracking_number}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/shipments?id=${shipment.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        loadShipments();
+        alert('Shipment deleted successfully');
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to delete shipment');
+      }
+    } catch (error) {
+      console.error('Error deleting shipment:', error);
+      alert('Failed to delete shipment');
+    }
+  };
+
   if (!user || user.role === 'guest') {
     return null;
   }
@@ -100,40 +133,66 @@ export default function ShipmentsContent() {
               <Download size={14} />
               Export
             </button>
-            <button className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 text-white font-bold text-xs rounded-full hover:bg-emerald-600 transition">
+            <button
+              onClick={() => setIsCreating(true)}
+              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 text-white font-bold text-xs rounded-full hover:bg-emerald-600 transition"
+            >
               <Plus size={14} />
               New
             </button>
           </div>
         </div>
 
-        {/* Search Section */}
-        <div className="bg-white px-6 py-3 border-b-[2px] border-black/20">
-          <p className="text-slate-900 font-medium text-xs mb-2.5">
-            Search and filter shipments
-          </p>
-          <form onSubmit={handleSearch} className="flex gap-2">
-            <div className="flex-1 bg-white border-[2px] border-black/20 rounded-[16px] px-3.5 py-2 flex items-center gap-2">
-              <Search size={16} className="text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search AWB, origin, destination, or flight..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 bg-transparent text-slate-900 text-xs outline-none placeholder-slate-400"
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-emerald-500 text-white font-bold text-xs rounded transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg hover:bg-emerald-600"
-            >
-              Search
-            </button>
-          </form>
-        </div>
+        {/* Search Section - Hidden when creating */}
+        {!isCreating && (
+          <div className="bg-white px-6 py-3 border-b-[2px] border-black/20">
+            <p className="text-slate-900 font-medium text-xs mb-2.5">
+              Search and filter shipments
+            </p>
+            <form onSubmit={handleSearch} className="flex gap-2">
+              <div className="flex-1 bg-white border-[2px] border-black/20 rounded-[16px] px-3.5 py-2 flex items-center gap-2">
+                <Search size={16} className="text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search AWB, origin, destination, or flight..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-transparent text-slate-900 text-xs outline-none placeholder-slate-400"
+                />
+              </div>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-[#1e3a5f] text-white font-bold text-xs rounded transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg hover:bg-[#2c5282]"
+              >
+                Search
+              </button>
+            </form>
+          </div>
+        )}
 
         {/* Content Section */}
         <div className="space-y-3 p-5 bg-white overflow-y-auto flex-1">
+          {isCreating ? (
+            <CreateShipmentForm
+              onClose={() => setIsCreating(false)}
+              onSuccess={() => {
+                setIsCreating(false);
+                loadShipments();
+                // Trigger dashboard refresh
+                window.dispatchEvent(new Event('shipment-created'));
+              }}
+            />
+          ) : isEditing ? (
+            <EditShipmentForm
+              shipment={selectedShipment}
+              onClose={() => setIsEditing(false)}
+              onSuccess={() => {
+                setIsEditing(false);
+                loadShipments();
+              }}
+            />
+          ) : (
+            <>
           {/* Shipments Table Box */}
           <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[16px] overflow-hidden">
             <div className="overflow-x-auto">
@@ -146,7 +205,9 @@ export default function ShipmentsContent() {
                     <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">Flight</th>
                     <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">Status</th>
                     <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">Weight</th>
-                    <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">Action</th>
+                    <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">View</th>
+                    <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">Edit</th>
+                    <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">Delete</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -218,6 +279,24 @@ export default function ShipmentsContent() {
                             View →
                           </button>
                         </td>
+                        <td className="py-3 px-4">
+                          <button
+                            onClick={() => handleEditShipment(shipment)}
+                            className="text-orange-600 hover:text-orange-700 font-bold text-xs flex items-center gap-1"
+                          >
+                            <Edit size={12} />
+                            Edit
+                          </button>
+                        </td>
+                        <td className="py-3 px-4">
+                          <button
+                            onClick={() => handleDeleteShipment(shipment)}
+                            className="text-red-600 hover:text-red-700 font-bold text-xs flex items-center gap-1"
+                          >
+                            <Trash2 size={12} />
+                            Delete
+                          </button>
+                        </td>
                       </tr>
                     ))
                   )}
@@ -281,6 +360,8 @@ export default function ShipmentsContent() {
                 </button>
               </div>
             </div>
+          )}
+            </>
           )}
         </div>
         </div>

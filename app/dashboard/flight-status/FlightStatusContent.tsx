@@ -121,7 +121,7 @@ export default function FlightStatusContent() {
               </div>
               <button
                 type="submit"
-                className="px-4 py-2 bg-emerald-500 text-white font-bold text-xs rounded transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg hover:bg-emerald-600 transition"
+                className="px-4 py-2 bg-[#1e3a5f] text-white font-bold text-xs rounded transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg hover:bg-[#2c5282] transition"
               >
                 Search
               </button>

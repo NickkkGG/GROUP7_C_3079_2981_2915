@@ -1,0 +1,408 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { X, Package, User, MapPin } from 'lucide-react';
+import { indonesianCities } from '@/lib/cities';
+
+interface CreateShipmentFormProps {
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmentFormProps) {
+  const [loading, setLoading] = useState(false);
+  const [flights, setFlights] = useState<any[]>([]);
+  const [originSuggestions, setOriginSuggestions] = useState<typeof indonesianCities>([]);
+  const [destinationSuggestions, setDestinationSuggestions] = useState<typeof indonesianCities>([]);
+  const [showOriginDropdown, setShowOriginDropdown] = useState(false);
+  const [showDestinationDropdown, setShowDestinationDropdown] = useState(false);
+  const [formData, setFormData] = useState({
+    tracking_number: '',
+    sender: '',
+    sender_contact: '',
+    sender_address: '',
+    receiver: '',
+    recipient_name: '',
+    recipient_contact: '',
+    recipient_address: '',
+    origin: '',
+    destination: '',
+    weight: '',
+    flight_id: '',
+    status: 'booked',
+    notes: ''
+  });
+
+  useEffect(() => {
+    loadFlights();
+    generateAWB();
+  }, []);
+
+  const generateAWB = async () => {
+    try {
+      const response = await fetch('/api/shipments/generate-awb');
+      const data = await response.json();
+      if (data.tracking_number) {
+        setFormData(prev => ({ ...prev, tracking_number: data.tracking_number }));
+      }
+    } catch (error) {
+      console.error('Error generating AWB:', error);
+    }
+  };
+
+  const loadFlights = async () => {
+    try {
+      const response = await fetch('/api/flights');
+      const data = await response.json();
+      setFlights(data.flights || []);
+    } catch (error) {
+      console.error('Error loading flights:', error);
+    }
+  };
+
+  const handleOriginChange = (value: string) => {
+    setFormData({ ...formData, origin: value });
+    if (value.trim()) {
+      const filtered = indonesianCities.filter(city =>
+        city.name.toLowerCase().includes(value.toLowerCase()) ||
+        city.code.toLowerCase().includes(value.toLowerCase())
+      );
+      setOriginSuggestions(filtered);
+      setShowOriginDropdown(true);
+    } else {
+      setShowOriginDropdown(false);
+    }
+  };
+
+  const handleDestinationChange = (value: string) => {
+    setFormData({ ...formData, destination: value });
+    if (value.trim()) {
+      const filtered = indonesianCities.filter(city =>
+        city.name.toLowerCase().includes(value.toLowerCase()) ||
+        city.code.toLowerCase().includes(value.toLowerCase())
+      );
+      setDestinationSuggestions(filtered);
+      setShowDestinationDropdown(true);
+    } else {
+      setShowDestinationDropdown(false);
+    }
+  };
+
+  const selectOrigin = (city: typeof indonesianCities[0]) => {
+    setFormData({ ...formData, origin: city.fullName });
+    setShowOriginDropdown(false);
+  };
+
+  const selectDestination = (city: typeof indonesianCities[0]) => {
+    setFormData({ ...formData, destination: city.fullName });
+    setShowDestinationDropdown(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/shipments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          weight: parseFloat(formData.weight),
+          flight_id: formData.flight_id ? parseInt(formData.flight_id) : null
+        })
+      });
+
+      if (response.ok) {
+        onSuccess();
+        onClose();
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to create shipment');
+      }
+    } catch (error) {
+      console.error('Error creating shipment:', error);
+      alert('Failed to create shipment');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-white border-[2px] border-black/20 rounded-[16px] p-6 shadow-sm">
+      <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-slate-200">
+        <div className="w-12 h-12 bg-[#1e3a5f] rounded-full flex items-center justify-center shadow-md">
+          <Package size={24} className="text-white" />
+        </div>
+        <div>
+          <h2 className="text-slate-900 font-bold text-xl">Create New Shipment</h2>
+          <p className="text-slate-600 text-xs mt-1">Fill in the shipment details below</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-slate-900 font-bold text-xs mb-2">
+              Tracking Number (AWB) *
+            </label>
+            <input
+              type="text"
+              required
+              disabled
+              value={formData.tracking_number}
+              className="w-full bg-slate-100 border-[2px] border-slate-300 rounded-[12px] px-3 py-2 text-slate-600 text-xs outline-none cursor-not-allowed"
+            />
+            <p className="text-slate-500 text-[10px] mt-1">Auto-generated upon creation</p>
+          </div>
+
+          <div>
+            <label className="block text-slate-900 font-bold text-xs mb-2">
+              Weight (kg) *
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              required
+              value={formData.weight}
+              onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+              placeholder="e.g., 25.5"
+              className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+            />
+          </div>
+        </div>
+
+        {/* Sender Information */}
+        <div className="bg-blue-100 border-2 border-blue-300 rounded-[12px] p-4">
+          <h3 className="text-blue-900 font-bold text-sm mb-3 flex items-center gap-2">
+            <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+              <User size={14} className="text-white" />
+            </div>
+            Sender Information
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-slate-900 font-bold text-xs mb-2">
+                Sender Name *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.sender}
+                onChange={(e) => setFormData({ ...formData, sender: e.target.value })}
+                placeholder="e.g., John Doe"
+                className="w-full bg-white border-[2px] border-blue-200 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-blue-500 transition"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-900 font-bold text-xs mb-2">
+                Sender Contact
+              </label>
+              <input
+                type="text"
+                value={formData.sender_contact}
+                onChange={(e) => setFormData({ ...formData, sender_contact: e.target.value })}
+                placeholder="e.g., +62812345678"
+                className="w-full bg-white border-[2px] border-blue-200 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-blue-500 transition"
+              />
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <label className="block text-slate-900 font-bold text-xs mb-2">
+              Sender Address
+            </label>
+            <textarea
+              value={formData.sender_address}
+              onChange={(e) => setFormData({ ...formData, sender_address: e.target.value })}
+              placeholder="Full address..."
+              rows={2}
+              className="w-full bg-white border-[2px] border-blue-200 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-blue-500 transition resize-none"
+            />
+          </div>
+        </div>
+
+        {/* Recipient Information */}
+        <div className="bg-emerald-100 border-2 border-emerald-300 rounded-[12px] p-4">
+          <h3 className="text-emerald-900 font-bold text-sm mb-3 flex items-center gap-2">
+            <div className="w-6 h-6 bg-emerald-600 rounded-full flex items-center justify-center">
+              <MapPin size={14} className="text-white" />
+            </div>
+            Recipient Information
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-slate-900 font-bold text-xs mb-2">
+                Recipient Name *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.recipient_name}
+                onChange={(e) => setFormData({ ...formData, recipient_name: e.target.value })}
+                placeholder="e.g., Jane Smith"
+                className="w-full bg-white border-[2px] border-emerald-200 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-900 font-bold text-xs mb-2">
+                Recipient Contact
+              </label>
+              <input
+                type="text"
+                value={formData.recipient_contact}
+                onChange={(e) => setFormData({ ...formData, recipient_contact: e.target.value })}
+                placeholder="e.g., +62812345678"
+                className="w-full bg-white border-[2px] border-emerald-200 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+              />
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <label className="block text-slate-900 font-bold text-xs mb-2">
+              Recipient Address
+            </label>
+            <textarea
+              value={formData.recipient_address}
+              onChange={(e) => setFormData({ ...formData, recipient_address: e.target.value })}
+              placeholder="Full address..."
+              rows={2}
+              className="w-full bg-white border-[2px] border-emerald-200 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition resize-none"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="relative">
+            <label className="block text-slate-900 font-bold text-xs mb-2">
+              Origin City *
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.origin}
+              onChange={(e) => handleOriginChange(e.target.value)}
+              onFocus={() => formData.origin && setShowOriginDropdown(true)}
+              onBlur={() => setTimeout(() => setShowOriginDropdown(false), 200)}
+              placeholder="e.g., Jakarta or YIA"
+              className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+            />
+            {showOriginDropdown && originSuggestions.length > 0 && (
+              <div className="absolute z-50 w-full mt-1 bg-white border-[2px] border-black/20 rounded-[12px] shadow-lg max-h-48 overflow-y-auto">
+                {originSuggestions.map((city, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => selectOrigin(city)}
+                    className="w-full text-left px-3 py-2 text-slate-900 text-xs hover:bg-emerald-50 transition border-b border-slate-200 last:border-b-0"
+                  >
+                    <span className="font-bold">{city.name}</span> <span className="text-slate-600">({city.code})</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="relative">
+            <label className="block text-slate-900 font-bold text-xs mb-2">
+              Destination City *
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.destination}
+              onChange={(e) => handleDestinationChange(e.target.value)}
+              onFocus={() => formData.destination && setShowDestinationDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDestinationDropdown(false), 200)}
+              placeholder="e.g., Surabaya or SUB"
+              className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+            />
+            {showDestinationDropdown && destinationSuggestions.length > 0 && (
+              <div className="absolute z-50 w-full mt-1 bg-white border-[2px] border-black/20 rounded-[12px] shadow-lg max-h-48 overflow-y-auto">
+                {destinationSuggestions.map((city, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => selectDestination(city)}
+                    className="w-full text-left px-3 py-2 text-slate-900 text-xs hover:bg-emerald-50 transition border-b border-slate-200 last:border-b-0"
+                  >
+                    <span className="font-bold">{city.name}</span> <span className="text-slate-600">({city.code})</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-slate-900 font-bold text-xs mb-2">
+              Assign to Flight
+            </label>
+            <select
+              value={formData.flight_id}
+              onChange={(e) => setFormData({ ...formData, flight_id: e.target.value })}
+              className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+            >
+              <option value="">No flight assigned</option>
+              {flights.map((flight) => (
+                <option key={flight.id} value={flight.id}>
+                  {flight.flight_number} - {flight.departure_city} → {flight.arrival_city}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-slate-900 font-bold text-xs mb-2">
+              Status *
+            </label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+            >
+              <option value="booked">Booked</option>
+              <option value="received">Received</option>
+              <option value="in_transit">In Transit</option>
+              <option value="arrived">Arrived</option>
+              <option value="delivered">Delivered</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-slate-900 font-bold text-xs mb-2">
+            Additional Notes
+          </label>
+          <textarea
+            value={formData.notes}
+            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            placeholder="Any special instructions or notes..."
+            rows={2}
+            className="w-full bg-white border-[2px] border-slate-300 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-slate-500 transition resize-none"
+          />
+        </div>
+
+        <div className="flex gap-3 pt-3 border-t-2 border-slate-200">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-2.5 bg-slate-200 border-[2px] border-slate-400 text-slate-900 font-bold text-xs rounded-[12px] hover:bg-slate-300 transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex-1 px-4 py-2.5 bg-[#1e3a5f] text-white font-bold text-xs rounded-[12px] hover:bg-[#2c5282] transition disabled:opacity-50 shadow-md"
+          >
+            {loading ? 'Creating...' : 'Create Shipment'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
