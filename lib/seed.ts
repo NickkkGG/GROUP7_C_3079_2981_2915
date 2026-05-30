@@ -128,18 +128,25 @@ export async function seedDatabase() {
       const notes = notesList[Math.floor(Math.random() * notesList.length)];
       const notesEscaped = notes ? `'${notes.replace(/'/g, "''")}'` : 'NULL';
 
+      const itemTypes = ['General Cargo', 'Electronics', 'Documents', 'Perishable', 'Fragile', 'Garments'];
+      const serviceTypes = ['Regular', 'Express', 'Priority'];
+      const rates: Record<string, number> = { Regular: 5000, Express: 10000, Priority: 15000 };
+      const itemType = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+      const serviceType = serviceTypes[Math.floor(Math.random() * serviceTypes.length)];
+      const tariff = (rates[serviceType] * parseFloat(weight)).toFixed(2);
+
       let status = 'booked';
       if (i % 5 === 0) status = 'delivered';
       else if (i % 4 === 0) status = 'arrived';
       else if (i % 3 === 0) status = 'in_transit';
       else if (i % 2 === 0) status = 'received';
 
-      shipmentValues.push(`('${trackingNumber}', ${flightId}, '${sender}', '${senderContact}', '${senderAddress}', '${recipientName}', '${recipientContact}', '${recipientAddress}', '${origin}', '${destination}', ${weight}, '${status}', ${notesEscaped})`);
+      shipmentValues.push(`('${trackingNumber}', ${flightId}, '${sender}', '${senderContact}', '${senderAddress}', '${recipientName}', '${recipientContact}', '${recipientAddress}', '${origin}', '${destination}', ${weight}, '${itemType}', '${serviceType}', ${tariff}, '${status}', ${notesEscaped})`);
     }
 
     if (shipmentValues.length > 0) {
       await sql.query(`
-        INSERT INTO shipments (tracking_number, flight_id, sender, sender_contact, sender_address, recipient_name, recipient_contact, recipient_address, origin, destination, weight, status, notes)
+        INSERT INTO shipments (tracking_number, flight_id, sender, sender_contact, sender_address, recipient_name, recipient_contact, recipient_address, origin, destination, weight, item_type, service_type, tariff, status, notes)
         VALUES ${shipmentValues.join(', ')}
         ON CONFLICT (tracking_number) DO NOTHING;
       `);

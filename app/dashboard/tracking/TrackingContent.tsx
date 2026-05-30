@@ -215,22 +215,22 @@ export default function TrackingContent() {
             </div>
 
             {/* Timeline Content */}
-            <div className="bg-gradient-to-br from-white to-amber-50 px-4 py-4 flex-1">
+            <div className="bg-gradient-to-br from-white to-amber-50 px-4 py-4 flex-1 flex flex-col justify-center">
               {loading ? (
                 <div className="relative">
                   {/* Timeline line background */}
-                  <div className="absolute top-4 left-0 right-0 h-[2px] bg-slate-300" />
+                  <div className="absolute top-[28px] -translate-y-1/2 left-[10%] right-[10%] h-[2px] bg-slate-300" />
 
                   {/* Timeline items - loading */}
                   <div className="flex justify-between items-start gap-2">
                     {['Booked', 'Received', 'In Transit', 'Arrived', 'Delivered'].map((step, idx) => (
                       <div key={idx} className="flex-1 flex flex-col items-center">
                         <div className="relative z-10 mb-2">
-                          <div className="w-9 h-9 bg-slate-300 rounded-full border-4 border-white flex items-center justify-center animate-pulse">
-                            <div className="w-2 h-2 bg-slate-400 rounded-full" />
+                          <div className="w-14 h-14 bg-slate-300 rounded-full border-4 border-white flex items-center justify-center animate-pulse">
+                            <div className="w-3.5 h-3.5 bg-slate-400 rounded-full" />
                           </div>
                         </div>
-                        <h4 className="text-slate-900 font-bold text-[10px] text-center mb-1">{step}</h4>
+                        <h4 className="text-slate-900 font-bold text-sm text-center mb-1">{step}</h4>
                         <div className="text-center mb-0.5">
                           <div className="h-2.5 bg-slate-300 rounded w-12 mx-auto animate-pulse"></div>
                         </div>
@@ -242,19 +242,19 @@ export default function TrackingContent() {
               ) : !hasSearched || trackingHistory.length === 0 ? (
                 <div className="relative">
                   {/* Timeline line background */}
-                  <div className="absolute top-4 left-0 right-0 h-[2px] bg-slate-200" />
+                  <div className="absolute top-[28px] -translate-y-1/2 left-[10%] right-[10%] h-[2px] bg-slate-200" />
 
                   {/* Timeline items - empty state */}
                   <div className="flex justify-between items-start gap-2">
                     {['Booked', 'Received', 'In Transit', 'Arrived', 'Delivered'].map((step, idx) => (
                       <div key={idx} className="flex-1 flex flex-col items-center">
                         <div className="relative z-10 mb-2">
-                          <div className="w-9 h-9 bg-slate-200 rounded-full border-4 border-white flex items-center justify-center">
-                            <div className="w-2 h-2 bg-slate-300 rounded-full" />
+                          <div className="w-14 h-14 bg-slate-200 rounded-full border-4 border-white flex items-center justify-center">
+                            <div className="w-3.5 h-3.5 bg-slate-300 rounded-full" />
                           </div>
                         </div>
-                        <h4 className="text-slate-400 font-bold text-[10px] text-center mb-1">{step}</h4>
-                        <p className="text-slate-300 text-[10px]">-</p>
+                        <h4 className="text-slate-400 font-bold text-sm text-center mb-1">{step}</h4>
+                        <p className="text-slate-300 text-sm">-</p>
                       </div>
                     ))}
                   </div>
@@ -262,7 +262,7 @@ export default function TrackingContent() {
               ) : (
                 <div className="relative">
                   {/* Timeline line background */}
-                  <div className="absolute top-4 left-0 right-0 h-[2px] bg-slate-300" />
+                  <div className="absolute top-[28px] -translate-y-1/2 left-[10%] right-[10%] h-[2px] bg-slate-300" />
 
                   {/* Timeline items - real data */}
                   <div className="flex justify-between items-start gap-2">
@@ -277,34 +277,34 @@ export default function TrackingContent() {
                             {isCompleted ? (
                               <div
                                 style={{ backgroundColor: '#2563eb' }}
-                                className="w-9 h-9 rounded-full flex items-center justify-center text-white text-base font-bold border-4 border-white"
+                                className="w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl font-bold border-4 border-white"
                               >
                                 ✓
                               </div>
                             ) : (
-                              <div className="w-9 h-9 bg-slate-300 rounded-full border-4 border-white flex items-center justify-center">
-                                <div className="w-2 h-2 bg-slate-400 rounded-full" />
+                              <div className="w-14 h-14 bg-slate-300 rounded-full border-4 border-white flex items-center justify-center">
+                                <div className="w-3.5 h-3.5 bg-slate-400 rounded-full" />
                               </div>
                             )}
                           </div>
 
                           {/* Label */}
-                          <h4 className="text-slate-900 font-bold text-[10px] text-center mb-1">
+                          <h4 className="text-slate-900 font-bold text-sm text-center mb-1">
                             {statusKey.replace('_', ' ').charAt(0).toUpperCase() + statusKey.replace('_', ' ').slice(1)}
                           </h4>
 
                           {/* Timestamp & Location */}
                           {isCompleted ? (
                             <div className="text-center">
-                              <p className="text-slate-600 text-[10px] opacity-70 font-mono">
+                              <p className="text-slate-600 text-sm opacity-70 font-mono">
                                 {new Date(historyItem.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                               </p>
-                              <p className="text-slate-600 text-[10px] opacity-60">
+                              <p className="text-slate-600 text-sm opacity-60">
                                 📍 {historyItem.location}
                               </p>
                             </div>
                           ) : (
-                            <p className="text-slate-300 text-[10px]">-</p>
+                            <p className="text-slate-300 text-sm">-</p>
                           )}
                         </div>
                       );

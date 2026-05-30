@@ -191,6 +191,22 @@ export default function ShipmentDetailDrawer({ isOpen, onClose, trackingNumber }
                     <p className="text-slate-500 text-xs mb-0.5">Weight</p>
                     <p className="text-slate-900 font-semibold">{shipment.weight} kg</p>
                   </div>
+                  <div>
+                    <p className="text-slate-500 text-xs mb-0.5">Jenis Barang</p>
+                    <p className="text-slate-900 font-semibold">{shipment.item_type || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-xs mb-0.5">Jenis Pengiriman</p>
+                    <p className="text-slate-900 font-semibold">{shipment.service_type || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-xs mb-0.5">Tarif</p>
+                    <p className="text-slate-900 font-semibold">
+                      {shipment.tariff != null
+                        ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(shipment.tariff))
+                        : '-'}
+                    </p>
+                  </div>
                 </div>
               </div>
 

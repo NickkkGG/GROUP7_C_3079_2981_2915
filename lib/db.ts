@@ -77,9 +77,13 @@ export async function createTables() {
         origin VARCHAR(100) NOT NULL,
         destination VARCHAR(100) NOT NULL,
         weight DECIMAL(10, 2),
+        item_type VARCHAR(100),
+        service_type VARCHAR(50) DEFAULT 'Regular',
+        tariff DECIMAL(12, 2),
         status VARCHAR(50) DEFAULT 'booked',
         notes TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;
 

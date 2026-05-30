@@ -47,6 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: userData.email,
             role: role as UserRole,
           });
+          // Pastikan cookie middleware ada (untuk sesi yang sudah login)
+          document.cookie = `auth_role=${role}; path=/; max-age=86400; samesite=lax`;
         } catch (error) {
           console.error('Error loading user from storage:', error);
         }
@@ -60,6 +62,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('user');
       localStorage.removeItem('userRole');
+      // Hapus cookie middleware
+      document.cookie = 'auth_role=; path=/; max-age=0';
     }
   };
 

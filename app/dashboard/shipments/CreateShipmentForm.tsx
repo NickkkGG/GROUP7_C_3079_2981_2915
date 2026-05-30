@@ -5,6 +5,13 @@ import { X, Package, User, MapPin } from 'lucide-react';
 import { indonesianCities } from '@/lib/cities';
 import Notification from '@/components/Notification';
 
+// Tarif per kg per jenis pengiriman
+const RATES: Record<string, number> = { Regular: 5000, Express: 10000, Priority: 15000 };
+const formatRupiah = (n: number) =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+// Format no. telp Indonesia: +62/62/0 diikuti 8-13 digit
+const isValidPhone = (v: string) => /^(\+62|62|0)[0-9]{8,13}$/.test(v.replace(/[\s-]/g, ''));
+
 interface CreateShipmentFormProps {
   onClose: () => void;
   onSuccess: () => void;
@@ -30,10 +37,15 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
     origin: '',
     destination: '',
     weight: '',
+    item_type: '',
+    service_type: 'Regular',
     flight_id: '',
     status: 'booked',
     notes: ''
   });
+
+  // Tarif otomatis = tarif per kg (jenis pengiriman) × berat
+  const tariff = (RATES[formData.service_type] || 0) * (parseFloat(formData.weight) || 0);
 
   useEffect(() => {
     loadFlights();
@@ -138,6 +150,17 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validasi nomor telepon (jika diisi)
+    if (formData.sender_contact && !isValidPhone(formData.sender_contact)) {
+      setNotification({ type: 'error', message: 'Nomor telepon pengirim tidak valid (cth: 0812xxxx atau +62812xxxx)' });
+      return;
+    }
+    if (formData.recipient_contact && !isValidPhone(formData.recipient_contact)) {
+      setNotification({ type: 'error', message: 'Nomor telepon penerima tidak valid (cth: 0812xxxx atau +62812xxxx)' });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -228,6 +251,43 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
               placeholder="e.g., 25.5"
               className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
             />
+          </div>
+        </div>
+
+        {/* Item type, Service type, Auto tariff */}
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="block text-slate-900 font-bold text-xs mb-2">Jenis Barang *</label>
+            <input
+              type="text"
+              required
+              value={formData.item_type}
+              onChange={(e) => setFormData({ ...formData, item_type: e.target.value })}
+              placeholder="cth: Electronics, Documents"
+              className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+            />
+          </div>
+          <div>
+            <label className="block text-slate-900 font-bold text-xs mb-2">Jenis Pengiriman *</label>
+            <select
+              value={formData.service_type}
+              onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
+              className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+            >
+              <option value="Regular">Regular (Rp 5.000/kg)</option>
+              <option value="Express">Express (Rp 10.000/kg)</option>
+              <option value="Priority">Priority (Rp 15.000/kg)</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-slate-900 font-bold text-xs mb-2">Tarif (otomatis)</label>
+            <input
+              type="text"
+              readOnly
+              value={formatRupiah(tariff)}
+              className="w-full bg-slate-100 border-[2px] border-slate-300 rounded-[12px] px-3 py-2 text-slate-700 font-bold text-xs outline-none cursor-not-allowed"
+            />
+            <p className="text-slate-500 text-[10px] mt-1">Tarif/kg × berat</p>
           </div>
         </div>
 

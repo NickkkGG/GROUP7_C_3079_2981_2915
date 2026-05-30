@@ -76,6 +76,8 @@ export default function LoginPage() {
       showNotification('Login successful! Redirecting...', 'success');
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('userRole', data.user.role);
+      // Cookie untuk middleware proteksi route /dashboard
+      document.cookie = `auth_role=${data.user.role}; path=/; max-age=86400; samesite=lax`;
 
       setTimeout(() => {
         window.location.href = '/dashboard';
@@ -88,6 +90,7 @@ export default function LoginPage() {
   };
 
   const handleGuestLogin = () => {
+    document.cookie = `auth_role=guest; path=/; max-age=86400; samesite=lax`;
     window.location.href = '/dashboard?role=guest';
   };
 

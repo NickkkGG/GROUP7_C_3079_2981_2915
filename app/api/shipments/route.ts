@@ -1,6 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
+// Tarif per kg berdasarkan jenis pengiriman
+const RATES: Record<string, number> = { Regular: 5000, Express: 10000, Priority: 15000 };
+const computeTariff = (serviceType: string, weight: number) =>
+  (RATES[serviceType] ?? RATES.Regular) * weight;
+
+// Alur status & lokasi untuk tracking history
+const STATUS_FLOW = ['booked', 'received', 'in_transit', 'arrived', 'delivered'];
+const STEP_LOCATION: Record<string, string> = {
+  booked: 'Origin Warehouse',
+  received: 'Origin Hub',
+  in_transit: 'In Flight',
+  arrived: 'Destination Hub',
+  delivered: 'Final Destination',
+};
+
+// Pastikan ada entri tracking_history dari 'booked' s/d status saat ini (idempotent)
+async function syncTrackingHistory(trackingNumber: string, status: string) {
+  const idx = STATUS_FLOW.indexOf(status);
+  if (idx < 0) return;
+  for (let i = 0; i <= idx; i++) {
+    const st = STATUS_FLOW[i];
+    await sql.query(
+      `INSERT INTO tracking_history (tracking_number, status, location, notes, timestamp)
+       SELECT $1::varchar, $2::varchar, $3::varchar, $4::text, NOW() + ($5::int * INTERVAL '1 second')
+       WHERE NOT EXISTS (
+         SELECT 1 FROM tracking_history WHERE tracking_number = $1::varchar AND status = $2::varchar
+       )`,
+      [trackingNumber, st, STEP_LOCATION[st], 'Status update', i]
+    );
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -23,6 +55,9 @@ export async function GET(request: NextRequest) {
     if (search) {
       query += ` AND (
         s.tracking_number ILIKE $${paramIndex} OR
+        s.sender ILIKE $${paramIndex} OR
+        s.recipient_name ILIKE $${paramIndex} OR
+        s.item_type ILIKE $${paramIndex} OR
         s.origin ILIKE $${paramIndex} OR
         s.destination ILIKE $${paramIndex} OR
         s.status ILIKE $${paramIndex} OR
@@ -74,6 +109,8 @@ export async function POST(request: NextRequest) {
       origin,
       destination,
       weight,
+      item_type,
+      service_type,
       flight_id,
       status,
       notes
@@ -94,14 +131,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tracking number already exists' }, { status: 400 });
     }
 
+    const serviceType = service_type || 'Regular';
+    const tariff = computeTariff(serviceType, parseFloat(weight));
+
     // Insert new shipment
     const result = await sql.query(
       `INSERT INTO shipments (
         tracking_number, sender, sender_contact, sender_address,
         recipient_name, recipient_contact, recipient_address,
-        origin, destination, weight, flight_id, status, notes, created_at
+        origin, destination, weight, item_type, service_type, tariff,
+        flight_id, status, notes, created_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())
       RETURNING *`,
       [
         tracking_number,
@@ -114,11 +155,17 @@ export async function POST(request: NextRequest) {
         origin,
         destination,
         weight,
+        item_type || null,
+        serviceType,
+        tariff,
         flight_id || null,
         status || 'booked',
         notes || null
       ]
     );
+
+    // Buat entri tracking_history awal sesuai status (perbaikan timeline shipment baru)
+    await syncTrackingHistory(tracking_number, status || 'booked');
 
     return NextResponse.json({
       success: true,
@@ -146,6 +193,8 @@ export async function PUT(request: NextRequest) {
       origin,
       destination,
       weight,
+      item_type,
+      service_type,
       flight_id,
       status,
       notes
@@ -166,6 +215,9 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Tracking number already exists' }, { status: 400 });
     }
 
+    const serviceType = service_type || 'Regular';
+    const tariff = computeTariff(serviceType, parseFloat(weight));
+
     // Update shipment
     const result = await sql.query(
       `UPDATE shipments SET
@@ -179,10 +231,14 @@ export async function PUT(request: NextRequest) {
         origin = $8,
         destination = $9,
         weight = $10,
-        flight_id = $11,
-        status = $12,
-        notes = $13
-      WHERE id = $14
+        item_type = $11,
+        service_type = $12,
+        tariff = $13,
+        flight_id = $14,
+        status = $15,
+        notes = $16,
+        updated_at = NOW()
+      WHERE id = $17
       RETURNING *`,
       [
         tracking_number,
@@ -195,6 +251,9 @@ export async function PUT(request: NextRequest) {
         origin,
         destination,
         weight,
+        item_type || null,
+        serviceType,
+        tariff,
         flight_id || null,
         status,
         notes || null,
@@ -205,6 +264,9 @@ export async function PUT(request: NextRequest) {
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Shipment not found' }, { status: 404 });
     }
+
+    // Sinkronkan tracking_history dengan status terbaru
+    await syncTrackingHistory(tracking_number, status);
 
     return NextResponse.json({
       success: true,

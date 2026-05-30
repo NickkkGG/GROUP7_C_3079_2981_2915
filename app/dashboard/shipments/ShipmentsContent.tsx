@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Package, Plus, Download, ChevronLeft, ChevronRight, Search, Edit, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 import TopNavbar from '@/components/TopNavbar';
 import ShipmentDetailDrawer from './ShipmentDetailDrawer';
 import CreateShipmentForm from './CreateShipmentForm';
@@ -24,6 +25,8 @@ export default function ShipmentsContent() {
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedShipment, setSelectedShipment] = useState<any>(null);
+  const [shipmentToDelete, setShipmentToDelete] = useState<any>(null);
+  const [deleting, setDeleting] = useState(false);
   const limit = 10;
 
   useEffect(() => {
@@ -86,26 +89,31 @@ export default function ShipmentsContent() {
     setIsEditing(true);
   };
 
-  const handleDeleteShipment = async (shipment: any) => {
-    if (!confirm(`Are you sure you want to delete shipment ${shipment.tracking_number}?`)) {
-      return;
-    }
+  const handleDeleteShipment = (shipment: any) => {
+    setShipmentToDelete(shipment);
+  };
 
+  const confirmDelete = async () => {
+    if (!shipmentToDelete) return;
+    setDeleting(true);
     try {
-      const response = await fetch(`/api/shipments?id=${shipment.id}`, {
+      const response = await fetch(`/api/shipments?id=${shipmentToDelete.id}`, {
         method: 'DELETE',
       });
 
       if (response.ok) {
+        toast.success(`Shipment ${shipmentToDelete.tracking_number} berhasil dihapus`);
+        setShipmentToDelete(null);
         loadShipments();
-        alert('Shipment deleted successfully');
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to delete shipment');
+        toast.error(error.error || 'Gagal menghapus shipment');
       }
     } catch (error) {
       console.error('Error deleting shipment:', error);
-      alert('Failed to delete shipment');
+      toast.error('Gagal menghapus shipment. Coba lagi.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -154,7 +162,7 @@ export default function ShipmentsContent() {
                 <Search size={16} className="text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search AWB, origin, destination, or flight..."
+                  placeholder="Search AWB, pengirim, penerima, jenis barang, kota, atau flight..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex-1 bg-transparent text-slate-900 text-xs outline-none placeholder-slate-400"
@@ -373,6 +381,39 @@ export default function ShipmentsContent() {
         onClose={() => setDrawerOpen(false)}
         trackingNumber={selectedTracking}
       />
+
+      {/* Delete Confirmation Modal */}
+      {shipmentToDelete && (
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white border-[2px] border-black/20 rounded-[20px] p-6 max-w-sm w-full mx-4 shadow-2xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-11 h-11 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 size={20} className="text-red-600" />
+              </div>
+              <h3 className="text-slate-900 font-bold text-lg">Hapus Shipment?</h3>
+            </div>
+            <p className="text-slate-600 text-sm mb-5">
+              Yakin ingin menghapus shipment <span className="font-bold text-slate-900">{shipmentToDelete.tracking_number}</span>? Tindakan ini tidak bisa dibatalkan.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShipmentToDelete(null)}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 bg-slate-200 border-[2px] border-slate-400 text-slate-900 font-bold text-xs rounded-[12px] hover:bg-slate-300 transition disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white font-bold text-xs rounded-[12px] hover:bg-red-700 transition disabled:opacity-50 shadow-md"
+              >
+                {deleting ? 'Menghapus...' : 'Ya, Hapus'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
