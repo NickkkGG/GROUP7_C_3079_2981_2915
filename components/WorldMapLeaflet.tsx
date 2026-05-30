@@ -1,302 +1,266 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
-import { mockAircraft, Aircraft } from '@/lib/mockAircraft';
+import { useEffect, useRef } from 'react';
+import maplibregl from 'maplibre-gl';
+import { mockAircraft } from '@/lib/mockAircraft';
 import { Plus, Minus } from 'lucide-react';
-import 'leaflet/dist/leaflet.css';
+import 'maplibre-gl/dist/maplibre-gl.css';
+
+const ACCENT = '#22d3ee';
+const DURATION = 60000;
+
+// Bandara besar untuk membangkitkan pesawat tambahan
+const CITIES = [
+  { c: 'JFK', lat: 40.64, lng: -73.78 }, { c: 'LAX', lat: 33.94, lng: -118.4 },
+  { c: 'LHR', lat: 51.47, lng: -0.46 }, { c: 'CDG', lat: 49.0, lng: 2.55 },
+  { c: 'DXB', lat: 25.25, lng: 55.36 }, { c: 'SIN', lat: 1.36, lng: 103.99 },
+  { c: 'HND', lat: 35.55, lng: 139.78 }, { c: 'SYD', lat: -33.94, lng: 151.18 },
+  { c: 'GRU', lat: -23.43, lng: -46.47 }, { c: 'JNB', lat: -26.13, lng: 28.24 },
+  { c: 'HKG', lat: 22.31, lng: 113.91 }, { c: 'FRA', lat: 50.03, lng: 8.56 },
+  { c: 'DEL', lat: 28.56, lng: 77.1 }, { c: 'ICN', lat: 37.46, lng: 126.44 },
+  { c: 'CGK', lat: -6.13, lng: 106.65 }, { c: 'IST', lat: 41.27, lng: 28.75 },
+  { c: 'YYZ', lat: 43.68, lng: -79.61 }, { c: 'MEX', lat: 19.44, lng: -99.07 },
+];
+
+type Plane = { callsign: string; origin: string; destination: string; altitude: number; speed: number; route: { lat: number; lng: number }[] };
+
+function genPlanes(n: number): Plane[] {
+  const out: Plane[] = [];
+  for (let i = 0; i < n; i++) {
+    let a = Math.floor(Math.random() * CITIES.length);
+    let b = Math.floor(Math.random() * CITIES.length);
+    while (b === a) b = Math.floor(Math.random() * CITIES.length);
+    out.push({
+      callsign: `ALTUS${300 + i}`,
+      origin: CITIES[a].c,
+      destination: CITIES[b].c,
+      altitude: 9000 + Math.floor(Math.random() * 4000),
+      speed: 440 + Math.floor(Math.random() * 120),
+      route: [{ lat: CITIES[a].lat, lng: CITIES[a].lng }, { lat: CITIES[b].lat, lng: CITIES[b].lng }],
+    });
+  }
+  return out;
+}
+
+const allPlanes: Plane[] = [...(mockAircraft as unknown as Plane[]), ...genPlanes(22)];
+
+function buildArc(a: { lat: number; lng: number }, b: { lat: number; lng: number }, n = 80) {
+  const dLat = b.lat - a.lat;
+  const dLng = b.lng - a.lng;
+  const dist = Math.hypot(dLat, dLng) || 1;
+  const curve = dist * 0.18;
+  const ctrl = {
+    lat: (a.lat + b.lat) / 2 + (dLng / dist) * curve,
+    lng: (a.lng + b.lng) / 2 - (dLat / dist) * curve,
+  };
+  const pts: [number, number][] = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    const lat = (1 - t) ** 2 * a.lat + 2 * (1 - t) * t * ctrl.lat + t * t * b.lat;
+    const lng = (1 - t) ** 2 * a.lng + 2 * (1 - t) * t * ctrl.lng + t * t * b.lng;
+    pts.push([lng, lat]);
+  }
+  return pts;
+}
+
+const PLANE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 100 100">
+  <path d="M50 8 L57 42 L92 60 L92 68 L57 56 L55 80 L66 88 L66 93 L50 88 L34 93 L34 88 L45 80 L43 56 L8 68 L8 60 L43 42 Z"
+    fill="#f8fafc" stroke="${ACCENT}" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="50" cy="34" r="4" fill="${ACCENT}"/></svg>`;
 
 export default function WorldMapLeaflet() {
-  const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const layerGroupRef = useRef<L.LayerGroup | null>(null);
-  const [zoom, setZoom] = useState(2);
-  const [aircraftData, setAircraftData] = useState<Aircraft[]>(mockAircraft);
-  const animationTimeRef = useRef<number>(0);
+  const starRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const rafRef = useRef<number>(0);
+  const selectedRef = useRef<number | null>(null);
+  const followRef = useRef<boolean>(false);
+  const zoomTargetRef = useRef<number>(4);
 
-  // Initialize map
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const map = L.map(containerRef.current, {
-      center: [20, 0],
-      zoom: zoom,
-      zoomControl: false,
+    const map = new maplibregl.Map({
+      container: containerRef.current,
+      style: {
+        version: 8,
+        sources: {
+          satellite: {
+            type: 'raster',
+            tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+            tileSize: 256,
+            maxzoom: 18,
+            attribution: 'Esri World Imagery',
+          },
+        },
+        layers: [{ id: 'satellite', type: 'raster', source: 'satellite' }],
+      } as maplibregl.StyleSpecification,
+      center: [10, 20],
+      zoom: 1.6,
       attributionControl: false,
-      dragging: true,
+      canvasContextAttributes: { alpha: true, antialias: true },
     });
-
-    // Add OSM tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19,
-    }).addTo(map);
-
-    // Layer for aircraft
-    const layerGroup = L.layerGroup().addTo(map);
-    layerGroupRef.current = layerGroup;
-
     mapRef.current = map;
 
-    map.on('zoomend', () => {
-      setZoom(map.getZoom());
+    // Parallax starfield (overlay, tidak mengganggu render globe)
+    const onMove = () => {
+      const c = map.getCenter();
+      if (starRef.current) starRef.current.style.transform = `translate(${c.lng * 3}px, ${c.lat * 3}px) rotate(${map.getBearing() * 0.4}deg)`;
+    };
+    map.on('move', onMove);
+
+    const curves = allPlanes.map((p) => buildArc(p.route[0], p.route[p.route.length - 1]));
+
+    map.on('load', () => {
+      try { map.setProjection({ type: 'globe' } as never); } catch {}
+
+      map.addSource('routes', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: curves.map((c, idx) => ({ type: 'Feature', properties: { id: idx }, geometry: { type: 'LineString', coordinates: c } })) } as never,
+      });
+      map.addLayer({ id: 'route-glow', type: 'line', source: 'routes', paint: { 'line-color': ACCENT, 'line-width': 5, 'line-opacity': 0.05, 'line-blur': 4 } });
+      map.addLayer({ id: 'route-dash', type: 'line', source: 'routes', paint: { 'line-color': ACCENT, 'line-width': 1.2, 'line-opacity': 0.22, 'line-dasharray': [0, 4, 3] } });
+      map.addLayer({ id: 'route-active', type: 'line', source: 'routes', filter: ['==', ['get', 'id'], -1], paint: { 'line-color': '#fbbf24', 'line-width': 2, 'line-opacity': 0.95 } });
+
+      const img = new Image(48, 48);
+      img.onload = () => {
+        if (!map.hasImage('plane')) map.addImage('plane', img);
+
+        map.addSource('planes', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } as never });
+        map.addLayer({ id: 'plane-glow', type: 'circle', source: 'planes', paint: { 'circle-radius': 12, 'circle-color': ACCENT, 'circle-opacity': 0.18, 'circle-blur': 1 } });
+        map.addLayer({
+          id: 'planes', type: 'symbol', source: 'planes',
+          layout: { 'icon-image': 'plane', 'icon-size': 0.55, 'icon-rotate': ['get', 'bearing'], 'icon-rotation-alignment': 'map', 'icon-allow-overlap': true },
+        });
+
+        const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: false, offset: 16, className: 'plane-popup' });
+        popup.on('close', () => { selectedRef.current = null; followRef.current = false; map.setFilter('route-active', ['==', ['get', 'id'], -1]); });
+        map.on('mouseenter', 'planes', () => { map.getCanvas().style.cursor = 'pointer'; });
+        map.on('mouseleave', 'planes', () => { map.getCanvas().style.cursor = ''; });
+        map.on('click', 'planes', (e) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          const p = f.properties as Record<string, string | number>;
+          const cc = (f.geometry as unknown as { coordinates: [number, number] }).coordinates;
+          selectedRef.current = Number(p.id);
+          followRef.current = false;
+          zoomTargetRef.current = 4.5;
+          map.setFilter('route-active', ['==', ['get', 'id'], Number(p.id)]);
+          popup.setLngLat(cc).setHTML(
+            `<div class="pp">
+              <div class="pp-h">✈ ${p.callsign}</div>
+              <div class="pp-r">${p.origin} <span>→</span> ${p.destination}</div>
+              <div class="pp-stats"><div><span>ALT</span><b>${p.altitude} ft</b></div><div><span>SPD</span><b>${p.speed} kts</b></div></div>
+            </div>`
+          ).addTo(map);
+          map.easeTo({ center: cc, zoom: 4.5, duration: 1200 });
+          map.once('moveend', () => { if (selectedRef.current !== null) followRef.current = true; });
+        });
+
+        const dashSeq = [[0, 4, 3], [1, 4, 2], [2, 4, 1], [3, 4, 0], [0, 1, 3, 3], [0, 2, 3, 2], [0, 3, 3, 1]];
+        let dashStep = 0;
+
+        const animate = (ts: number) => {
+          const now = Date.now();
+          const coords: [number, number][] = [];
+          const features = curves.map((c, idx) => {
+            const phase = ((now / DURATION) + idx / curves.length) % 1;
+            const f = phase * (c.length - 1);
+            const i = Math.floor(f);
+            const t = f - i;
+            const p0 = c[i];
+            const p1 = c[Math.min(i + 1, c.length - 1)];
+            const lng = p0[0] + (p1[0] - p0[0]) * t;
+            const lat = p0[1] + (p1[1] - p0[1]) * t;
+            coords[idx] = [lng, lat];
+            const bearing = Math.atan2(p1[0] - p0[0], p1[1] - p0[1]) * (180 / Math.PI);
+            const m = allPlanes[idx];
+            return { type: 'Feature', properties: { id: idx, bearing, callsign: m.callsign, origin: m.origin, destination: m.destination, altitude: m.altitude, speed: Math.round(m.speed) }, geometry: { type: 'Point', coordinates: [lng, lat] } };
+          });
+          (map.getSource('planes') as maplibregl.GeoJSONSource)?.setData({ type: 'FeatureCollection', features } as never);
+
+          const sel = selectedRef.current;
+          if (sel !== null && coords[sel]) {
+            popup.setLngLat(coords[sel]);
+            if (followRef.current) {
+              const cur = map.getCenter();
+              const k = 0.07; // faktor kehalusan
+              const nlng = cur.lng + (coords[sel][0] - cur.lng) * k;
+              const nlat = cur.lat + (coords[sel][1] - cur.lat) * k;
+              const nzoom = map.getZoom() + (zoomTargetRef.current - map.getZoom()) * k;
+              map.jumpTo({ center: [nlng, nlat], zoom: nzoom });
+            }
+          }
+
+          const ns = Math.floor((ts / 220) % dashSeq.length);
+          if (ns !== dashStep) { map.setPaintProperty('route-dash', 'line-dasharray', dashSeq[ns]); dashStep = ns; }
+          rafRef.current = requestAnimationFrame(animate);
+        };
+        rafRef.current = requestAnimationFrame(animate);
+      };
+      img.src = 'data:image/svg+xml;base64,' + btoa(PLANE_SVG);
     });
 
     return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
+      cancelAnimationFrame(rafRef.current);
+      map.remove();
+      mapRef.current = null;
     };
   }, []);
-
-  // Animate aircraft
-  useEffect(() => {
-    let lastTime = Date.now();
-
-    const animate = () => {
-      const now = Date.now();
-      const dt = now - lastTime;
-      lastTime = now;
-
-      animationTimeRef.current += dt;
-
-      setAircraftData((prevData) =>
-        prevData.map((plane) => {
-          const routeLength = plane.route.length;
-          const totalDistance = routeLength - 1;
-          const progress = (animationTimeRef.current % 30000) / 30000;
-          const currentSegment = Math.floor(progress * totalDistance);
-          const segmentProgress = (progress * totalDistance) % 1;
-
-          if (currentSegment < routeLength - 1) {
-            const start = plane.route[currentSegment];
-            const end = plane.route[currentSegment + 1];
-
-            const latitude = start.lat + (end.lat - start.lat) * segmentProgress;
-            const longitude = start.lng + (end.lng - start.lng) * segmentProgress;
-
-            const dLng = end.lng - start.lng;
-            const dLat = end.lat - start.lat;
-            const heading = Math.atan2(dLng, dLat) * (180 / Math.PI);
-
-            return {
-              ...plane,
-              latitude,
-              longitude,
-              heading,
-            };
-          }
-
-          return plane;
-        })
-      );
-
-      requestAnimationFrame(animate);
-    };
-
-    const id = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(id);
-  }, []);
-
-  // Calculate dynamic icon size based on zoom level
-  const getIconSize = (zoomLevel: number) => {
-    // Zoom 2: 18px, Zoom 10: 38px, Zoom 19: 68px
-    const baseSize = 18 + (zoomLevel - 2) * 2.5;
-    return Math.max(16, Math.min(baseSize, 68));
-  };
-
-  // Update aircraft markers
-  useEffect(() => {
-    if (!layerGroupRef.current || !mapRef.current) return;
-
-    layerGroupRef.current.clearLayers();
-
-    const iconSize = getIconSize(zoom);
-    const halfSize = iconSize / 2;
-
-    aircraftData.forEach((plane, idx) => {
-      // Route line with different colors per aircraft
-      const routeLatLngs = plane.route.map((p) => [p.lat, p.lng] as [number, number]);
-      const routeColors = [
-        '#FF6B6B', // Red
-        '#4ECDC4', // Teal
-        '#45B7D1', // Blue
-        '#FFA07A', // Light Salmon
-        '#98D8C8', // Mint
-        '#F7DC6F', // Yellow
-        '#BB8FCE', // Purple
-        '#85C1E2', // Light Blue
-        '#F8B88B', // Peach
-        '#A9CCE3', // Sky Blue
-        '#F1948A', // Light Red
-        '#82E0AA', // Light Green
-      ];
-
-      const lineColor = routeColors[idx % routeColors.length];
-
-      L.polyline(routeLatLngs, {
-        color: lineColor,
-        weight: 3,
-        opacity: 0.85,
-        dashArray: '5, 5',
-      }).addTo(layerGroupRef.current!);
-
-      // Aircraft marker with realistic airplane SVG - dynamic sizing
-      const planeIcon = L.divIcon({
-        html: `
-          <div style="
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transform: rotate(${plane.heading}deg);
-            filter: drop-shadow(0 0 8px rgba(66, 165, 245, 0.8)) drop-shadow(0 0 3px rgba(0,0,0,0.6));
-          ">
-            <svg width="${iconSize}" height="${iconSize}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Main fuselage body -->
-              <ellipse cx="50" cy="50" rx="8" ry="28" fill="#ffffff" stroke="#1e3a8a" stroke-width="1.5"/>
-
-              <!-- Cockpit/nose -->
-              <circle cx="50" cy="22" r="6" fill="#1e3a8a" stroke="#0f172a" stroke-width="1"/>
-              <circle cx="50" cy="23" r="4" fill="#3b82f6" opacity="0.8"/>
-
-              <!-- Main cabin windows -->
-              <circle cx="48" cy="35" r="2" fill="#93c5fd" stroke="#1e40af" stroke-width="0.5"/>
-              <circle cx="52" cy="35" r="2" fill="#93c5fd" stroke="#1e40af" stroke-width="0.5"/>
-              <circle cx="48" cy="45" r="2" fill="#93c5fd" stroke="#1e40af" stroke-width="0.5"/>
-              <circle cx="52" cy="45" r="2" fill="#93c5fd" stroke="#1e40af" stroke-width="0.5"/>
-
-              <!-- Right wing -->
-              <path d="M 58 48 L 95 45 Q 96 45 95 48 L 58 52 Z" fill="#2563eb" stroke="#1e40af" stroke-width="1.2" opacity="0.95"/>
-              <ellipse cx="80" cy="46.5" rx="10" ry="2.5" fill="#3b82f6" opacity="0.5"/>
-
-              <!-- Left wing -->
-              <path d="M 42 48 L 5 45 Q 4 45 5 48 L 42 52 Z" fill="#2563eb" stroke="#1e40af" stroke-width="1.2" opacity="0.95"/>
-              <ellipse cx="20" cy="46.5" rx="10" ry="2.5" fill="#3b82f6" opacity="0.5"/>
-
-              <!-- Right tail -->
-              <path d="M 48 70 L 70 78 Q 70.5 78 70 79 L 48 75 Z" fill="#1e40af" stroke="#0f172a" stroke-width="1"/>
-
-              <!-- Left tail -->
-              <path d="M 52 70 L 30 78 Q 29.5 78 30 79 L 52 75 Z" fill="#1e40af" stroke="#0f172a" stroke-width="1"/>
-
-              <!-- Vertical stabilizer -->
-              <path d="M 50 72 L 48 85 L 50 85 L 52 85 L 50 72 Z" fill="#1e40af" stroke="#0f172a" stroke-width="1"/>
-
-              <!-- Landing gear (left) -->
-              <g opacity="0.7">
-                <line x1="45" y1="55" x2="45" y2="62" stroke="#475569" stroke-width="1"/>
-                <circle cx="45" cy="63" r="1.5" fill="#475569"/>
-              </g>
-
-              <!-- Landing gear (right) -->
-              <g opacity="0.7">
-                <line x1="55" y1="55" x2="55" y2="62" stroke="#475569" stroke-width="1"/>
-                <circle cx="55" cy="63" r="1.5" fill="#475569"/>
-              </g>
-            </svg>
-          </div>
-        `,
-        iconSize: [iconSize, iconSize],
-        iconAnchor: [halfSize, halfSize],
-        className: 'aircraft-marker',
-      });
-
-      const marker = L.marker([plane.latitude, plane.longitude], {
-        icon: planeIcon,
-        title: plane.callsign,
-      }).addTo(layerGroupRef.current!);
-
-      // Popup with info
-      marker.bindPopup(`
-        <div style="font-size: 12px; color: #333;">
-          <strong>${plane.callsign}</strong><br/>
-          ${plane.origin} → ${plane.destination}<br/>
-          Alt: ${plane.altitude}ft | Speed: ${Math.round(plane.speed)}kts
-        </div>
-      `);
-    });
-  }, [aircraftData, zoom]);
-
-  const handleZoomIn = () => {
-    if (mapRef.current) {
-      mapRef.current.setZoom(Math.min(mapRef.current.getZoom() + 1, 19));
-    }
-  };
-
-  const handleZoomOut = () => {
-    if (mapRef.current) {
-      mapRef.current.setZoom(Math.max(mapRef.current.getZoom() - 1, 1));
-    }
-  };
 
   return (
-    <div className="relative w-full h-full rounded-[16px] overflow-hidden border border-black/10">
-      {/* Leaflet Map Container */}
-      <div
-        ref={containerRef}
-        className="w-full h-full"
-        style={{ background: '#1a3a5f' }}
-      />
+    <div className="relative w-full h-full rounded-[16px] overflow-hidden border border-cyan-500/20 bg-[#030712]">
+      <div ref={starRef} className="pointer-events-none absolute -inset-full w-[300%] h-[300%] z-0 starfield" />
+      <div ref={containerRef} className="relative w-full h-full z-[1]" />
+      <div className="pointer-events-none absolute inset-0 z-[386] map-vignette" />
 
-      {/* Zoom Controls - Bottom Left */}
-      <div className="absolute bottom-4 left-4 flex flex-col gap-2 bg-black/75 backdrop-blur-sm p-2 rounded-lg border border-slate-600 shadow-lg z-[400]">
-        <button
-          onClick={handleZoomIn}
-          className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all active:scale-95"
-          title="Zoom In"
-        >
-          <Plus size={16} />
-        </button>
-        <button
-          onClick={handleZoomOut}
-          className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all active:scale-95"
-          title="Zoom Out"
-        >
-          <Minus size={16} />
-        </button>
+      <div className="absolute bottom-4 left-4 flex flex-col gap-2 bg-slate-900/70 backdrop-blur-md p-2 rounded-xl border border-cyan-500/20 shadow-lg z-[400]">
+        <button onClick={() => mapRef.current?.zoomIn()} className="p-2 bg-cyan-500/90 hover:bg-cyan-400 text-slate-900 rounded-lg transition active:scale-95" title="Zoom In"><Plus size={16} /></button>
+        <button onClick={() => mapRef.current?.zoomOut()} className="p-2 bg-cyan-500/90 hover:bg-cyan-400 text-slate-900 rounded-lg transition active:scale-95" title="Zoom Out"><Minus size={16} /></button>
       </div>
 
-      {/* Info Panel - Top Left */}
-      <div className="absolute top-4 left-4 bg-black/75 backdrop-blur-sm text-white text-xs p-3 rounded-lg border border-slate-600 shadow-lg z-[400] max-w-xs">
-        <h3 className="font-bold text-sm mb-2">✈️ Live Flight Tracking</h3>
-        <p className="text-slate-300 text-[11px]">Aircraft: {aircraftData.length}</p>
-        <p className="text-slate-400 text-[10px] mt-1">Zoom: {zoom}</p>
-        <div className="mt-2 pt-2 border-t border-slate-600">
-          <p className="text-slate-300 text-[10px] font-semibold mb-1">Flight Routes:</p>
-          <div className="grid grid-cols-2 gap-1 text-[9px]">
-            {aircraftData.slice(0, 4).map((ac, i) => (
-              <div key={i} className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full" style={{backgroundColor: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A'][i % 4]}}></div>
-                <span className="text-slate-300 truncate">{ac.callsign}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="absolute top-4 left-4 bg-slate-900/70 backdrop-blur-md text-white p-3 rounded-xl border border-cyan-500/20 shadow-lg z-[400] max-w-xs">
+        <h3 className="font-bold text-sm mb-2 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" /> Global Flight Radar</h3>
+        <p className="text-cyan-300 text-[11px]">Active aircraft: {allPlanes.length}</p>
+        <p className="text-slate-400 text-[10px] mt-1">Klik pesawat untuk ikuti · drag untuk putar</p>
       </div>
 
-      {/* Live Update Badge - Top Right */}
-      <div className="absolute top-4 right-4 bg-white backdrop-blur-sm px-3 py-2 rounded-full shadow-lg z-[400] flex items-center gap-2">
-        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-        <span className="text-xs font-bold text-slate-900">LIVE UPDATE</span>
-      </div>
-
-      {/* Controls - Bottom Right */}
-      <div className="absolute bottom-4 right-4 bg-black/75 backdrop-blur-sm text-white text-[10px] p-2.5 rounded-lg border border-slate-600 shadow-lg z-[400]">
-        <p className="mb-1">🖱️ Drag to pan</p>
-        <p>➕➖ Zoom buttons left</p>
+      <div className="absolute top-4 right-4 bg-slate-900/70 backdrop-blur-md px-3 py-2 rounded-full shadow-lg border border-cyan-500/20 z-[400] flex items-center gap-2">
+        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+        <span className="text-xs font-bold text-cyan-200 tracking-wide">LIVE</span>
       </div>
 
       <style>{`
-        .leaflet-container {
-          background: #1a3a5f !important;
+        .maplibregl-canvas { background: transparent !important; }
+        .maplibregl-ctrl-attrib { display: none !important; }
+        .starfield {
+          background-color: transparent;
+          background-image:
+            radial-gradient(1px 1px at 25px 35px, #fff, transparent),
+            radial-gradient(1px 1px at 80px 120px, rgba(255,255,255,.8), transparent),
+            radial-gradient(1.5px 1.5px at 160px 60px, #fff, transparent),
+            radial-gradient(1px 1px at 200px 180px, rgba(255,255,255,.7), transparent),
+            radial-gradient(1px 1px at 120px 220px, rgba(200,230,255,.9), transparent),
+            radial-gradient(1.5px 1.5px at 300px 280px, #fff, transparent),
+            radial-gradient(1px 1px at 360px 90px, rgba(255,255,255,.7), transparent),
+            radial-gradient(1px 1px at 340px 200px, rgba(255,255,255,.6), transparent);
+          background-repeat: repeat;
+          background-size: 400px 400px;
         }
-        .leaflet-control-attribution {
-          display: none;
+        .map-vignette { box-shadow: inset 0 0 130px 30px rgba(1,4,12,0.85); }
+        .plane-popup .maplibregl-popup-content {
+          background: rgba(8,18,32,0.92); backdrop-filter: blur(8px);
+          border: 1px solid rgba(34,211,238,0.35); border-radius: 12px;
+          color: #e2f5fb; padding: 10px 12px; box-shadow: 0 8px 28px rgba(0,0,0,0.5);
         }
-        .aircraft-marker {
-          filter: drop-shadow(0 0 8px rgba(66, 165, 245, 0.6));
-        }
+        .plane-popup .maplibregl-popup-tip { border-top-color: rgba(8,18,32,0.92); }
+        .plane-popup .maplibregl-popup-close-button { color: #67e8f9; font-size: 16px; }
+        .pp-h { font-weight: 800; font-size: 13px; color: #67e8f9; margin-bottom: 2px; }
+        .pp-r { font-size: 11px; color: #cbd5e1; margin-bottom: 6px; }
+        .pp-r span { color: #22d3ee; }
+        .pp-stats { display: flex; gap: 14px; }
+        .pp-stats span { display: block; font-size: 9px; color: #64748b; letter-spacing: .5px; }
+        .pp-stats b { font-size: 12px; color: #f1f5f9; }
       `}</style>
     </div>
   );
