@@ -73,7 +73,7 @@ export default function TrackingContent() {
         title="Track Airway Bill"
         subtitle="Locate and track specific airway bills."
       />
-      <div className="p-4 flex flex-col gap-3 flex-1 overflow-y-auto">
+      <div className="p-4 flex flex-col gap-3 flex-1 overflow-y-auto no-scrollbar">
       {/* SECTION 1: Search Header */}
       <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[20px] backdrop-blur-md overflow-hidden p-4 min-h-[150px]">
         <div className="flex flex-col gap-5">

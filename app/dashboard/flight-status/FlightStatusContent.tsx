@@ -87,7 +87,7 @@ export default function FlightStatusContent() {
         title="Flight Status"
         subtitle="Monitor live flight schedules and status updates"
       />
-      <div className="p-4 flex flex-col overflow-y-auto flex-1">
+      <div className="p-4 flex flex-col overflow-y-auto flex-1 no-scrollbar">
         {/* Content Box */}
         <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[24px] backdrop-blur-md overflow-hidden flex flex-col flex-1">
         {/* Header Section */}
@@ -130,7 +130,7 @@ export default function FlightStatusContent() {
         </div>
 
         {/* Content Section */}
-        <div className="space-y-3 p-5 bg-white overflow-y-auto flex-1">
+        <div className="space-y-3 p-5 bg-white overflow-y-auto flex-1 no-scrollbar">
           {/* Flights Table Box */}
           <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[16px] overflow-hidden">
             <div className="overflow-x-auto">

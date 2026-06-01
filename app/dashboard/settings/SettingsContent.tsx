@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import TopNavbar from '@/components/TopNavbar';
 import Image from 'next/image';
+import CustomNotification, { useNotification } from '@/components/CustomNotification';
 import {
   User,
   Bell,
@@ -47,6 +48,7 @@ const notificationItems: ToggleItem[] = [
 export default function SettingsContent() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const { notification, show: showNotification } = useNotification();
   const [activeTab, setActiveTab] = useState<Tab>('account');
   const [toggles, setToggles] = useState<Record<string, boolean>>(
     Object.fromEntries(notificationItems.map((i) => [i.key, i.defaultOn]))
@@ -89,6 +91,9 @@ export default function SettingsContent() {
 
   return (
     <div className="h-full flex flex-col bg-[#ffe9d4] animate-fade-in">
+      {notification && (
+        <CustomNotification message={notification.message} type={notification.type} />
+      )}
       <TopNavbar
         title="Settings"
         subtitle="Configure personal preferences and system options"
@@ -132,7 +137,7 @@ export default function SettingsContent() {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 bg-white overflow-y-auto p-8">
+          <div className="flex-1 bg-white overflow-y-auto no-scrollbar p-8">
             {activeTab === 'account' && (
               <AccountTab
                 user={user}
@@ -141,6 +146,7 @@ export default function SettingsContent() {
                 setProfileData={setProfileData}
                 isSaving={isSaving}
                 setIsSaving={setIsSaving}
+                showNotification={showNotification}
               />
             )}
             {activeTab === 'notifications' && !isGuest && (
@@ -150,7 +156,7 @@ export default function SettingsContent() {
               <DisplayTab />
             )}
             {activeTab === 'security' && !isGuest && (
-              <SecurityTab passwords={passwords} setPasswords={setPasswords} user={user} />
+              <SecurityTab passwords={passwords} setPasswords={setPasswords} user={user} showNotification={showNotification} />
             )}
           </div>
         </div>
@@ -167,6 +173,7 @@ function AccountTab({
   setProfileData,
   isSaving,
   setIsSaving,
+  showNotification,
 }: {
   user: { name: string; email: string; role: string; profileImage?: string | null };
   isGuest: boolean;
@@ -174,6 +181,7 @@ function AccountTab({
   setProfileData: any;
   isSaving: boolean;
   setIsSaving: any;
+  showNotification: (message: string, type?: 'success' | 'error' | 'info') => void;
 }) {
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -188,10 +196,10 @@ function AccountTab({
       });
 
       if (!response.ok) throw new Error('Failed to update profile');
-      alert('Profile updated successfully!');
+      showNotification('Profile updated successfully!', 'success');
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile');
+      showNotification('Failed to update profile. Please try again.', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -545,21 +553,23 @@ function SecurityTab({
   passwords,
   setPasswords,
   user,
+  showNotification,
 }: {
   passwords: { current: string; newPass: string; confirm: string };
   setPasswords: (v: { current: string; newPass: string; confirm: string }) => void;
   user: any;
+  showNotification: (message: string, type?: 'success' | 'error' | 'info') => void;
 }) {
   const [isChanging, setIsChanging] = useState(false);
 
   const handleChangePassword = async () => {
     if (passwords.newPass !== passwords.confirm) {
-      alert('New passwords do not match!');
+      showNotification('Password baru tidak cocok! Pastikan keduanya sama.', 'error');
       return;
     }
 
     if (passwords.newPass.length < 6) {
-      alert('Password must be at least 6 characters!');
+      showNotification('Password minimal 6 karakter!', 'error');
       return;
     }
 
@@ -577,15 +587,15 @@ function SecurityTab({
 
       if (!response.ok) {
         const data = await response.json();
-        alert(data.error || 'Failed to change password');
+        showNotification(data.error || 'Gagal mengganti password', 'error');
         return;
       }
 
-      alert('Password changed successfully!');
+      showNotification('Password berhasil diubah!', 'success');
       setPasswords({ current: '', newPass: '', confirm: '' });
     } catch (error) {
       console.error('Error changing password:', error);
-      alert('Failed to change password');
+      showNotification('Gagal mengganti password. Coba lagi.', 'error');
     } finally {
       setIsChanging(false);
     }

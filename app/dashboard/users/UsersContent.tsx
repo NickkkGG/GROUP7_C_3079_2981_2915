@@ -24,6 +24,8 @@ export default function UsersContent() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [selectedRole, setSelectedRole] = useState('user');
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     // Wait for auth to finish loading before redirecting
@@ -68,21 +70,28 @@ export default function UsersContent() {
     }
   };
 
-  const handleDeleteUser = async (userId: number) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+  const handleDeleteUser = (user: User) => {
+    setUserToDelete(user);
+  };
 
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+    setDeleting(true);
     try {
-      const response = await fetch(`/api/users?id=${userId}`, {
+      const response = await fetch(`/api/users?id=${userToDelete.id}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) throw new Error('Failed to delete user');
 
       showNotification('User deleted successfully', 'success');
+      setUserToDelete(null);
       fetchUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
       showNotification('Failed to delete user', 'error');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -108,7 +117,7 @@ export default function UsersContent() {
         subtitle="Manage operator and admin accounts"
       />
 
-      <div className="p-4 flex flex-col overflow-y-auto flex-1">
+      <div className="p-4 flex flex-col overflow-y-auto flex-1 no-scrollbar">
         <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[24px] backdrop-blur-md overflow-hidden flex flex-col flex-1">
           <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 px-5 py-3 flex items-center justify-between border-b-[2px] border-black/20">
             <div>
@@ -147,7 +156,7 @@ export default function UsersContent() {
             </div>
           </div>
 
-          <div className="space-y-3 p-5 bg-white overflow-y-auto flex-1">
+          <div className="space-y-3 p-5 bg-white overflow-y-auto flex-1 no-scrollbar">
             <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[16px] overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -192,7 +201,7 @@ export default function UsersContent() {
                                 value={selectedRole}
                                 onChange={(e) => setSelectedRole(e.target.value)}
                                 onBlur={() => handleUpdateRole(u.id, selectedRole)}
-                                className="px-2 py-0.5 rounded text-xs border border-slate-300 focus:outline-none"
+                                className="px-2 py-1 rounded-lg text-xs border-2 border-cyan-400 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-300 cursor-pointer"
                                 autoFocus
                               >
                                 <option value="user">User</option>
@@ -221,7 +230,7 @@ export default function UsersContent() {
                               Edit
                             </button>
                             <button
-                              onClick={() => handleDeleteUser(u.id)}
+                              onClick={() => handleDeleteUser(u)}
                               className="text-red-600 hover:text-red-700 font-bold text-xs ml-2"
                             >
                               <Trash2 size={12} className="inline mr-1" />
@@ -238,6 +247,39 @@ export default function UsersContent() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {userToDelete && (
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white border-[2px] border-black/20 rounded-[20px] p-6 max-w-sm w-full mx-4 shadow-2xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-11 h-11 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 size={20} className="text-red-600" />
+              </div>
+              <h3 className="text-slate-900 font-bold text-lg">Delete User?</h3>
+            </div>
+            <p className="text-slate-600 text-sm mb-5">
+              Are you sure you want to delete user <span className="font-bold text-slate-900">{userToDelete.fullname}</span> ({userToDelete.email})? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setUserToDelete(null)}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 bg-slate-200 border-[2px] border-slate-400 text-slate-900 font-bold text-xs rounded-[12px] hover:bg-slate-300 transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white font-bold text-xs rounded-[12px] hover:bg-red-700 transition disabled:opacity-50 shadow-md"
+              >
+                {deleting ? 'Deleting...' : 'Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Check, AlertCircle, Info } from 'lucide-react';
+import { Check, AlertCircle, Info, X } from 'lucide-react';
 
 export type NotificationType = 'success' | 'error' | 'info';
 
@@ -20,47 +20,54 @@ export default function CustomNotification({
 }: CustomNotificationProps) {
   const [isVisible, setIsVisible] = useState(true);
 
+  const handleClose = () => {
+    setIsVisible(false);
+    onClose?.();
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      setIsVisible(false);
-      onClose?.();
+      handleClose();
     }, duration);
 
     return () => clearTimeout(timer);
-  }, [duration, onClose]);
+  }, [duration]);
 
   if (!isVisible) return null;
 
   const config = {
     success: {
-      bg: 'bg-green-500/20',
-      border: 'border-green-500/50',
-      icon: <Check size={20} className="text-green-400" />,
-      text: 'text-green-100'
+      border: 'border-l-4 border-l-green-500',
+      icon: <Check size={20} className="text-green-500" />,
+      text: 'text-gray-800'
     },
     error: {
-      bg: 'bg-red-500/20',
-      border: 'border-red-500/50',
-      icon: <AlertCircle size={20} className="text-red-400" />,
-      text: 'text-red-100'
+      border: 'border-l-4 border-l-red-500',
+      icon: <AlertCircle size={20} className="text-red-500" />,
+      text: 'text-gray-800'
     },
     info: {
-      bg: 'bg-blue-500/20',
-      border: 'border-blue-500/50',
-      icon: <Info size={20} className="text-blue-400" />,
-      text: 'text-blue-100'
+      border: 'border-l-4 border-l-blue-500',
+      icon: <Info size={20} className="text-blue-500" />,
+      text: 'text-gray-800'
     }
   };
 
   const colors = config[type];
 
   return (
-    <div className="fixed top-24 right-6 z-[9999] animate-fade-in">
+    <div className="fixed top-4 right-4 z-[9999] animate-slide-in-right">
       <div
-        className={`flex items-center gap-3 px-4 py-3 rounded-[12px] border ${colors.bg} ${colors.border} backdrop-blur-sm`}
+        className={`flex items-center gap-3 px-4 py-3 bg-white rounded-lg shadow-lg border border-gray-100 ${colors.border}`}
       >
         {colors.icon}
-        <p className={`${colors.text} font-medium text-sm`}>{message}</p>
+        <p className={`${colors.text} font-medium text-sm pr-4`}>{message}</p>
+        <button 
+          onClick={handleClose}
+          className="ml-auto text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <X size={16} />
+        </button>
       </div>
     </div>
   );

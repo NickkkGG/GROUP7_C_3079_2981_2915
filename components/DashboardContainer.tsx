@@ -136,8 +136,10 @@ export default function DashboardContainer({ children }: DashboardContainerProps
         </div>
 
         {/* RIGHT CONTENT AREA */}
-        <div className="flex-1 bg-[#ffe9d4] overflow-y-auto overflow-x-hidden" style={{ contain: 'layout style paint' }}>
-          {children}
+        <div className="flex-1 overflow-hidden relative" style={{ contain: 'layout style paint' }}>
+          <div className="absolute inset-0 overflow-y-scroll overflow-x-hidden no-scrollbar">
+            {children}
+          </div>
         </div>
       </div>
 

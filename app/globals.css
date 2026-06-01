@@ -76,13 +76,23 @@ body {
   @apply bg-[#0d1c32] text-white overflow-hidden;
 }
 
+/* ===== HIDE SCROLLBAR UTILITY ===== */
+/* Sembunyikan scrollbar tapi tetap bisa scroll */
+.no-scrollbar {
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE / Edge */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;               /* Chrome, Safari, Opera */
+}
+
 /* ===== WEB3 ANIMATIONS ===== */
 
 /* Fade In */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;

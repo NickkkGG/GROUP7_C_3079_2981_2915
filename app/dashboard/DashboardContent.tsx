@@ -190,7 +190,7 @@ export default function DashboardContent() {
         {/* Flight Status - div2: col 1, rows 4-5 */}
         <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-2 overflow-hidden flex flex-col" style={{ gridColumn: '1', gridRow: '4 / span 2' }}>
           <h3 className="text-xs font-bold text-slate-900 mb-1.5 flex-shrink-0">Flight Status</h3>
-          <div className="overflow-y-auto flex-1 space-y-1 mb-2">
+          <div className="overflow-y-auto flex-1 space-y-1 mb-2 no-scrollbar">
             {loading ? (
               // Loading state - gray placeholders
               [...Array(4)].map((_, idx) => (
@@ -248,7 +248,7 @@ export default function DashboardContent() {
             </div>
           </div>
 
-          <div className="overflow-x-auto overflow-y-auto flex-1">
+          <div className="overflow-x-auto overflow-y-auto flex-1 no-scrollbar">
             <table className="w-full text-[10px]">
               <thead>
                 <tr className="border-b-[2px] border-black/20 sticky top-0 bg-gradient-to-r from-slate-50 to-white">
