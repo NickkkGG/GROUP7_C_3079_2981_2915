@@ -47,9 +47,26 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
-    if (!email || !password) {
-      showNotification('Email and password are required', 'error');
+    // Validasi form kosong
+    if (!email && !password) {
+      showNotification('ALTUS Login Error: Email and password are required', 'error');
+      return;
+    }
+
+    if (!email) {
+      showNotification('ALTUS Login Error: Email cannot be empty', 'error');
+      return;
+    }
+
+    if (!password) {
+      showNotification('ALTUS Login Error: Password cannot be empty', 'error');
+      return;
+    }
+
+    // Validasi format email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showNotification('ALTUS Login Error: Invalid email format. Use format: name@domain.com', 'error');
       return;
     }
 
@@ -68,12 +85,12 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        showNotification(data.error || 'Login failed', 'error');
+        showNotification(data.error || 'ALTUS Login Error: Login failed', 'error');
         setIsLoading(false);
         return;
       }
 
-      showNotification('Login successful! Redirecting...', 'success');
+      showNotification('Login successful! Redirecting to ALTUS dashboard...', 'success');
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('userRole', data.user.role);
       // Cookie untuk middleware proteksi route /dashboard
@@ -84,7 +101,7 @@ export default function LoginPage() {
       }, 1500);
     } catch (error) {
       console.error('Login error:', error);
-      showNotification('Login failed. Please try again.', 'error');
+      showNotification('ALTUS System Error: Cannot connect to server. Please check your internet connection.', 'error');
       setIsLoading(false);
     }
   };

@@ -93,24 +93,46 @@ export default function RegisterPage() {
 
     // STEP 1: Generate & Save Code
     if (registrationStep === 1) {
-      // Validation
+      // Validasi form kosong
       if (!fullName.trim()) {
-        showNotification('Full name is required', 'error');
+        showNotification('ALTUS Register Error: Full name cannot be empty', 'error');
         return;
       }
 
-      if (!validateEmail(email)) {
-        showNotification('Email must contain @ and a domain (e.g., .com)', 'error');
+      if (fullName.trim().length < 3) {
+        showNotification('ALTUS Register Error: Full name must be at least 3 characters', 'error');
         return;
       }
 
-      if (!password || password.length < 6) {
-        showNotification('Password must be at least 6 characters', 'error');
+      if (!email.trim()) {
+        showNotification('ALTUS Register Error: Email cannot be empty', 'error');
+        return;
+      }
+
+      // Validasi format email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        showNotification('ALTUS Register Error: Invalid email format. Use format: name@domain.com', 'error');
+        return;
+      }
+
+      if (!password) {
+        showNotification('ALTUS Register Error: Password cannot be empty', 'error');
+        return;
+      }
+
+      if (password.length < 6) {
+        showNotification('ALTUS Register Error: Password must be at least 6 characters', 'error');
+        return;
+      }
+
+      if (!confirmPassword) {
+        showNotification('ALTUS Register Error: Confirm password cannot be empty', 'error');
         return;
       }
 
       if (password !== confirmPassword) {
-        showNotification('Passwords do not match', 'error');
+        showNotification('ALTUS Register Error: Password and confirm password do not match', 'error');
         return;
       }
 
@@ -138,17 +160,17 @@ export default function RegisterPage() {
         const data = await response.json();
 
         if (!response.ok) {
-          showNotification(data.error || 'Failed to generate code', 'error');
+          showNotification(data.error || 'ALTUS Register Error: Failed to generate verification code', 'error');
           setIsLoading(false);
           return;
         }
 
-        showNotification('Verification code sent! Enter code to complete registration', 'success');
+        showNotification('Verification code generated successfully! Enter code to complete ALTUS registration', 'success');
         setRegistrationStep(2);
         setIsLoading(false);
       } catch (error) {
         console.error('Code generation error:', error);
-        showNotification('Failed to generate code. Please try again.', 'error');
+        showNotification('ALTUS System Error: Cannot connect to server. Please check your internet connection.', 'error');
         setIsLoading(false);
       }
       return;
@@ -156,8 +178,13 @@ export default function RegisterPage() {
 
     // STEP 2: Verify Code & Create User
     if (registrationStep === 2) {
-      if (!userVerificationCode) {
-        showNotification('Please enter verification code', 'error');
+      if (!userVerificationCode.trim()) {
+        showNotification('ALTUS Register Error: Verification code cannot be empty', 'error');
+        return;
+      }
+
+      if (userVerificationCode.trim().length !== 6) {
+        showNotification('ALTUS Register Error: Verification code must be 6 characters', 'error');
         return;
       }
 
@@ -183,18 +210,32 @@ export default function RegisterPage() {
           const newCode = generateCode();
           setVerificationCode(newCode);
           setUserVerificationCode('');
-          showNotification('Code invalid/expired. Code refreshed! Enter new code.', 'error');
+
+          // Update code in database
+          await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fullName: fullName.trim(),
+              email: email.toLowerCase().trim(),
+              password,
+              code: newCode,
+              step: 1
+            })
+          });
+
+          showNotification(data.error || 'ALTUS Register Error: Verification failed. New code has been generated.', 'error');
           setIsLoading(false);
           return;
         }
 
-        showNotification('Account created successfully! Redirecting to login...', 'success');
+        showNotification('ALTUS account created successfully! Redirecting to login page...', 'success');
         setTimeout(() => {
           window.location.href = '/login';
         }, 1500);
       } catch (error) {
         console.error('Verification error:', error);
-        showNotification('Verification failed. Please try again.', 'error');
+        showNotification('ALTUS System Error: Cannot connect to server. Please check your internet connection.', 'error');
         setIsLoading(false);
       }
     }
