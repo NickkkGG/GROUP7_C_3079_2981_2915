@@ -14,73 +14,62 @@ export default function NotFound() {
   }, []);
 
   return (
-    <main className={`${inter.className} bg-[#0d1c32] min-h-dvh flex flex-col overflow-x-hidden overflow-y-auto`}>
+    <main className={`${inter.className} relative bg-[#0d1c32] min-h-dvh flex flex-col overflow-x-hidden overflow-y-auto`}>
       <Header />
 
-      {/* Background Image */}
-      <div className="fixed inset-0 z-0 opacity-40 pointer-events-none">
+      {/* Background Image — sama dengan halaman Home */}
+      <div className="absolute inset-0 z-0 overflow-hidden opacity-25 pointer-events-none">
         <Image
-          src="/images/login & register.jpeg"
+          src="/images/plane_bg.jpg"
           fill
           alt=""
-          className="object-cover"
+          className="object-cover object-center"
+          sizes="100vw"
           priority
         />
       </div>
 
       {/* Grid Pattern */}
-      <div className="fixed inset-0 z-0 opacity-10 pointer-events-none">
+      <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:4rem_4rem]" />
       </div>
 
-      {/* Blur Effects */}
-      <div className="fixed top-[-131px] left-[-1005px] w-[1218px] h-[947px] bg-[#0d1d32] rotate-[0.84deg] blur-[199.25px] z-10 pointer-events-none" />
-      <div className="fixed top-[-898px] left-[908px] w-[1259px] h-[1080px] bg-[#0d1d32] blur-[199.25px] z-10 pointer-events-none" />
+      {/* Blur Effects — sama dengan halaman Home */}
+      <div className="absolute top-[-131px] left-[-1005px] w-[1218px] h-[947px] bg-[#0d1d32] rotate-[0.84deg] blur-[199.25px] z-10 pointer-events-none" />
+      <div className="absolute top-[-898px] left-[908px] w-[1259px] h-[1080px] bg-[#0d1d32] blur-[199.25px] z-10 pointer-events-none" />
 
-      <section className="relative z-20 flex flex-1 flex-col items-center justify-center px-6 py-8 min-h-0">
-        <div className="max-w-2xl w-full text-center space-y-5">
-          {/* ALTUS Logo */}
-          <div className="flex justify-center opacity-0 animate-fade-up">
-            <div className="relative w-16 h-16 md:w-20 md:h-20">
-              <Image
-                src="/images/LOGO ALTUS FULL.png"
-                alt="ALTUS Logo"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
-          </div>
-
+      {/* pt-24+: jarak aman dari header fixed; scale: muat window tidak fullscreen */}
+      <section className="relative z-20 flex flex-1 flex-col items-center justify-center px-6 pt-24 pb-10 min-h-dvh box-border">
+        <div className="max-w-2xl w-full text-center space-y-4 origin-center scale-[0.82] sm:scale-[0.88] md:scale-95 lg:scale-100 mt-4 sm:mt-6">
           {/* 404 — angka saja, tanpa icon package */}
           <div
             className="flex justify-center opacity-0 animate-fade-up"
             style={{ animationDelay: '50ms' }}
           >
-            <div className="flex h-24 w-24 md:h-28 md:w-28 items-center justify-center rounded-full border-2 border-[#003fcc]/40 bg-[#003fcc]/10 shadow-[0_0_40px_rgba(0,63,204,0.25)]">
-              <span className="text-5xl md:text-6xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50">
+            <div className="flex h-20 w-20 sm:h-[5.5rem] sm:w-[5.5rem] md:h-24 md:w-24 items-center justify-center rounded-full border-2 border-[#003fcc]/40 bg-[#003fcc]/10 shadow-[0_0_40px_rgba(0,63,204,0.25)]">
+              <span className="text-4xl sm:text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50">
                 404
               </span>
             </div>
           </div>
 
           {/* Error Message */}
-          <div className="space-y-3 opacity-0 animate-fade-up" style={{ animationDelay: '100ms' }}>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-white leading-tight tracking-tight">
+          <div className="space-y-2 opacity-0 animate-fade-up" style={{ animationDelay: '100ms' }}>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-tight tracking-tight">
               Halaman Tidak Ditemukan
             </h1>
-            <p className="text-base md:text-lg text-white/70 font-medium max-w-lg mx-auto leading-relaxed">
+            <p className="text-sm sm:text-base text-white/70 font-medium max-w-lg mx-auto leading-relaxed">
               Halaman yang Anda cari tidak ada di sistem ALTUS. Periksa kembali URL — mungkin ada typo atau link sudah tidak aktif.
             </p>
           </div>
 
           {/* Error Code Box */}
           <div
-            className="bg-white/5 border border-white/20 rounded-[12px] p-4 md:p-5 backdrop-blur-sm opacity-0 animate-fade-up text-left max-w-md mx-auto"
+            className="bg-white/5 border border-white/20 rounded-[12px] p-3 sm:p-4 backdrop-blur-sm opacity-0 animate-fade-up text-left max-w-md mx-auto"
             style={{ animationDelay: '150ms' }}
           >
             <p className="text-white/60 font-semibold text-xs uppercase tracking-wide">Error Code</p>
-            <p className="text-xl font-mono font-bold text-[#003fcc] mt-1">ALTUS-404-NOT-FOUND</p>
+            <p className="text-lg sm:text-xl font-mono font-bold text-[#003fcc] mt-1">ALTUS-404-NOT-FOUND</p>
             <ul className="text-white/60 text-sm mt-3 space-y-1">
               <li>• URL salah atau tidak valid</li>
               <li>• Halaman dipindahkan atau dihapus</li>
