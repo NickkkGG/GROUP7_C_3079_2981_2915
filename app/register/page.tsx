@@ -108,6 +108,16 @@ export default function RegisterPage() {
       if (Object.keys(errors).length > 0) return;
 
       const newCode = generateCode();
+      const validation = validateRegisterStepOne({
+        fullName,
+        email,
+        password,
+        code: newCode,
+      });
+      if (!validation.ok) {
+        showNotification(validation.error, 'error');
+        return;
+      }
 
       setIsLoading(true);
 
@@ -152,6 +162,17 @@ export default function RegisterPage() {
 
       setFieldErrors(errors);
       if (Object.keys(errors).length > 0) return;
+
+      const validation = validateRegisterStepTwo({
+        fullName,
+        email,
+        password,
+        verificationCode: userVerificationCode,
+      });
+      if (!validation.ok) {
+        showNotification(validation.error, 'error');
+        return;
+      }
 
       setIsLoading(true);
 

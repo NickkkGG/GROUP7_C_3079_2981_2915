@@ -156,6 +156,12 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
+    const validation = validateShipmentInput(formData);
+    if (!validation.ok) {
+      setNotification({ type: 'error', message: validation.error });
+      return;
+    }
+
     setLoading(true);
 
     try {

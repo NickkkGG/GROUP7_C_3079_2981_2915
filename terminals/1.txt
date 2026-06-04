@@ -1,0 +1,27 @@
+---
+pid: 30868
+cwd: "C:\Semester 4\SIWEB\KEL7_C_3079_2981_2915\altus"
+command: "Set-Location \"C:\\Semester 4\\SIWEB\\KEL7_C_3079_2981_2915\\altus\"; pnpm run dev"
+started_at: 2026-06-04T14:01:21.746Z
+running_for_ms: 185012   
+---
+
+> altus@0.1.0 dev C:\Semester 4\SIWEB\KEL7_C_3079_2981_2915\altus
+> next dev
+
+▲ Next.js 16.2.3 (Turbopack)
+⚠ Port 3000 is in use by process 23876, using available port 3001 instead.
+- Local:         http://localhost:3001
+- Network:       http://100.90.245.85:3001
+- Environments: .env.local
+✓ Ready in 624ms
+⨯ Another next dev server is already running.
+
+
+- Local:        http://localhost:3000
+- PID:          23876
+- Dir:          C:\Semester 4\SIWEB\KEL7_C_3079_2981_2915\altus
+- Log:          .next\dev\logs\next-development.log
+
+Run taskkill /PID 23876 /F to stop it.
+ ELIFECYCLE  Command failed with exit code 1.
