@@ -1,12 +1,16 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { mockFlights, mockShipments } from '@/lib/mockData';
 import { FileText, Download } from 'lucide-react';
-import { useEffect } from 'react';
 import TopNavbar from '@/components/TopNavbar';
 
 export default function ManifestPage() {
+  useEffect(() => {
+    document.title = 'Manifest - ALTUS';
+  }, []);
+
   const { user, loginAsGuest } = useAuth();
 
   useEffect(() => {

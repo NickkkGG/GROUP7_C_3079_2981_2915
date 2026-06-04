@@ -7,9 +7,13 @@ import { inter } from '@/app/ui/fonts';
 import Header from '@/components/Header';
 import FloatingInput from '@/components/FloatingInput';
 import CustomNotification, { useNotification } from '@/components/CustomNotification';
-import { RotateCw, User, Mail, Eye, EyeOff } from 'lucide-react';
+import { validateRegisterStepOne, validateRegisterStepTwo } from '@/lib/validation';
+import { User, Mail, Eye, EyeOff } from 'lucide-react';
 
 export default function RegisterPage() {
+  useEffect(() => {
+    document.title = 'Register - ALTUS';
+  }, []);
   const { notification, show: showNotification } = useNotification();
 
   const generateCode = (): string => {
@@ -21,9 +25,6 @@ export default function RegisterPage() {
     return code;
   };
 
-  const validateEmail = (email: string): boolean => {
-    return email.includes('@') && email.includes('.');
-  };
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -35,30 +36,8 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [registrationStep, setRegistrationStep] = useState(1); // 1 = form, 2 = verify code
-
-  const handleRefreshCode = async () => {
-    // Generate new code locally
-    const newCode = generateCode();
-    setVerificationCode(newCode);
-    setUserVerificationCode('');
-
-    // Save new code to database
-    try {
-      await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: fullName.trim(),
-          email: email.toLowerCase().trim(),
-          password,
-          refreshCode: true,
-          newCode: newCode
-        })
-      });
-    } catch (error) {
-      console.error('Error refreshing code:', error);
-    }
-  };
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Scroll to top on initial load
   useEffect(() => {
@@ -91,69 +70,54 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // STEP 1: Generate & Save Code
     if (registrationStep === 1) {
-      // Validasi form kosong
-      if (!fullName.trim()) {
-        showNotification('ALTUS Register Error: Full name cannot be empty', 'error');
-        return;
-      }
+      const errors: Record<string, string> = {};
 
-      if (fullName.trim().length < 3) {
-        showNotification('ALTUS Register Error: Full name must be at least 3 characters', 'error');
-        return;
+      if (!fullName.trim()) {
+        errors.fullName = 'Full name cannot be empty';
+      } else if (fullName.trim().length < 3) {
+        errors.fullName = 'Full name must be at least 3 characters';
       }
 
       if (!email.trim()) {
-        showNotification('ALTUS Register Error: Email cannot be empty', 'error');
-        return;
-      }
-
-      // Validasi format email
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        showNotification('ALTUS Register Error: Invalid email format. Use format: name@domain.com', 'error');
-        return;
+        errors.email = 'Email cannot be empty';
+      } else {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          errors.email = 'Invalid email format. Use format: name@domain.com';
+        }
       }
 
       if (!password) {
-        showNotification('ALTUS Register Error: Password cannot be empty', 'error');
-        return;
-      }
-
-      if (password.length < 6) {
-        showNotification('ALTUS Register Error: Password must be at least 6 characters', 'error');
-        return;
+        errors.password = 'Password cannot be empty';
+      } else if (password.length < 6) {
+        errors.password = 'Password must be at least 6 characters';
       }
 
       if (!confirmPassword) {
-        showNotification('ALTUS Register Error: Confirm password cannot be empty', 'error');
-        return;
+        errors.confirmPassword = 'Confirm password cannot be empty';
+      } else if (password !== confirmPassword) {
+        errors.confirmPassword = 'Password and confirm password do not match';
       }
 
-      if (password !== confirmPassword) {
-        showNotification('ALTUS Register Error: Password and confirm password do not match', 'error');
-        return;
+      if (!termsAccepted) {
+        errors.terms = 'You must agree to the Terms of Service and Privacy Policy';
       }
+
+      setFieldErrors(errors);
+      if (Object.keys(errors).length > 0) return;
+
+      const newCode = generateCode();
 
       setIsLoading(true);
 
       try {
-        // Generate new code
-        const newCode = generateCode();
-        setVerificationCode(newCode);
-        setUserVerificationCode('');
-
-        // Save code to database
         const response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            fullName: fullName.trim(),
-            email: email.toLowerCase().trim(),
-            password,
-            code: newCode,
-            step: 1
+            ...validation.sanitized,
+            step: 1,
           })
         });
 
@@ -161,32 +125,33 @@ export default function RegisterPage() {
 
         if (!response.ok) {
           showNotification(data.error || 'ALTUS Register Error: Failed to generate verification code', 'error');
-          setIsLoading(false);
           return;
         }
 
+        setVerificationCode(validation.sanitized.code || '');
+        setUserVerificationCode('');
         showNotification('Verification code generated successfully! Enter code to complete ALTUS registration', 'success');
         setRegistrationStep(2);
-        setIsLoading(false);
       } catch (error) {
         console.error('Code generation error:', error);
         showNotification('ALTUS System Error: Cannot connect to server. Please check your internet connection.', 'error');
+      } finally {
         setIsLoading(false);
       }
       return;
     }
 
-    // STEP 2: Verify Code & Create User
     if (registrationStep === 2) {
+      const errors: Record<string, string> = {};
+
       if (!userVerificationCode.trim()) {
-        showNotification('ALTUS Register Error: Verification code cannot be empty', 'error');
-        return;
+        errors.verificationCode = 'Verification code cannot be empty';
+      } else if (userVerificationCode.trim().length !== 6) {
+        errors.verificationCode = 'Verification code must be 6 characters';
       }
 
-      if (userVerificationCode.trim().length !== 6) {
-        showNotification('ALTUS Register Error: Verification code must be 6 characters', 'error');
-        return;
-      }
+      setFieldErrors(errors);
+      if (Object.keys(errors).length > 0) return;
 
       setIsLoading(true);
 
@@ -195,10 +160,10 @@ export default function RegisterPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            fullName: fullName.trim(),
-            email: email.toLowerCase().trim(),
-            password,
-            verificationCode: userVerificationCode.trim(),
+            fullName: validation.sanitized.fullName,
+            email: validation.sanitized.email,
+            password: validation.sanitized.password,
+            verificationCode: validation.sanitized.verificationCode,
             step: 2
           })
         });
@@ -206,26 +171,7 @@ export default function RegisterPage() {
         const data = await response.json();
 
         if (!response.ok) {
-          // Auto-refresh code on error
-          const newCode = generateCode();
-          setVerificationCode(newCode);
-          setUserVerificationCode('');
-
-          // Update code in database
-          await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              fullName: fullName.trim(),
-              email: email.toLowerCase().trim(),
-              password,
-              code: newCode,
-              step: 1
-            })
-          });
-
-          showNotification(data.error || 'ALTUS Register Error: Verification failed. New code has been generated.', 'error');
-          setIsLoading(false);
+          showNotification(data.error || 'ALTUS Register Error: Verification failed.', 'error');
           return;
         }
 
@@ -236,6 +182,7 @@ export default function RegisterPage() {
       } catch (error) {
         console.error('Verification error:', error);
         showNotification('ALTUS System Error: Cannot connect to server. Please check your internet connection.', 'error');
+      } finally {
         setIsLoading(false);
       }
     }
@@ -303,16 +250,16 @@ export default function RegisterPage() {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-2 opacity-0 animate-fade-up" style={{animationDelay: '150ms'}}>
+            <form noValidate onSubmit={handleSubmit} className="space-y-2 opacity-0 animate-fade-up" style={{animationDelay: '150ms'}}>
               {/* Full Name Field */}
               <FloatingInput
                 type="text"
                 id="fullName"
                 label="Full Name"
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                onChange={(e) => { setFullName(e.target.value); if (fieldErrors.fullName) setFieldErrors(prev => ({ ...prev, fullName: '' })); }}
                 rightIcon={<User size={18} />}
-                required
+                error={fieldErrors.fullName}
               />
 
               {/* Email Field */}
@@ -321,9 +268,9 @@ export default function RegisterPage() {
                 id="email"
                 label="Email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: '' })); }}
                 rightIcon={<Mail size={18} />}
-                required
+                error={fieldErrors.email}
               />
 
               {/* Password Field */}
@@ -332,10 +279,10 @@ export default function RegisterPage() {
                 id="password"
                 label="Password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: '' })); }}
                 rightIcon={showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 onRightIconClick={() => setShowPassword(!showPassword)}
-                required
+                error={fieldErrors.password}
               />
 
               {/* Confirm Password Field */}
@@ -344,10 +291,10 @@ export default function RegisterPage() {
                 id="confirmPassword"
                 label="Confirm Password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => { setConfirmPassword(e.target.value); if (fieldErrors.confirmPassword) setFieldErrors(prev => ({ ...prev, confirmPassword: '' })); }}
                 rightIcon={showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 onRightIconClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                required
+                error={fieldErrors.confirmPassword}
               />
 
               {/* Verification Code Section */}
@@ -367,25 +314,34 @@ export default function RegisterPage() {
                   id="verifyCode"
                   label="Enter Code"
                   value={userVerificationCode}
-                  onChange={(e) => setUserVerificationCode(e.target.value.toUpperCase())}
+                  onChange={(e) => { setUserVerificationCode(e.target.value.toUpperCase()); if (fieldErrors.verificationCode) setFieldErrors(prev => ({ ...prev, verificationCode: '' })); }}
                   placeholder="Masukkan kode verifikasi"
+                  error={fieldErrors.verificationCode}
                 />
               </div>
 
               {/* Terms & Conditions */}
-              <label className="flex items-start gap-3 cursor-pointer group pt-2">
-                <input type="checkbox" className="w-4 h-4 rounded bg-white/10 border border-white/20 cursor-pointer accent-[#003fcc] mt-1" required />
-                <span className="text-white/60 group-hover:text-white transition-colors text-xs md:text-sm">
-                  I agree to the{' '}
-                  <Link href="#" className="text-[#003fcc] hover:text-[#0b499a] transition-colors font-semibold">
-                    Terms of Service
-                  </Link>{' '}
-                  and{' '}
-                  <Link href="#" className="text-[#003fcc] hover:text-[#0b499a] transition-colors font-semibold">
-                    Privacy Policy
-                  </Link>
-                </span>
-              </label>
+              <div>
+                <label className="flex items-start gap-3 cursor-pointer group pt-2">
+                  <input
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(e) => { setTermsAccepted(e.target.checked); if (fieldErrors.terms) setFieldErrors(prev => ({ ...prev, terms: '' })); }}
+                    className="w-4 h-4 rounded bg-white/10 border border-white/20 cursor-pointer accent-[#003fcc] mt-1"
+                  />
+                  <span className="text-white/60 group-hover:text-white transition-colors text-xs md:text-sm">
+                    I agree to the{' '}
+                    <Link href="#" className="text-[#003fcc] hover:text-[#0b499a] transition-colors font-semibold">
+                      Terms of Service
+                    </Link>{' '}
+                    and{' '}
+                    <Link href="#" className="text-[#003fcc] hover:text-[#0b499a] transition-colors font-semibold">
+                      Privacy Policy
+                    </Link>
+                  </span>
+                </label>
+                {fieldErrors.terms && <p className="text-red-400 text-xs mt-1">{fieldErrors.terms}</p>}
+              </div>
 
               {/* Submit Button */}
               <button
@@ -393,7 +349,7 @@ export default function RegisterPage() {
                 disabled={isLoading}
                 className="w-full px-6 py-3 bg-gradient-to-r from-[#003fcc] to-[#0b499a] rounded-[12px] shadow-[0_0_20px_rgba(0,63,204,0.4)] font-bold text-white text-base tracking-wide uppercase btn-enhanced-hover hover:shadow-[0_0_50px_rgba(0,63,204,0.8)] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
               >
-                {isLoading ? 'Creating Account...' : 'Get verification code'}
+                {isLoading ? (registrationStep === 1 ? 'Generating Code...' : 'Creating Account...') : (registrationStep === 1 ? 'Get verification code' : 'Create Account')}
               </button>
             </form>
 

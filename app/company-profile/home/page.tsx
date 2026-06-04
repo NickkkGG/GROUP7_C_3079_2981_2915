@@ -7,6 +7,10 @@ import { inter } from '@/app/ui/fonts';
 import Header from '@/components/Header';
 
 export default function HomePage() {
+  useEffect(() => {
+    document.title = 'Home - ALTUS';
+  }, []);
+
   const heroContentRef = useRef<HTMLDivElement>(null);
 
   // Scroll to top on initial load

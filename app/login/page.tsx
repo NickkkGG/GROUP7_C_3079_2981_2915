@@ -15,6 +15,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Set page title
+  useEffect(() => {
+    document.title = 'Login - ALTUS';
+  }, []);
 
   // Scroll to top on initial load
   useEffect(() => {
@@ -48,27 +54,21 @@ export default function LoginPage() {
     e.preventDefault();
 
     // Validasi form kosong
-    if (!email && !password) {
-      showNotification('ALTUS Login Error: Email and password are required', 'error');
-      return;
+    const errors: Record<string, string> = {};
+    if (!email.trim()) {
+      errors.email = 'Email cannot be empty';
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        errors.email = 'Invalid email format. Use format: name@domain.com';
+      }
     }
-
-    if (!email) {
-      showNotification('ALTUS Login Error: Email cannot be empty', 'error');
-      return;
-    }
-
     if (!password) {
-      showNotification('ALTUS Login Error: Password cannot be empty', 'error');
-      return;
+      errors.password = 'Password cannot be empty';
     }
 
-    // Validasi format email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      showNotification('ALTUS Login Error: Invalid email format. Use format: name@domain.com', 'error');
-      return;
-    }
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
 
     setIsLoading(true);
 
@@ -173,16 +173,16 @@ export default function LoginPage() {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-3 opacity-0 animate-fade-up" style={{animationDelay: '150ms'}}>
+            <form noValidate onSubmit={handleSubmit} className="space-y-3 opacity-0 animate-fade-up" style={{animationDelay: '150ms'}}>
               {/* Email Field */}
               <FloatingInput
                 type="email"
                 id="email"
                 label="Email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: '' })); }}
                 rightIcon={<Mail size={18} />}
-                required
+                error={fieldErrors.email}
               />
 
               {/* Password Field */}
@@ -191,10 +191,10 @@ export default function LoginPage() {
                 id="password"
                 label="Password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: '' })); }}
                 rightIcon={showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 onRightIconClick={() => setShowPassword(!showPassword)}
-                required
+                error={fieldErrors.password}
               />
 
               {/* Remember Me & Forgot Password */}

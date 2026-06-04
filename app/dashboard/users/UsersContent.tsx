@@ -42,6 +42,13 @@ export default function UsersContent() {
     try {
       const response = await fetch('/api/users');
       const data = await response.json();
+
+      if (!response.ok) {
+        showNotification(data.error || 'Failed to load users', 'error');
+        setUsers([]);
+        return;
+      }
+
       setUsers(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -59,7 +66,12 @@ export default function UsersContent() {
         body: JSON.stringify({ userId, role: newRole }),
       });
 
-      if (!response.ok) throw new Error('Failed to update role');
+      const data = await response.json();
+
+      if (!response.ok) {
+        showNotification(data.error || 'Failed to update user role', 'error');
+        return;
+      }
 
       showNotification(`User role updated to ${newRole}`, 'success');
       setEditingId(null);
@@ -82,7 +94,12 @@ export default function UsersContent() {
         method: 'DELETE',
       });
 
-      if (!response.ok) throw new Error('Failed to delete user');
+      const data = await response.json();
+
+      if (!response.ok) {
+        showNotification(data.error || 'Failed to delete user', 'error');
+        return;
+      }
 
       showNotification('User deleted successfully', 'success');
       setUserToDelete(null);

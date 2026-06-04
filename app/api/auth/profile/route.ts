@@ -29,14 +29,16 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
     const { email, fullname, newPassword, currentPassword } = body;
+    const normalizedEmail = typeof email === 'string' ? email.toLowerCase().trim() : '';
+    const normalizedFullname = typeof fullname === 'string' ? fullname.trim() : '';
 
-    if (!email) {
+    if (!normalizedEmail) {
       return Response.json({ error: 'Email required' }, { status: 400 });
     }
 
     // Get current user
     const userResult = await sql`
-      SELECT id, password FROM users WHERE email = ${email.toLowerCase().trim()};
+      SELECT id, password FROM users WHERE email = ${normalizedEmail};
     `;
 
     if (userResult.rows.length === 0) {
@@ -64,9 +66,13 @@ export async function PUT(request: Request) {
     }
 
     // Update fullname if provided
-    if (fullname) {
+    if (fullname !== undefined) {
+      if (!normalizedFullname) {
+        return Response.json({ error: 'Full name cannot be empty' }, { status: 400 });
+      }
+
       const result = await sql`
-        UPDATE users SET fullname = ${fullname} WHERE email = ${email.toLowerCase().trim()} RETURNING id, fullname, email, role;
+        UPDATE users SET fullname = ${normalizedFullname} WHERE email = ${normalizedEmail} RETURNING id, fullname, email, role;
       `;
 
       return Response.json({

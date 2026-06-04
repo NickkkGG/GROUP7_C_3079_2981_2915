@@ -195,7 +195,12 @@ function AccountTab({
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to update profile');
+      const data = await response.json();
+
+      if (!response.ok) {
+        showNotification(data.error || 'Failed to update profile. Please try again.', 'error');
+        return;
+      }
       showNotification('Profile updated successfully!', 'success');
     } catch (error) {
       console.error('Error updating profile:', error);

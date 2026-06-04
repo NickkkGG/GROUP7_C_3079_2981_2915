@@ -4,13 +4,11 @@ import { useState, useEffect } from 'react';
 import { X, Package, User, MapPin } from 'lucide-react';
 import { indonesianCities } from '@/lib/cities';
 import Notification from '@/components/Notification';
+import { isValidPhone, validateShipmentInput } from '@/lib/validation';
 
-// Tarif per kg per jenis pengiriman
 const RATES: Record<string, number> = { Regular: 5000, Express: 10000, Priority: 15000 };
 const formatRupiah = (n: number) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
-// Format no. telp Indonesia: +62/62/0 diikuti 8-13 digit
-const isValidPhone = (v: string) => /^(\+62|62|0)[0-9]{8,13}$/.test(v.replace(/[\s-]/g, ''));
 
 interface CreateShipmentFormProps {
   onClose: () => void;
@@ -25,6 +23,7 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
   const [showOriginDropdown, setShowOriginDropdown] = useState(false);
   const [showDestinationDropdown, setShowDestinationDropdown] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     tracking_number: '',
     sender: '',
@@ -151,15 +150,32 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validasi nomor telepon (jika diisi)
+    const errors: Record<string, string> = {};
+
+    if (!formData.weight) {
+      errors.weight = 'Weight cannot be empty';
+    } else {
+      const w = parseFloat(formData.weight);
+      if (!Number.isFinite(w) || w <= 0) {
+        errors.weight = 'Weight must be a number greater than 0';
+      }
+    }
+
+    if (!formData.item_type.trim()) errors.item_type = 'Item type cannot be empty';
+    if (!formData.sender.trim()) errors.sender = 'Sender name cannot be empty';
+    if (!formData.recipient_name.trim()) errors.recipient_name = 'Recipient name cannot be empty';
+    if (!formData.origin.trim()) errors.origin = 'Origin city cannot be empty';
+    if (!formData.destination.trim()) errors.destination = 'Destination city cannot be empty';
+
     if (formData.sender_contact && !isValidPhone(formData.sender_contact)) {
-      setNotification({ type: 'error', message: 'Nomor telepon pengirim tidak valid (cth: 0812xxxx atau +62812xxxx)' });
-      return;
+      errors.sender_contact = 'Invalid phone number (e.g., 0812xxxx or +62812xxxx)';
     }
     if (formData.recipient_contact && !isValidPhone(formData.recipient_contact)) {
-      setNotification({ type: 'error', message: 'Nomor telepon penerima tidak valid (cth: 0812xxxx atau +62812xxxx)' });
-      return;
+      errors.recipient_contact = 'Invalid phone number (e.g., 0812xxxx or +62812xxxx)';
     }
+
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
 
     setLoading(true);
 
@@ -167,15 +183,12 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
       const response = await fetch('/api/shipments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          weight: parseFloat(formData.weight),
-          flight_id: formData.flight_id ? parseInt(formData.flight_id) : null
-        })
+        body: JSON.stringify(validation.sanitized)
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
         setNotification({
           type: 'success',
           message: `Shipment ${data.shipment.tracking_number} created successfully!`
@@ -185,10 +198,9 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
           onClose();
         }, 1500);
       } else {
-        const error = await response.json();
         setNotification({
           type: 'error',
-          message: error.error || 'Failed to create shipment'
+          message: data.error || 'Failed to create shipment'
         });
       }
     } catch (error) {
@@ -222,7 +234,7 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form noValidate onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-slate-900 font-bold text-xs mb-2">
@@ -230,7 +242,6 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
             </label>
             <input
               type="text"
-              required
               disabled
               value={formData.tracking_number}
               className="w-full bg-slate-100 border-[2px] border-slate-300 rounded-[12px] px-3 py-2 text-slate-600 text-xs outline-none cursor-not-allowed"
@@ -245,12 +256,12 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
             <input
               type="number"
               step="0.01"
-              required
               value={formData.weight}
-              onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+              onChange={(e) => { setFormData({ ...formData, weight: e.target.value }); if (fieldErrors.weight) setFieldErrors(prev => ({ ...prev, weight: '' })); }}
               placeholder="e.g., 25.5"
-              className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+              className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition ${fieldErrors.weight ? 'border-red-400' : 'border-black/20'}`}
             />
+            {fieldErrors.weight && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.weight}</p>}
           </div>
         </div>
 
@@ -260,12 +271,12 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
             <label className="block text-slate-900 font-bold text-xs mb-2">Jenis Barang *</label>
             <input
               type="text"
-              required
               value={formData.item_type}
-              onChange={(e) => setFormData({ ...formData, item_type: e.target.value })}
+              onChange={(e) => { setFormData({ ...formData, item_type: e.target.value }); if (fieldErrors.item_type) setFieldErrors(prev => ({ ...prev, item_type: '' })); }}
               placeholder="cth: Electronics, Documents"
-              className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+              className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition ${fieldErrors.item_type ? 'border-red-400' : 'border-black/20'}`}
             />
+            {fieldErrors.item_type && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.item_type}</p>}
           </div>
           <div>
             <label className="block text-slate-900 font-bold text-xs mb-2">Jenis Pengiriman *</label>
@@ -306,12 +317,12 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
               </label>
               <input
                 type="text"
-                required
                 value={formData.sender}
-                onChange={(e) => setFormData({ ...formData, sender: e.target.value })}
+                onChange={(e) => { setFormData({ ...formData, sender: e.target.value }); if (fieldErrors.sender) setFieldErrors(prev => ({ ...prev, sender: '' })); }}
                 placeholder="e.g., John Doe"
-                className="w-full bg-white border-[2px] border-blue-200 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-blue-500 transition"
+                className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-blue-500 transition ${fieldErrors.sender ? 'border-red-400' : 'border-blue-200'}`}
               />
+              {fieldErrors.sender && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.sender}</p>}
             </div>
 
             <div>
@@ -321,10 +332,11 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
               <input
                 type="text"
                 value={formData.sender_contact}
-                onChange={(e) => setFormData({ ...formData, sender_contact: e.target.value })}
+                onChange={(e) => { setFormData({ ...formData, sender_contact: e.target.value }); if (fieldErrors.sender_contact) setFieldErrors(prev => ({ ...prev, sender_contact: '' })); }}
                 placeholder="e.g., +62812345678"
-                className="w-full bg-white border-[2px] border-blue-200 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-blue-500 transition"
+                className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-blue-500 transition ${fieldErrors.sender_contact ? 'border-red-400' : 'border-blue-200'}`}
               />
+              {fieldErrors.sender_contact && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.sender_contact}</p>}
             </div>
           </div>
 
@@ -357,12 +369,12 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
               </label>
               <input
                 type="text"
-                required
                 value={formData.recipient_name}
-                onChange={(e) => setFormData({ ...formData, recipient_name: e.target.value })}
+                onChange={(e) => { setFormData({ ...formData, recipient_name: e.target.value }); if (fieldErrors.recipient_name) setFieldErrors(prev => ({ ...prev, recipient_name: '' })); }}
                 placeholder="e.g., Jane Smith"
-                className="w-full bg-white border-[2px] border-emerald-200 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+                className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition ${fieldErrors.recipient_name ? 'border-red-400' : 'border-emerald-200'}`}
               />
+              {fieldErrors.recipient_name && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.recipient_name}</p>}
             </div>
 
             <div>
@@ -372,10 +384,11 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
               <input
                 type="text"
                 value={formData.recipient_contact}
-                onChange={(e) => setFormData({ ...formData, recipient_contact: e.target.value })}
+                onChange={(e) => { setFormData({ ...formData, recipient_contact: e.target.value }); if (fieldErrors.recipient_contact) setFieldErrors(prev => ({ ...prev, recipient_contact: '' })); }}
                 placeholder="e.g., +62812345678"
-                className="w-full bg-white border-[2px] border-emerald-200 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+                className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition ${fieldErrors.recipient_contact ? 'border-red-400' : 'border-emerald-200'}`}
               />
+              {fieldErrors.recipient_contact && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.recipient_contact}</p>}
             </div>
           </div>
 
@@ -400,14 +413,14 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
             </label>
             <input
               type="text"
-              required
               value={formData.origin}
-              onChange={(e) => handleOriginChange(e.target.value)}
+              onChange={(e) => { handleOriginChange(e.target.value); if (fieldErrors.origin) setFieldErrors(prev => ({ ...prev, origin: '' })); }}
               onFocus={() => formData.origin && setShowOriginDropdown(true)}
               onBlur={() => setTimeout(() => setShowOriginDropdown(false), 200)}
               placeholder="e.g., Jakarta or YIA"
-              className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+              className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition ${fieldErrors.origin ? 'border-red-400' : 'border-black/20'}`}
             />
+            {fieldErrors.origin && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.origin}</p>}
             {showOriginDropdown && originSuggestions.length > 0 && (
               <div className="absolute z-50 w-full mt-1 bg-white border-[2px] border-black/20 rounded-[12px] shadow-lg max-h-48 overflow-y-auto">
                 {originSuggestions.map((city, idx) => (
@@ -430,14 +443,14 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
             </label>
             <input
               type="text"
-              required
               value={formData.destination}
-              onChange={(e) => handleDestinationChange(e.target.value)}
+              onChange={(e) => { handleDestinationChange(e.target.value); if (fieldErrors.destination) setFieldErrors(prev => ({ ...prev, destination: '' })); }}
               onFocus={() => formData.destination && setShowDestinationDropdown(true)}
               onBlur={() => setTimeout(() => setShowDestinationDropdown(false), 200)}
               placeholder="e.g., Surabaya or SUB"
-              className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+              className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition ${fieldErrors.destination ? 'border-red-400' : 'border-black/20'}`}
             />
+            {fieldErrors.destination && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.destination}</p>}
             {showDestinationDropdown && destinationSuggestions.length > 0 && (
               <div className="absolute z-50 w-full mt-1 bg-white border-[2px] border-black/20 rounded-[12px] shadow-lg max-h-48 overflow-y-auto">
                 {destinationSuggestions.map((city, idx) => (

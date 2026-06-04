@@ -1,9 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import TopNavbar from '@/components/TopNavbar';
 
 export default function DatabasePage() {
+  useEffect(() => {
+    document.title = 'Database - ALTUS';
+  }, []);
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');

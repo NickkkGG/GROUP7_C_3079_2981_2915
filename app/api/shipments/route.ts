@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { validateShipmentInput } from '@/lib/validation';
 
 // Tarif per kg berdasarkan jenis pengiriman
 const RATES: Record<string, number> = { Regular: 5000, Express: 10000, Priority: 15000 };
@@ -97,12 +98,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const validation = validateShipmentInput(body);
+
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
     const {
       tracking_number,
       sender,
       sender_contact,
       sender_address,
-      receiver,
       recipient_name,
       recipient_contact,
       recipient_address,
@@ -113,13 +119,8 @@ export async function POST(request: NextRequest) {
       service_type,
       flight_id,
       status,
-      notes
-    } = body;
-
-    // Validate required fields
-    if (!tracking_number || !sender || !recipient_name || !origin || !destination || !weight) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
+      notes,
+    } = validation.sanitized;
 
     // Check if tracking number already exists
     const existingShipment = await sql.query(
@@ -131,8 +132,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tracking number already exists' }, { status: 400 });
     }
 
-    const serviceType = service_type || 'Regular';
-    const tariff = computeTariff(serviceType, parseFloat(weight));
+    const tariff = computeTariff(service_type, weight);
 
     // Insert new shipment
     const result = await sql.query(
@@ -155,17 +155,17 @@ export async function POST(request: NextRequest) {
         origin,
         destination,
         weight,
-        item_type || null,
-        serviceType,
+        item_type,
+        service_type,
         tariff,
-        flight_id || null,
-        status || 'booked',
-        notes || null
+        flight_id,
+        status,
+        notes
       ]
     );
 
     // Buat entri tracking_history awal sesuai status (perbaikan timeline shipment baru)
-    await syncTrackingHistory(tracking_number, status || 'booked');
+    await syncTrackingHistory(tracking_number, status);
 
     return NextResponse.json({
       success: true,
@@ -180,13 +180,23 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
+    const { id } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'Shipment Error: Shipment ID is required' }, { status: 400 });
+    }
+
+    const validation = validateShipmentInput(body);
+
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
     const {
-      id,
       tracking_number,
       sender,
       sender_contact,
       sender_address,
-      receiver,
       recipient_name,
       recipient_contact,
       recipient_address,
@@ -197,13 +207,8 @@ export async function PUT(request: NextRequest) {
       service_type,
       flight_id,
       status,
-      notes
-    } = body;
-
-    // Validate required fields
-    if (!id || !tracking_number || !sender || !recipient_name || !origin || !destination || !weight) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
+      notes,
+    } = validation.sanitized;
 
     // Check if tracking number exists for another shipment
     const existingShipment = await sql.query(
@@ -215,8 +220,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Tracking number already exists' }, { status: 400 });
     }
 
-    const serviceType = service_type || 'Regular';
-    const tariff = computeTariff(serviceType, parseFloat(weight));
+    const tariff = computeTariff(service_type, weight);
 
     // Update shipment
     const result = await sql.query(
@@ -251,12 +255,12 @@ export async function PUT(request: NextRequest) {
         origin,
         destination,
         weight,
-        item_type || null,
-        serviceType,
+        item_type,
+        service_type,
         tariff,
-        flight_id || null,
+        flight_id,
         status,
-        notes || null,
+        notes,
         id
       ]
     );
