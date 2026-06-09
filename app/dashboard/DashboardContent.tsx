@@ -299,7 +299,7 @@ export default function DashboardContent() {
                   shipments.map((shipment, idx) => (
                     <tr key={idx} className="border-b-[1px] border-black/20 hover:bg-emerald-50 transition-all duration-200 group">
                       <td className="py-1.5 px-2">
-                        <Link href={`/dashboard/tracking?tracking=${shipment.tracking_number}`} className="text-emerald-600 hover:text-emerald-700 font-bold transition-colors truncate block group-hover:underline">
+                        <Link href={`/dashboard/tracking?search=${encodeURIComponent(shipment.tracking_number)}`} className="text-emerald-600 hover:text-emerald-700 font-bold transition-colors truncate block group-hover:underline">
                           {shipment.tracking_number}
                         </Link>
                       </td>
@@ -325,7 +325,7 @@ export default function DashboardContent() {
                       </td>
                       <td className="py-1.5 px-2 text-slate-700 whitespace-nowrap text-[9px] font-medium">{shipment.weight || 'N/A'} kg</td>
                       <td className="py-1.5 px-2">
-                        <Link href={`/dashboard/tracking?tracking=${shipment.tracking_number}`} className="px-2 py-1 rounded-lg text-white text-[9px] font-bold bg-[#1e3a5f] hover:bg-[#2c5282] transition-all duration-200 inline-block hover:shadow-md active:scale-95">
+                        <Link href={`/dashboard/tracking?search=${encodeURIComponent(shipment.tracking_number)}`} className="px-2 py-1 rounded-lg text-white text-[9px] font-bold bg-[#1e3a5f] hover:bg-[#2c5282] transition-all duration-200 inline-block hover:shadow-md active:scale-95">
                           Details →
                         </Link>
                       </td>
