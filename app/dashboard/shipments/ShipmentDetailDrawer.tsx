@@ -207,6 +207,20 @@ export default function ShipmentDetailDrawer({ isOpen, onClose, trackingNumber }
                         : '-'}
                     </p>
                   </div>
+                  <div>
+                    <p className="text-slate-500 text-xs mb-0.5 flex items-center gap-1">
+                      <Clock size={11} className="text-blue-600" />
+                      Tanggal Dibuat
+                    </p>
+                    <p className="text-slate-900 font-semibold">
+                      {shipment.created_at
+                        ? new Date(shipment.created_at).toLocaleString('id-ID', {
+                            day: '2-digit', month: 'short', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit',
+                          })
+                        : '-'}
+                    </p>
+                  </div>
                 </div>
               </div>
 
