@@ -76,11 +76,11 @@ export function validateRegisterStepTwo(input: {
 export function validateShipmentInput(input: Record<string, unknown>) {
   const tracking_number = normalizeString(input.tracking_number);
   const sender = normalizeString(input.sender);
-  const sender_contact = normalizeOptionalString(input.sender_contact);
-  const sender_address = normalizeOptionalString(input.sender_address);
+  const sender_contact = normalizeString(input.sender_contact);
+  const sender_address = normalizeString(input.sender_address);
   const recipient_name = normalizeString(input.recipient_name);
-  const recipient_contact = normalizeOptionalString(input.recipient_contact);
-  const recipient_address = normalizeOptionalString(input.recipient_address);
+  const recipient_contact = normalizeString(input.recipient_contact);
+  const recipient_address = normalizeString(input.recipient_address);
   const origin = normalizeString(input.origin);
   const destination = normalizeString(input.destination);
   const item_type = normalizeString(input.item_type);
@@ -101,7 +101,13 @@ export function validateShipmentInput(input: Record<string, unknown>) {
 
   if (!tracking_number) return { ok: false as const, error: 'Shipment Error: Tracking number cannot be empty' };
   if (!sender) return { ok: false as const, error: 'Shipment Error: Sender name cannot be empty' };
+  if (!sender_contact) return { ok: false as const, error: 'Shipment Error: Sender contact cannot be empty' };
+  if (!isValidPhone(sender_contact)) return { ok: false as const, error: 'Shipment Error: Sender phone number is invalid' };
+  if (!sender_address) return { ok: false as const, error: 'Shipment Error: Sender address cannot be empty' };
   if (!recipient_name) return { ok: false as const, error: 'Shipment Error: Recipient name cannot be empty' };
+  if (!recipient_contact) return { ok: false as const, error: 'Shipment Error: Recipient contact cannot be empty' };
+  if (!isValidPhone(recipient_contact)) return { ok: false as const, error: 'Shipment Error: Recipient phone number is invalid' };
+  if (!recipient_address) return { ok: false as const, error: 'Shipment Error: Recipient address cannot be empty' };
   if (!origin) return { ok: false as const, error: 'Shipment Error: Origin city cannot be empty' };
   if (!destination) return { ok: false as const, error: 'Shipment Error: Destination city cannot be empty' };
   if (!item_type) return { ok: false as const, error: 'Shipment Error: Item type cannot be empty' };
@@ -111,8 +117,6 @@ export function validateShipmentInput(input: Record<string, unknown>) {
   if (!SHIPMENT_STATUSES.includes(status)) return { ok: false as const, error: 'Shipment Error: Status is invalid' };
   if (!Number.isFinite(weight)) return { ok: false as const, error: 'Shipment Error: Weight must be a valid number' };
   if (weight <= 0) return { ok: false as const, error: 'Shipment Error: Weight must be greater than 0' };
-  if (sender_contact && !isValidPhone(sender_contact)) return { ok: false as const, error: 'Shipment Error: Sender phone number is invalid' };
-  if (recipient_contact && !isValidPhone(recipient_contact)) return { ok: false as const, error: 'Shipment Error: Recipient phone number is invalid' };
 
   return {
     ok: true as const,

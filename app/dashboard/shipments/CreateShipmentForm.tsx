@@ -163,16 +163,21 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
 
     if (!formData.item_type.trim()) errors.item_type = 'Item type cannot be empty';
     if (!formData.sender.trim()) errors.sender = 'Sender name cannot be empty';
-    if (!formData.recipient_name.trim()) errors.recipient_name = 'Recipient name cannot be empty';
-    if (!formData.origin.trim()) errors.origin = 'Origin city cannot be empty';
-    if (!formData.destination.trim()) errors.destination = 'Destination city cannot be empty';
-
-    if (formData.sender_contact && !isValidPhone(formData.sender_contact)) {
+    if (!formData.sender_contact.trim()) {
+      errors.sender_contact = 'Sender contact cannot be empty';
+    } else if (!isValidPhone(formData.sender_contact)) {
       errors.sender_contact = 'Invalid phone number (e.g., 0812xxxx or +62812xxxx)';
     }
-    if (formData.recipient_contact && !isValidPhone(formData.recipient_contact)) {
+    if (!formData.sender_address.trim()) errors.sender_address = 'Sender address cannot be empty';
+    if (!formData.recipient_name.trim()) errors.recipient_name = 'Recipient name cannot be empty';
+    if (!formData.recipient_contact.trim()) {
+      errors.recipient_contact = 'Recipient contact cannot be empty';
+    } else if (!isValidPhone(formData.recipient_contact)) {
       errors.recipient_contact = 'Invalid phone number (e.g., 0812xxxx or +62812xxxx)';
     }
+    if (!formData.recipient_address.trim()) errors.recipient_address = 'Recipient address cannot be empty';
+    if (!formData.origin.trim()) errors.origin = 'Origin city cannot be empty';
+    if (!formData.destination.trim()) errors.destination = 'Destination city cannot be empty';
 
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
@@ -333,7 +338,7 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
 
             <div>
               <label className="block text-slate-900 font-bold text-xs mb-2">
-                Sender Contact
+                Sender Contact *
               </label>
               <input
                 type="text"
@@ -348,15 +353,16 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
 
           <div className="mt-3">
             <label className="block text-slate-900 font-bold text-xs mb-2">
-              Sender Address
+              Sender Address *
             </label>
             <textarea
               value={formData.sender_address}
-              onChange={(e) => setFormData({ ...formData, sender_address: e.target.value })}
+              onChange={(e) => { setFormData({ ...formData, sender_address: e.target.value }); if (fieldErrors.sender_address) setFieldErrors(prev => ({ ...prev, sender_address: '' })); }}
               placeholder="Full address..."
               rows={2}
-              className="w-full bg-white border-[2px] border-blue-200 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-blue-500 transition resize-none"
+              className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-blue-500 transition resize-none ${fieldErrors.sender_address ? 'border-red-400' : 'border-blue-200'}`}
             />
+            {fieldErrors.sender_address && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.sender_address}</p>}
           </div>
         </div>
 
@@ -385,7 +391,7 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
 
             <div>
               <label className="block text-slate-900 font-bold text-xs mb-2">
-                Recipient Contact
+                Recipient Contact *
               </label>
               <input
                 type="text"
@@ -400,15 +406,16 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
 
           <div className="mt-3">
             <label className="block text-slate-900 font-bold text-xs mb-2">
-              Recipient Address
+              Recipient Address *
             </label>
             <textarea
               value={formData.recipient_address}
-              onChange={(e) => setFormData({ ...formData, recipient_address: e.target.value })}
+              onChange={(e) => { setFormData({ ...formData, recipient_address: e.target.value }); if (fieldErrors.recipient_address) setFieldErrors(prev => ({ ...prev, recipient_address: '' })); }}
               placeholder="Full address..."
               rows={2}
-              className="w-full bg-white border-[2px] border-emerald-200 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition resize-none"
+              className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition resize-none ${fieldErrors.recipient_address ? 'border-red-400' : 'border-emerald-200'}`}
             />
+            {fieldErrors.recipient_address && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.recipient_address}</p>}
           </div>
         </div>
 
