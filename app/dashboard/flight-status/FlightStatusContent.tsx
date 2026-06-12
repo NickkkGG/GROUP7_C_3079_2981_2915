@@ -71,13 +71,13 @@ export default function FlightStatusContent() {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'on-time':
-        return 'bg-green-500/10 text-green-700 border border-green-400';
+        return 'bg-green-500/10 text-green-700 border-green-400';
       case 'delayed':
-        return 'bg-orange-500/10 text-orange-700 border border-orange-400';
+        return 'bg-orange-500/10 text-orange-700 border-orange-400';
       default:
-        return 'bg-cyan-500/10 text-cyan-700 border-[3px] border-black/50';
+        return 'bg-transparent text-[#2c8a8e] border-[#2c8a8e]';
     }
   };
 
@@ -196,7 +196,7 @@ export default function FlightStatusContent() {
                           {new Date(flight.departure_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </td>
                         <td className="py-3 px-4">
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(flight.status)}`}>
+                          <span className={`px-3 py-1.5 rounded-full border-[2px] text-xs font-bold ${getStatusColor(flight.status)}`}>
                             {flight.status === 'on-time' ? 'On Time' : flight.status === 'delayed' ? 'Delayed' : flight.status.charAt(0).toUpperCase() + flight.status.slice(1)}
                           </span>
                         </td>
