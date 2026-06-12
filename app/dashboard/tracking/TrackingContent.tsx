@@ -3,8 +3,24 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Settings, Info, MapPin, Search } from 'lucide-react';
+import { Settings, Info, MapPin, Search, Package } from 'lucide-react';
 import TopNavbar from '@/components/TopNavbar';
+
+// Helper: sensor nama — "Budi Santoso" → "Budi S******"
+function maskName(name: string): string {
+  if (!name) return '-';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].charAt(0) + '*'.repeat(Math.max(parts[0].length - 1, 3));
+  return parts[0] + ' ' + parts.slice(1).map(p => p.charAt(0) + '*'.repeat(Math.max(p.length - 1, 2))).join(' ');
+}
+
+// Helper: sensor telepon — "08123456508" → "****6508"
+function maskPhone(phone: string): string {
+  if (!phone) return '-';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length <= 4) return '****';
+  return '****' + digits.slice(-4);
+}
 
 export default function TrackingContent() {
   const { user, loginAsGuest } = useAuth();
@@ -75,8 +91,8 @@ export default function TrackingContent() {
       />
       <div className="p-4 flex flex-col gap-3 flex-1 overflow-y-auto no-scrollbar">
       {/* SECTION 1: Search Header */}
-      <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[20px] backdrop-blur-md overflow-hidden p-4 min-h-[150px]">
-        <div className="flex flex-col gap-5">
+      <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[20px] backdrop-blur-md overflow-hidden p-3">
+        <div className="flex flex-col gap-3">
           <div>
             <h1 className="text-slate-900 font-bold text-base">Track Airway Bill</h1>
             <p className="text-slate-600 text-xs">Enter your 10-12 digit AWB number to get real-time status updates.</p>
@@ -203,6 +219,47 @@ export default function TrackingContent() {
               </div>
             </div>
           </div>
+
+          {/* SECTION 2.5: Sender & Recipient Details */}
+          {hasSearched && shipment && (
+            <div className="border-[2px] border-black/20 rounded-[20px] overflow-hidden">
+              <div className="bg-white px-4 py-3 border-b-[2px] border-black/10 flex items-center justify-between">
+                <h3 className="text-slate-900 font-bold text-sm flex items-center gap-2">
+                  <Package size={14} className="text-blue-600" />
+                  Shipment Details
+                </h3>
+                <span className="text-slate-400 text-[10px]">AWB: {shipment.tracking_number}</span>
+              </div>
+              <div className="bg-gradient-to-br from-white to-slate-50 px-4 py-3">
+                <div className="flex items-stretch gap-4">
+                  {/* Sender */}
+                  <div className="flex-1 bg-blue-50/60 rounded-xl px-3 py-2.5 border border-blue-100">
+                    <p className="text-blue-600 font-bold text-[10px] uppercase tracking-wider mb-1.5">✉ Sender</p>
+                    <p className="text-slate-900 text-xs font-semibold">{maskName(shipment.sender)}</p>
+                    <p className="text-slate-500 text-[11px] font-mono mt-0.5">{maskPhone(shipment.sender_contact)}</p>
+                  </div>
+                  {/* Arrow */}
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center">
+                      <span className="text-slate-400 text-sm">→</span>
+                    </div>
+                  </div>
+                  {/* Recipient */}
+                  <div className="flex-1 bg-emerald-50/60 rounded-xl px-3 py-2.5 border border-emerald-100">
+                    <p className="text-emerald-600 font-bold text-[10px] uppercase tracking-wider mb-1.5">📦 Recipient</p>
+                    <p className="text-slate-900 text-xs font-semibold">{maskName(shipment.recipient_name)}</p>
+                    <p className="text-slate-500 text-[11px] font-mono mt-0.5">{maskPhone(shipment.recipient_contact)}</p>
+                  </div>
+                  {/* Shipment Info */}
+                  <div className="flex-1 bg-amber-50/60 rounded-xl px-3 py-2.5 border border-amber-100">
+                    <p className="text-amber-600 font-bold text-[10px] uppercase tracking-wider mb-1.5">📋 Info</p>
+                    <p className="text-slate-900 text-xs font-semibold">{shipment.item_type || 'General'}</p>
+                    <p className="text-slate-500 text-[11px] mt-0.5">{shipment.weight} kg · {shipment.service_type || 'Regular'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* SECTION 3: Tracking Timeline */}
           <div className="border-[2px] border-black/20 rounded-[20px] overflow-hidden flex flex-col flex-1">

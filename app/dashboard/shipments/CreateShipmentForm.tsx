@@ -166,14 +166,14 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
     if (!formData.sender_contact.trim()) {
       errors.sender_contact = 'Sender contact cannot be empty';
     } else if (!isValidPhone(formData.sender_contact)) {
-      errors.sender_contact = 'Invalid phone number (e.g., 0812xxxx or +62812xxxx)';
+      errors.sender_contact = 'Phone must be 10–13 digits (e.g., 081234567890 or +6281234567890)';
     }
     if (!formData.sender_address.trim()) errors.sender_address = 'Sender address cannot be empty';
     if (!formData.recipient_name.trim()) errors.recipient_name = 'Recipient name cannot be empty';
     if (!formData.recipient_contact.trim()) {
       errors.recipient_contact = 'Recipient contact cannot be empty';
     } else if (!isValidPhone(formData.recipient_contact)) {
-      errors.recipient_contact = 'Invalid phone number (e.g., 0812xxxx or +62812xxxx)';
+      errors.recipient_contact = 'Phone must be 10–13 digits (e.g., 081234567890 or +6281234567890)';
     }
     if (!formData.recipient_address.trim()) errors.recipient_address = 'Recipient address cannot be empty';
     if (!formData.origin.trim()) errors.origin = 'Origin city cannot be empty';

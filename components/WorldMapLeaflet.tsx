@@ -76,6 +76,7 @@ export default function WorldMapLeaflet() {
   const selectedRef = useRef<number | null>(null);
   const followRef = useRef<boolean>(false);
   const zoomTargetRef = useRef<number>(4);
+  const destroyedRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -134,7 +135,7 @@ export default function WorldMapLeaflet() {
         });
 
         const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: false, offset: 16, className: 'plane-popup' });
-        popup.on('close', () => { selectedRef.current = null; followRef.current = false; map.setFilter('route-active', ['==', ['get', 'id'], -1]); });
+        popup.on('close', () => { selectedRef.current = null; followRef.current = false; if (!destroyedRef.current) { try { map.setFilter('route-active', ['==', ['get', 'id'], -1]); } catch {} } });
         map.on('mouseenter', 'planes', () => { map.getCanvas().style.cursor = 'pointer'; });
         map.on('mouseleave', 'planes', () => { map.getCanvas().style.cursor = ''; });
         map.on('click', 'planes', (e) => {
@@ -203,6 +204,7 @@ export default function WorldMapLeaflet() {
 
     return () => {
       cancelAnimationFrame(rafRef.current);
+      destroyedRef.current = true;
       map.remove();
       mapRef.current = null;
     };

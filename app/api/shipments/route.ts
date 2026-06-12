@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
@@ -65,6 +66,12 @@ export async function GET(request: NextRequest) {
         f.flight_number ILIKE $${paramIndex}
       )`;
       params.push(`%${search}%`);
+      paramIndex++;
+    }
+
+    if (status) {
+      query += ` AND s.status = $${paramIndex}`;
+      params.push(status);
       paramIndex++;
     }
 
@@ -184,6 +191,21 @@ export async function PUT(request: NextRequest) {
 
     if (!id) {
       return NextResponse.json({ error: 'Shipment Error: Shipment ID is required' }, { status: 400 });
+    }
+
+    // LOCK: Shipment yang sudah "delivered" tidak boleh diedit lagi
+    const currentShipment = await sql.query(
+      'SELECT status FROM shipments WHERE id = $1',
+      [id]
+    );
+    if (currentShipment.rows.length === 0) {
+      return NextResponse.json({ error: 'Shipment not found' }, { status: 404 });
+    }
+    if (currentShipment.rows[0].status === 'delivered') {
+      return NextResponse.json(
+        { error: 'Shipment Error: This shipment has been delivered and can no longer be edited.' },
+        { status: 403 }
+      );
     }
 
     const validation = validateShipmentInput(body);

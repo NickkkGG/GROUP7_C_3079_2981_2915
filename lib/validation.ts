@@ -1,5 +1,8 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^(\+62|62|0)[0-9]{8,13}$/;
+// Total digit Indonesia: 10-13 (prefix 08/62/+62 + 8-13 digit)
+const PHONE_DIGIT_MIN = 10;
+const PHONE_DIGIT_MAX = 13;
 const VERIFICATION_CODE_REGEX = /^[A-Z0-9]{6}$/;
 
 export const SHIPMENT_SERVICE_TYPES = ['Regular', 'Express', 'Priority'] as const;
@@ -15,7 +18,10 @@ const normalizeOptionalString = (value: unknown) => {
 };
 
 export function isValidPhone(value: string) {
-  return PHONE_REGEX.test(value.replace(/[\s-]/g, ''));
+  const normalized = value.replace(/[\s-]/g, '');
+  if (!PHONE_REGEX.test(normalized)) return false;
+  const digits = normalized.replace(/^\+/, '');
+  return digits.length >= PHONE_DIGIT_MIN && digits.length <= PHONE_DIGIT_MAX;
 }
 
 export function validateRegisterStepOne(input: {
@@ -102,11 +108,11 @@ export function validateShipmentInput(input: Record<string, unknown>) {
   if (!tracking_number) return { ok: false as const, error: 'Shipment Error: Tracking number cannot be empty' };
   if (!sender) return { ok: false as const, error: 'Shipment Error: Sender name cannot be empty' };
   if (!sender_contact) return { ok: false as const, error: 'Shipment Error: Sender contact cannot be empty' };
-  if (!isValidPhone(sender_contact)) return { ok: false as const, error: 'Shipment Error: Sender phone number is invalid' };
+  if (!isValidPhone(sender_contact)) return { ok: false as const, error: 'Shipment Error: Sender phone number must be 10–13 digits (e.g., 081234567890 or +6281234567890)' };
   if (!sender_address) return { ok: false as const, error: 'Shipment Error: Sender address cannot be empty' };
   if (!recipient_name) return { ok: false as const, error: 'Shipment Error: Recipient name cannot be empty' };
   if (!recipient_contact) return { ok: false as const, error: 'Shipment Error: Recipient contact cannot be empty' };
-  if (!isValidPhone(recipient_contact)) return { ok: false as const, error: 'Shipment Error: Recipient phone number is invalid' };
+  if (!isValidPhone(recipient_contact)) return { ok: false as const, error: 'Shipment Error: Recipient phone number must be 10–13 digits (e.g., 081234567890 or +6281234567890)' };
   if (!recipient_address) return { ok: false as const, error: 'Shipment Error: Recipient address cannot be empty' };
   if (!origin) return { ok: false as const, error: 'Shipment Error: Origin city cannot be empty' };
   if (!destination) return { ok: false as const, error: 'Shipment Error: Destination city cannot be empty' };

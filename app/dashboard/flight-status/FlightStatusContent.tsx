@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/context/AuthContext';
-import { Plane, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Plane, ChevronLeft, ChevronRight, Search, Filter } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import TopNavbar from '@/components/TopNavbar';
 import FlightCargoManifest from './FlightCargoManifest';
@@ -17,6 +17,7 @@ export default function FlightStatusContent() {
   const [totalItems, setTotalItems] = useState(0);
   const [manifestOpen, setManifestOpen] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const limit = 10;
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function FlightStatusContent() {
 
   useEffect(() => {
     loadFlights();
-  }, [currentPage, debouncedSearch]);
+  }, [currentPage, debouncedSearch, statusFilter]);
 
   const loadFlights = async () => {
     try {
@@ -46,7 +47,7 @@ export default function FlightStatusContent() {
         setLoading(true);
       }
 
-      const response = await fetch(`/api/flights?search=${debouncedSearch}&page=${currentPage}&limit=${limit}`);
+      const response = await fetch(`/api/flights?search=${debouncedSearch}&page=${currentPage}&limit=${limit}${statusFilter ? `&status=${statusFilter}` : ''}`);
       const data = await response.json();
 
       setFlights(data.flights || []);
@@ -86,6 +87,7 @@ export default function FlightStatusContent() {
       <TopNavbar
         title="Flight Status"
         subtitle="Monitor live flight schedules and status updates"
+        showLiveUpdate={false}
       />
       <div className="p-4 flex flex-col overflow-y-auto flex-1 no-scrollbar">
         {/* Content Box */}
@@ -118,6 +120,22 @@ export default function FlightStatusContent() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex-1 bg-transparent text-slate-900 text-xs outline-none placeholder-slate-400"
                 />
+              </div>
+              <div className="flex items-center gap-1 bg-white border-[2px] border-black/20 rounded-[16px] px-3 py-2">
+                <Filter size={14} className="text-slate-400" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                  className="bg-transparent text-slate-900 text-xs outline-none cursor-pointer font-medium"
+                >
+                  <option value="">All Status</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="on-time">On Time</option>
+                  <option value="delayed">Delayed</option>
+                  <option value="departed">Departed</option>
+                  <option value="arrived">Arrived</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
               </div>
               <button
                 type="submit"

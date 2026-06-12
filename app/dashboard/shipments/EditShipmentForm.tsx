@@ -25,6 +25,8 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
   const [destinationSuggestions, setDestinationSuggestions] = useState<typeof indonesianCities>([]);
   const [showOriginDropdown, setShowOriginDropdown] = useState(false);
   const [showDestinationDropdown, setShowDestinationDropdown] = useState(false);
+  const [showDeliverConfirm, setShowDeliverConfirm] = useState(false);
+  const isDelivered = shipment.status === 'delivered';
   const [formData, setFormData] = useState({
     id: shipment.id,
     tracking_number: shipment.tracking_number || '',
@@ -129,6 +131,16 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // 2-step verification: kalau status mau diubah ke "delivered", tampilkan konfirmasi dulu
+    if (formData.status === 'delivered' && shipment.status !== 'delivered') {
+      setShowDeliverConfirm(true);
+      return;
+    }
+
+    submitForm();
+  };
+
+  const submitForm = async () => {
     const errors: Record<string, string> = {};
 
     if (!formData.tracking_number.trim()) errors.tracking_number = 'Tracking number cannot be empty';
@@ -145,14 +157,14 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
     if (!formData.sender_contact.trim()) {
       errors.sender_contact = 'Sender contact cannot be empty';
     } else if (!isValidPhone(formData.sender_contact)) {
-      errors.sender_contact = 'Invalid phone number (e.g., 0812xxxx or +62812xxxx)';
+      errors.sender_contact = 'Phone must be 10–13 digits (e.g., 081234567890 or +6281234567890)';
     }
     if (!formData.sender_address.trim()) errors.sender_address = 'Sender address cannot be empty';
     if (!formData.recipient_name.trim()) errors.recipient_name = 'Recipient name cannot be empty';
     if (!formData.recipient_contact.trim()) {
       errors.recipient_contact = 'Recipient contact cannot be empty';
     } else if (!isValidPhone(formData.recipient_contact)) {
-      errors.recipient_contact = 'Invalid phone number (e.g., 0812xxxx or +62812xxxx)';
+      errors.recipient_contact = 'Phone must be 10–13 digits (e.g., 081234567890 or +6281234567890)';
     }
     if (!formData.recipient_address.trim()) errors.recipient_address = 'Recipient address cannot be empty';
     if (!formData.origin.trim()) errors.origin = 'Origin city cannot be empty';
@@ -227,7 +239,15 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
         </div>
       </div>
 
-      <form noValidate onSubmit={handleSubmit} className="space-y-3">
+      {/* Peringatan jika shipment sudah selesai */}
+      {isDelivered && (
+        <div className="mb-4 p-4 bg-amber-50 border-[2px] border-amber-400 rounded-[12px]">
+          <p className="text-amber-800 font-bold text-sm">🔒 Shipment Completed</p>
+          <p className="text-amber-700 text-xs mt-1">This shipment has been delivered and can no longer be edited.</p>
+        </div>
+      )}
+
+      <form noValidate onSubmit={handleSubmit} className={`space-y-3${isDelivered ? ' pointer-events-none opacity-60' : ''}`}>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-slate-900 font-bold text-xs mb-2">
@@ -531,19 +551,64 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 bg-white border-[2px] border-black/20 text-slate-900 font-bold text-xs rounded-[12px] hover:bg-slate-50 transition"
+            className={`flex-1 px-4 py-2.5 bg-white border-[2px] border-black/20 text-slate-900 font-bold text-xs rounded-[12px] hover:bg-slate-50 transition${isDelivered ? ' pointer-events-auto' : ''}`}
           >
             Cancel
           </button>
           <button
             type="submit"
-            disabled={loading}
-            className="flex-1 px-4 py-2.5 bg-[#1e3a5f] text-white font-bold text-xs rounded-[12px] hover:bg-[#2c5282] transition disabled:opacity-50"
+            disabled={loading || isDelivered}
+            className="flex-1 px-4 py-2.5 bg-[#1e3a5f] text-white font-bold text-xs rounded-[12px] hover:bg-[#2c5282] transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Updating...' : 'Update Shipment'}
           </button>
         </div>
       </form>
+
+      {/* Warning banner saat shipment sudah delivered */}
+      {isDelivered && (
+        <div className="mt-4 p-4 bg-amber-50 border-[2px] border-amber-400 rounded-[12px]">
+          <p className="text-amber-800 font-bold text-sm">🔒 Shipment Completed</p>
+          <p className="text-amber-700 text-xs mt-1">This shipment has been delivered and can no longer be edited.</p>
+        </div>
+      )}
+
+      {/* 2-step confirm modal untuk ubah status ke delivered */}
+      {showDeliverConfirm && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-[20px] p-6 max-w-md w-full mx-4 shadow-2xl border-2 border-amber-300">
+            <div className="text-center mb-4">
+              <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Package size={28} className="text-amber-600" />
+              </div>
+              <h3 className="text-slate-900 font-bold text-lg">Complete Shipment?</h3>
+              <p className="text-slate-600 text-sm mt-2">
+                Are you sure you want to mark this shipment as <strong className="text-emerald-600">Delivered</strong>?
+              </p>
+              <p className="text-red-600 text-xs mt-2 font-bold">
+                ⚠️ Once completed, this shipment can no longer be edited.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeliverConfirm(false)}
+                className="flex-1 px-4 py-2.5 bg-white border-2 border-slate-300 text-slate-700 font-bold text-xs rounded-[12px] hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowDeliverConfirm(false); submitForm(); }}
+                disabled={loading}
+                className="flex-1 px-4 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-[12px] hover:bg-emerald-700 transition disabled:opacity-50"
+              >
+                {loading ? 'Processing...' : 'Yes, Complete Shipment'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </>
   );

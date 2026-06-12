@@ -5,6 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
@@ -28,6 +29,12 @@ export async function GET(request: NextRequest) {
         a.airline ILIKE $${paramIndex}
       )`;
       params.push(`%${search}%`);
+      paramIndex++;
+    }
+
+    if (status) {
+      query += ` AND f.status = $${paramIndex}`;
+      params.push(status);
       paramIndex++;
     }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/context/AuthContext';
-import { Package, Plus, Download, ChevronLeft, ChevronRight, Search, Edit, Trash2 } from 'lucide-react';
+import { Package, Plus, Download, ChevronLeft, ChevronRight, Search, Edit, Trash2, Filter } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
@@ -27,6 +27,7 @@ export default function ShipmentsContent() {
   const [selectedShipment, setSelectedShipment] = useState<any>(null);
   const [shipmentToDelete, setShipmentToDelete] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('');
   const limit = 10;
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function ShipmentsContent() {
 
   useEffect(() => {
     loadShipments();
-  }, [currentPage, debouncedSearch]);
+  }, [currentPage, debouncedSearch, statusFilter]);
 
   const loadShipments = async () => {
     try {
@@ -57,7 +58,7 @@ export default function ShipmentsContent() {
         setLoading(true);
       }
 
-      const response = await fetch(`/api/shipments?search=${debouncedSearch}&page=${currentPage}&limit=${limit}`);
+      const response = await fetch(`/api/shipments?search=${debouncedSearch}&page=${currentPage}&limit=${limit}${statusFilter ? `&status=${statusFilter}` : ''}`);
       const data = await response.json();
 
       setShipments(data.shipments || []);
@@ -167,6 +168,21 @@ export default function ShipmentsContent() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex-1 bg-transparent text-slate-900 text-xs outline-none placeholder-slate-400"
                 />
+              </div>
+              <div className="flex items-center gap-1 bg-white border-[2px] border-black/20 rounded-[16px] px-3 py-2">
+                <Filter size={14} className="text-slate-400" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                  className="bg-transparent text-slate-900 text-xs outline-none cursor-pointer font-medium"
+                >
+                  <option value="">All Status</option>
+                  <option value="booked">Booked</option>
+                  <option value="received">Received</option>
+                  <option value="in_transit">In Transit</option>
+                  <option value="arrived">Arrived</option>
+                  <option value="delivered">Delivered</option>
+                </select>
               </div>
               <button
                 type="submit"
