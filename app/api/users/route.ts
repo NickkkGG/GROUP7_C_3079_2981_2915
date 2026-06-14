@@ -1,4 +1,5 @@
 import { sql } from '@vercel/postgres';
+import bcrypt from 'bcrypt';
 
 export async function GET() {
   try {
@@ -14,15 +15,46 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const { userId, role } = await request.json();
+    const { userId, fullname, email, role, password } = await request.json();
 
-    if (!userId || !role) {
-      return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!userId) {
+      return Response.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const result = await sql`
-      UPDATE users SET role = ${role} WHERE id = ${userId} RETURNING id, fullname, email, role;
-    `;
+    // Validasi field yang diisi
+    if (fullname !== undefined && fullname.trim().length < 3) {
+      return Response.json({ error: 'Full name must be at least 3 characters' }, { status: 400 });
+    }
+    if (email !== undefined) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        return Response.json({ error: 'Invalid email format' }, { status: 400 });
+      }
+    }
+    if (password !== undefined && password.length > 0 && password.length < 6) {
+      return Response.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
+    }
+
+    // Build dynamic update
+    const fields: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    if (fullname !== undefined) { fields.push(`fullname = $${idx++}`); values.push(fullname.trim()); }
+    if (email !== undefined) { fields.push(`email = $${idx++}`); values.push(email.trim().toLowerCase()); }
+    if (role !== undefined) { fields.push(`role = $${idx++}`); values.push(role); }
+    if (password && password.length > 0) {
+      const hashed = await bcrypt.hash(password, 10);
+      fields.push(`password = $${idx++}`); values.push(hashed);
+    }
+
+    if (fields.length === 0) {
+      return Response.json({ error: 'No fields to update' }, { status: 400 });
+    }
+
+    values.push(userId);
+    const query = `UPDATE users SET ${fields.join(', ')} WHERE id = $${idx} RETURNING id, fullname, email, role`;
+    const result = await sql.query(query, values);
 
     if (result.rows.length === 0) {
       return Response.json({ error: 'User not found' }, { status: 404 });

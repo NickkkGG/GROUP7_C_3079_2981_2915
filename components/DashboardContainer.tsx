@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Map, Plane, Settings, Truck, Users } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import SecurityGuard from '@/components/SecurityGuard';
 
 interface DashboardContainerProps {
   children: React.ReactNode;
@@ -52,10 +53,11 @@ export default function DashboardContainer({ children }: DashboardContainerProps
 
   return (
     <div className="w-screen h-screen bg-gradient-to-br from-[#0d1c32] via-[#1a2f4a] to-[#0d1c32] flex flex-col items-center justify-center px-4 py-2">
+      <SecurityGuard />
       {/* Modern Container */}
-      <div className="w-full bg-[#ffe9d4] rounded-[24px] border-[2px] border-black/30 overflow-hidden flex h-[92vh] shadow-2xl shadow-black/30 hover:shadow-2xl hover:shadow-cyan-500/10">
+      <div className="w-full bg-white rounded-[24px] border-[2px] border-black/30 overflow-hidden flex h-[92vh] shadow-2xl shadow-black/30 hover:shadow-2xl hover:shadow-cyan-500/10">
         {/* LEFT SIDEBAR */}
-        <div className={`${sidebarExpanded ? 'w-48' : 'w-20'} bg-gradient-to-b from-[#ffe9d4] to-[#ffd9b8] border-r-[2px] border-black/20 flex flex-col items-center py-6 transition-all duration-300 ease-out`}>
+        <div className={`${sidebarExpanded ? 'w-48' : 'w-20'} bg-white border-r-[2px] border-black/20 flex flex-col items-center py-6 transition-all duration-300 ease-out`}>
           {/* Logo/ALTUS */}
           <Link href="/dashboard" className="group flex flex-col items-center relative top-[-48px] transition-transform duration-300 hover:scale-110">
             <div className="w-30 h-30 relative drop-shadow-lg group-hover:drop-shadow-2xl transition-all duration-300">

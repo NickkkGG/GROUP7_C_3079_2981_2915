@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
@@ -145,7 +145,7 @@ export const Contact = () => {
                 })}
               </div>
 
-              <div className="rounded-[24px] border border-[#d9d0bf] bg-[#f6efe5] p-4 md:p-5 shadow-sm">
+              <div className="rounded-[24px] border border-gray-200 bg-white p-4 md:p-5 shadow-sm">
                 <p className="font-semibold text-[#1f3d6d] uppercase tracking-[0.24em] text-xs mb-3">Our Contact</p>
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
@@ -170,7 +170,7 @@ export const Contact = () => {
               </div>
             </div>
 
-            <div className="rounded-[24px] border border-[#d9d0bf] bg-[#f6efe5] p-5 md:p-6 shadow-sm" data-animate>
+            <div className="rounded-[24px] border border-gray-200 bg-white p-5 md:p-6 shadow-sm" data-animate>
               <p className="font-semibold text-[#1f3d6d] uppercase tracking-[0.24em] text-xs mb-3">Postal Address</p>
               <p className="text-[#26416f] text-xs md:text-sm leading-relaxed">
                 PT Altus Air Logistics<br />

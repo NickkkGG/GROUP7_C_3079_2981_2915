@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 
 import { useAuth } from '@/context/AuthContext';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import TopNavbar from '@/components/TopNavbar';
-import { Plus, Download, Search, UserCheck, UserX, Trash2 } from 'lucide-react';
+import { Plus, Download, Search, UserCheck, UserX, Trash2, Eye, EyeOff } from 'lucide-react';
 import CustomNotification, { useNotification } from '@/components/CustomNotification';
 
 interface User {
@@ -26,6 +26,10 @@ export default function UsersContent() {
   const [selectedRole, setSelectedRole] = useState('user');
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [editForm, setEditForm] = useState({ fullname: '', email: '', role: 'user', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     // Wait for auth to finish loading before redirecting
@@ -82,6 +86,43 @@ export default function UsersContent() {
     }
   };
 
+  const openEditModal = (u: User) => {
+    setEditUser(u);
+    setEditForm({ fullname: u.fullname, email: u.email, role: u.role, password: '' });
+    setShowPassword(false);
+  };
+
+  const handleSaveUser = async () => {
+    if (!editUser) return;
+    setSaving(true);
+    try {
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: editUser.id,
+          fullname: editForm.fullname,
+          email: editForm.email,
+          role: editForm.role,
+          password: editForm.password,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        showNotification(data.error || 'Failed to update user', 'error');
+        return;
+      }
+      showNotification('User updated successfully', 'success');
+      setEditUser(null);
+      fetchUsers();
+    } catch (error) {
+      console.error('Error saving user:', error);
+      showNotification('Failed to update user', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleDeleteUser = (user: User) => {
     setUserToDelete(user);
   };
@@ -125,7 +166,7 @@ export default function UsersContent() {
   const userCount = users.filter((u) => u.role === 'user').length;
 
   return (
-    <div className="h-full flex flex-col bg-[#ffe9d4] animate-fade-in">
+    <div className="h-full flex flex-col bg-white animate-fade-in">
       {notification && (
         <CustomNotification message={notification.message} type={notification.type} />
       )}
@@ -135,7 +176,7 @@ export default function UsersContent() {
       />
 
       <div className="p-4 flex flex-col overflow-y-auto flex-1 no-scrollbar">
-        <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[24px] backdrop-blur-md overflow-hidden flex flex-col flex-1">
+        <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[24px] backdrop-blur-md overflow-hidden flex flex-col flex-1">
           <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 px-5 py-3 flex items-center justify-between border-b-[2px] border-black/20">
             <div>
               <h1 className="text-slate-900 font-bold text-lg">Users Management</h1>
@@ -174,7 +215,7 @@ export default function UsersContent() {
           </div>
 
           <div className="space-y-3 p-5 bg-white overflow-y-auto flex-1 no-scrollbar">
-            <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[16px] overflow-hidden">
+            <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -201,7 +242,7 @@ export default function UsersContent() {
                       </tr>
                     ) : (
                       filtered.map((u, idx) => (
-                        <tr key={u.id} className="border-b-[1px] border-black/10 hover:bg-cyan-50 transition">
+                        <tr key={u.id} onClick={() => openEditModal(u)} className="border-b-[1px] border-black/10 hover:bg-cyan-50 transition cursor-pointer">
                           <td className="py-3 px-4 text-slate-500 text-xs">{idx + 1}</td>
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-2">
@@ -236,18 +277,15 @@ export default function UsersContent() {
                               </span>
                             )}
                           </td>
-                          <td className="py-3 px-4 text-xs space-x-2">
+                          <td className="py-3 px-4 text-xs space-x-2" onClick={(e) => e.stopPropagation()}>
                             <button
-                              onClick={() => {
-                                setEditingId(u.id);
-                                setSelectedRole(u.role);
-                              }}
+                              onClick={(e) => { e.stopPropagation(); setEditingId(u.id); setSelectedRole(u.role); }}
                               className="text-cyan-600 hover:text-cyan-700 font-bold text-xs"
                             >
-                              Edit
+                              Edit Role
                             </button>
                             <button
-                              onClick={() => handleDeleteUser(u)}
+                              onClick={(e) => { e.stopPropagation(); handleDeleteUser(u); }}
                               className="text-red-600 hover:text-red-700 font-bold text-xs ml-2"
                             >
                               <Trash2 size={12} className="inline mr-1" />
@@ -264,6 +302,101 @@ export default function UsersContent() {
           </div>
         </div>
       </div>
+
+      {/* Edit User Modal */}
+      {editUser && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white border-[2px] border-black/20 rounded-[20px] p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-black text-lg">
+                  {editUser.fullname.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-slate-900 font-bold text-lg">Edit User</h3>
+                  <p className="text-slate-500 text-xs">Update user details</p>
+                </div>
+              </div>
+              <button onClick={() => setEditUser(null)} className="text-slate-400 hover:text-slate-600 transition text-lg">✕</button>
+            </div>
+
+            <div className="space-y-3">
+              {/* Fullname */}
+              <div>
+                <label className="block text-slate-900 font-bold text-xs mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={editForm.fullname}
+                  onChange={(e) => setEditForm({ ...editForm, fullname: e.target.value })}
+                  className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-cyan-500 transition"
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-slate-900 font-bold text-xs mb-1">Email</label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-cyan-500 transition"
+                />
+              </div>
+
+              {/* Role */}
+              <div>
+                <label className="block text-slate-900 font-bold text-xs mb-1">Role</label>
+                <select
+                  value={editForm.role}
+                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                  className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-cyan-500 transition cursor-pointer"
+                >
+                  <option value="user">User</option>
+                  <option value="operator">Operator</option>
+                </select>
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="block text-slate-900 font-bold text-xs mb-1">Password <span className="text-slate-400 font-normal">(leave blank to keep current)</span></label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={editForm.password}
+                    onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                    placeholder="Enter new password..."
+                    className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 pr-9 text-slate-900 text-xs outline-none focus:border-cyan-500 transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                  >
+                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={() => setEditUser(null)}
+                className="flex-1 px-4 py-2.5 bg-white border-[2px] border-black/20 text-slate-900 font-bold text-xs rounded-[12px] hover:bg-red-50 hover:border-red-400 hover:text-red-600 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveUser}
+                disabled={saving}
+                className="flex-1 px-4 py-2.5 bg-[#1e3a5f] text-white font-bold text-xs rounded-[12px] hover:bg-[#2c5282] transition disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {userToDelete && (

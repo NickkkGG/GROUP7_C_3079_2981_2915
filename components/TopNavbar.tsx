@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 interface TopNavbarProps {
   title: string;
@@ -14,7 +14,7 @@ export default function TopNavbar({
   liveUpdateColor = '#22c55e'
 }: TopNavbarProps) {
   return (
-    <div className="bg-[#ffe9d4] border-b-[2px] border-black/20 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+    <div className="bg-white border-b-[2px] border-black/20 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
       <div>
         <h1 className="text-slate-900 font-bold text-lg">{title}</h1>
         {subtitle && <p className="text-slate-600 text-xs mt-1">{subtitle}</p>}

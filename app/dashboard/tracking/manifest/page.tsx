@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -20,14 +20,14 @@ export default function ManifestPage() {
   }, [user, loginAsGuest]);
 
   return (
-    <div className="h-full flex flex-col animate-fade-in bg-[#ffe9d4]">
+    <div className="h-full flex flex-col animate-fade-in bg-white">
       <TopNavbar
         title="Flight Manifest"
         subtitle="Daftar manifest penerbangan dengan detail kargo"
       />
       <div className="p-8 flex flex-col overflow-y-auto flex-1">
         {/* Content Box */}
-        <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[24px] backdrop-blur-md overflow-hidden flex flex-col flex-1">
+        <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[24px] backdrop-blur-md overflow-hidden flex flex-col flex-1">
         {/* Header Section */}
         <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 px-5 py-3 flex items-center justify-between border-b-[2px] border-black/20">
           <div>
@@ -52,7 +52,7 @@ export default function ManifestPage() {
         <div className="space-y-3 p-5 bg-white overflow-y-auto flex-1">
           {/* Flight Manifests */}
           {mockFlights.map((flight, idx) => (
-            <div key={idx} className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[16px] p-4">
+            <div key={idx} className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-4">
               {/* Flight Header */}
               <div className="flex items-center justify-between mb-4 pb-4 border-b-[2px] border-black/20">
                 <div className="flex items-center gap-3">

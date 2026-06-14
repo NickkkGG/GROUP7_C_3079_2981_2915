@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useAuth } from '@/context/AuthContext';
 import { Plane, ChevronLeft, ChevronRight, Search, Filter } from 'lucide-react';
@@ -83,7 +83,7 @@ export default function FlightStatusContent() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#ffe9d4] animate-fade-in">
+    <div className="h-full flex flex-col bg-white animate-fade-in">
       <TopNavbar
         title="Flight Status"
         subtitle="Monitor live flight schedules and status updates"
@@ -91,7 +91,7 @@ export default function FlightStatusContent() {
       />
       <div className="p-4 flex flex-col overflow-y-auto flex-1 no-scrollbar">
         {/* Content Box */}
-        <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[24px] backdrop-blur-md overflow-hidden flex flex-col flex-1">
+        <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[24px] backdrop-blur-md overflow-hidden flex flex-col flex-1">
         {/* Header Section */}
         <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 px-5 py-3 flex items-center justify-between border-b-[2px] border-black/20">
           <div>
@@ -150,7 +150,7 @@ export default function FlightStatusContent() {
         {/* Content Section */}
         <div className="space-y-3 p-5 bg-white overflow-y-auto flex-1 no-scrollbar">
           {/* Flights Table Box */}
-          <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[16px] overflow-hidden">
+          <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -219,15 +219,22 @@ export default function FlightStatusContent() {
                           </span>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-20 h-1.5 bg-slate-200 rounded-full overflow-hidden border-[2px] border-black/20">
-                              <div
-                                className="h-full bg-emerald-500 transition-all"
-                                style={{ width: `${Math.floor(Math.random() * 40 + 60)}%` }}
-                              />
-                            </div>
-                            <span className="text-slate-900 text-xs whitespace-nowrap">{Math.floor(Math.random() * 40 + 60)}%</span>
-                          </div>
+                          {(() => {
+                            const used = parseFloat(flight.used_capacity) || 0;
+                            const max = parseFloat(flight.max_capacity) || 0;
+                            const pct = max > 0 ? Math.min(100, Math.round((used / max) * 100)) : 0;
+                            const color = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-orange-500' : 'bg-emerald-500';
+                            return (
+                              <div className="flex items-center gap-2">
+                                <div className="w-20 h-1.5 bg-slate-200 rounded-full overflow-hidden border-[2px] border-black/20">
+                                  <div className={`h-full ${color} transition-all`} style={{ width: `${pct}%` }} />
+                                </div>
+                                <span className="text-slate-900 text-xs whitespace-nowrap">
+                                  {max > 0 ? `${used}/${max} kg` : 'N/A'}
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td className="py-3 px-4">
                           <button

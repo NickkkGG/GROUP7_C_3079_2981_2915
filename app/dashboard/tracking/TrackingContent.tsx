@@ -1,10 +1,11 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Settings, Info, MapPin, Search, Package } from 'lucide-react';
+import { Settings, Info, MapPin, Search, Package, Download } from 'lucide-react';
 import TopNavbar from '@/components/TopNavbar';
+import { jsPDF } from 'jspdf';
 
 // Helper: sensor nama — "Budi Santoso" → "Budi S******"
 function maskName(name: string): string {
@@ -31,6 +32,7 @@ export default function TrackingContent() {
   const [notFound, setNotFound] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showGuestPopup, setShowGuestPopup] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -38,15 +40,128 @@ export default function TrackingContent() {
     }
   }, [user, loginAsGuest]);
 
+  const handleExportPDF = () => {
+    // Cek guest
+    if (!user || user.role === 'guest') {
+      setShowGuestPopup(true);
+      return;
+    }
+    if (!shipment) return;
+
+    const doc = new jsPDF({ unit: 'mm', format: 'a5' });
+    const pageW = doc.internal.pageSize.getWidth();
+    let y = 15;
+
+    // Header
+    doc.setFillColor(30, 58, 95);
+    doc.rect(0, 0, pageW, 22, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ALTUS AIR CARGO', pageW / 2, 10, { align: 'center' });
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Tracking Receipt', pageW / 2, 17, { align: 'center' });
+    y = 30;
+
+    // AWB Number
+    doc.setTextColor(30, 58, 95);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`AWB: ${shipment.tracking_number}`, pageW / 2, y, { align: 'center' });
+    y += 8;
+
+    // Status badge
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Status: ${shipment.status?.replace('_', ' ').toUpperCase()}`, pageW / 2, y, { align: 'center' });
+    y += 8;
+
+    // Divider
+    doc.setDrawColor(200, 200, 200);
+    doc.line(10, y, pageW - 10, y);
+    y += 6;
+
+    const addRow = (label: string, value: string) => {
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(80, 80, 80);
+      doc.setFontSize(8);
+      doc.text(label, 12, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(30, 30, 30);
+      doc.text(value || '-', 55, y);
+      y += 6;
+    };
+
+    // Sender
+    doc.setFillColor(239, 246, 255);
+    doc.rect(10, y - 3, pageW - 20, 7, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 58, 95);
+    doc.setFontSize(8);
+    doc.text('SENDER', 12, y + 2);
+    y += 8;
+    addRow('Name', maskName(shipment.sender));
+    addRow('Phone', maskPhone(shipment.sender_contact));
+    addRow('Address', shipment.sender_address || '-');
+
+    y += 2;
+    doc.line(10, y, pageW - 10, y);
+    y += 5;
+
+    // Recipient
+    doc.setFillColor(240, 253, 244);
+    doc.rect(10, y - 3, pageW - 20, 7, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(21, 128, 61);
+    doc.text('RECIPIENT', 12, y + 2);
+    y += 8;
+    addRow('Name', maskName(shipment.recipient_name));
+    addRow('Phone', maskPhone(shipment.recipient_contact));
+    addRow('Address', shipment.recipient_address || '-');
+
+    y += 2;
+    doc.line(10, y, pageW - 10, y);
+    y += 5;
+
+    // Shipment info
+    doc.setFillColor(255, 251, 235);
+    doc.rect(10, y - 3, pageW - 20, 7, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(146, 64, 14);
+    doc.text('SHIPMENT INFO', 12, y + 2);
+    y += 8;
+    addRow('Route', `${shipment.origin} - ${shipment.destination}`);
+    addRow('Flight', shipment.flight_number || 'N/A');
+    addRow('Weight', `${shipment.weight} kg`);
+    addRow('Service', shipment.service_type || 'Regular');
+    addRow('Item Type', shipment.item_type || '-');
+
+    y += 2;
+    doc.line(10, y, pageW - 10, y);
+    y += 5;
+
+    // Footer
+    doc.setFontSize(7);
+    doc.setTextColor(150, 150, 150);
+    doc.setFont('helvetica', 'italic');
+    doc.text(`Generated: ${new Date().toLocaleString('id-ID')}`, pageW / 2, y + 5, { align: 'center' });
+    doc.text('PT Altus Air Logistics — altus.id', pageW / 2, y + 10, { align: 'center' });
+
+    doc.save(`ALTUS_${shipment.tracking_number}.pdf`);
+  };
+
   const handleSearchWithAwb = async (awbNumber: string) => {
     if (!awbNumber.trim()) return;
 
+    const normalizedAwb = awbNumber.trim().toUpperCase();
     setHasSearched(true);
     setLoading(true);
     setNotFound(false);
 
     try {
-      const response = await fetch(`/api/tracking?awb=${encodeURIComponent(awbNumber)}`);
+      const response = await fetch(`/api/tracking?awb=${encodeURIComponent(normalizedAwb)}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -84,14 +199,14 @@ export default function TrackingContent() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#ffe9d4] animate-fade-in">
+    <div className="h-full flex flex-col bg-white animate-fade-in">
       <TopNavbar
         title="Track Airway Bill"
         subtitle="Locate and track specific airway bills."
       />
       <div className="p-4 flex flex-col gap-3 flex-1 overflow-y-auto no-scrollbar">
       {/* SECTION 1: Search Header */}
-      <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[20px] backdrop-blur-md overflow-hidden p-3">
+      <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[20px] backdrop-blur-md overflow-hidden p-3">
         <div className="flex flex-col gap-3">
           <div>
             <h1 className="text-slate-900 font-bold text-base">Track Airway Bill</h1>
@@ -130,7 +245,7 @@ export default function TrackingContent() {
 
       {/* SECTION 2 & 3: Details and Timeline */}
       {notFound ? (
-        <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[20px] p-4 flex items-center justify-center flex-1">
+        <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[20px] p-4 flex items-center justify-center flex-1">
           <div className="flex items-start gap-2 bg-orange-100 border border-orange-400 rounded-lg p-3 w-full max-w-sm">
             <Info className="text-orange-600 flex-shrink-0 mt-0.5" size={16} />
             <div>
@@ -142,7 +257,7 @@ export default function TrackingContent() {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col gap-3 flex-1 overflow-hidden">
+        <div className="flex flex-col gap-3">
           {/* SECTION 2: Shipment Details */}
           <div className="border-[2px] border-black/20 rounded-[20px] overflow-hidden flex flex-col">
             {/* Top Blue Section */}
@@ -228,7 +343,13 @@ export default function TrackingContent() {
                   <Package size={14} className="text-blue-600" />
                   Shipment Details
                 </h3>
-                <span className="text-slate-400 text-[10px]">AWB: {shipment.tracking_number}</span>
+                <button
+                  onClick={handleExportPDF}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-[#1e3a5f] text-white font-bold text-[11px] rounded-full hover:bg-[#2c5282] transition"
+                >
+                  <Download size={12} />
+                  Export PDF
+                </button>
               </div>
               <div className="bg-gradient-to-br from-white to-slate-50 px-4 py-3">
                 <div className="flex items-stretch gap-4">
@@ -262,7 +383,7 @@ export default function TrackingContent() {
           )}
 
           {/* SECTION 3: Tracking Timeline */}
-          <div className="border-[2px] border-black/20 rounded-[20px] overflow-hidden flex flex-col flex-1">
+          <div className="border-[2px] border-black/20 rounded-[20px] overflow-hidden min-h-[200px]">
             {/* Header */}
             <div className="bg-white px-4 py-3 border-b-[2px] border-black/20">
               <div className="flex items-center gap-2">
@@ -272,7 +393,7 @@ export default function TrackingContent() {
             </div>
 
             {/* Timeline Content */}
-            <div className="bg-gradient-to-br from-white to-amber-50 px-4 py-4 flex-1 flex flex-col justify-center">
+            <div className="bg-gradient-to-br from-white to-slate-50 px-4 py-4 flex-1 flex flex-col justify-center">
               {loading ? (
                 <div className="relative">
                   {/* Timeline line background */}
@@ -374,6 +495,37 @@ export default function TrackingContent() {
         </div>
       )}
       </div>
+
+      {/* Guest popup — harus login untuk export PDF */}
+      {showGuestPopup && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white border-[2px] border-black/20 rounded-[20px] p-6 max-w-sm w-full mx-4 shadow-2xl">
+            <div className="text-center mb-4">
+              <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Download size={26} className="text-blue-600" />
+              </div>
+              <h3 className="text-slate-900 font-bold text-lg">Login Required</h3>
+              <p className="text-slate-600 text-sm mt-2">
+                Kamu perlu punya akun untuk download tracking receipt dalam bentuk PDF. Silakan login atau buat akun dulu.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowGuestPopup(false)}
+                className="flex-1 px-4 py-2.5 bg-white border-[2px] border-black/20 text-slate-900 font-bold text-xs rounded-[12px] hover:bg-slate-50 transition"
+              >
+                Nanti Saja
+              </button>
+              <button
+                onClick={() => { window.location.href = '/login'; }}
+                className="flex-1 px-4 py-2.5 bg-[#1e3a5f] text-white font-bold text-xs rounded-[12px] hover:bg-[#2c5282] transition"
+              >
+                Login / Daftar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

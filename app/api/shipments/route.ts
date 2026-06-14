@@ -139,6 +139,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tracking number already exists' }, { status: 400 });
     }
 
+    // CAPACITY CHECK: Jika flight dipilih, cek kapasitas pesawat
+    if (flight_id) {
+      const capacityResult = await sql.query(
+        `SELECT a.capacity as max_capacity,
+          COALESCE((SELECT SUM(s.weight) FROM shipments s WHERE s.flight_id = $1), 0) as used_capacity
+         FROM flights f
+         LEFT JOIN aircraft a ON f.aircraft_id = a.id
+         WHERE f.id = $1`,
+        [flight_id]
+      );
+
+      if (capacityResult.rows.length > 0) {
+        const { max_capacity, used_capacity } = capacityResult.rows[0];
+        const maxKg = parseFloat(max_capacity) || 0;
+        const usedKg = parseFloat(used_capacity) || 0;
+
+        if (maxKg > 0 && (usedKg + weight) > maxKg) {
+          const remaining = maxKg - usedKg;
+          return NextResponse.json({
+            error: `Shipment Error: Aircraft capacity exceeded. Remaining capacity: ${remaining.toFixed(1)} kg, but shipment weight is ${weight} kg.`
+          }, { status: 400 });
+        }
+      }
+    }
+
     const tariff = computeTariff(service_type, weight);
 
     // Insert new shipment
@@ -311,6 +336,18 @@ export async function DELETE(request: NextRequest) {
 
     if (!id) {
       return NextResponse.json({ error: 'Shipment ID is required' }, { status: 400 });
+    }
+
+    // LOCK: Hanya shipment dengan status 'booked' yang bisa dihapus
+    const current = await sql.query('SELECT status FROM shipments WHERE id = $1', [id]);
+    if (current.rows.length === 0) {
+      return NextResponse.json({ error: 'Shipment not found' }, { status: 404 });
+    }
+    if (current.rows[0].status !== 'booked') {
+      return NextResponse.json(
+        { error: `Shipment cannot be deleted because it is already "${current.rows[0].status}". Only shipments with status "booked" can be deleted.` },
+        { status: 403 }
+      );
     }
 
     // Delete shipment

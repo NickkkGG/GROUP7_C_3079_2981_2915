@@ -163,6 +163,7 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
 
     if (!formData.item_type.trim()) errors.item_type = 'Item type cannot be empty';
     if (!formData.sender.trim()) errors.sender = 'Sender name cannot be empty';
+    else if (formData.sender.trim().length < 3) errors.sender = 'Sender name must be at least 3 characters';
     if (!formData.sender_contact.trim()) {
       errors.sender_contact = 'Sender contact cannot be empty';
     } else if (!isValidPhone(formData.sender_contact)) {
@@ -170,6 +171,7 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
     }
     if (!formData.sender_address.trim()) errors.sender_address = 'Sender address cannot be empty';
     if (!formData.recipient_name.trim()) errors.recipient_name = 'Recipient name cannot be empty';
+    else if (formData.recipient_name.trim().length < 3) errors.recipient_name = 'Recipient name must be at least 3 characters';
     if (!formData.recipient_contact.trim()) {
       errors.recipient_contact = 'Recipient contact cannot be empty';
     } else if (!isValidPhone(formData.recipient_contact)) {
@@ -341,9 +343,10 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
                 Sender Contact *
               </label>
               <input
-                type="text"
+                type="tel"
+                inputMode="numeric"
                 value={formData.sender_contact}
-                onChange={(e) => { setFormData({ ...formData, sender_contact: e.target.value }); if (fieldErrors.sender_contact) setFieldErrors(prev => ({ ...prev, sender_contact: '' })); }}
+                onChange={(e) => { setFormData({ ...formData, sender_contact: e.target.value.replace(/[^0-9+]/g, '') }); if (fieldErrors.sender_contact) setFieldErrors(prev => ({ ...prev, sender_contact: '' })); }}
                 placeholder="e.g., +62812345678"
                 className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-blue-500 transition ${fieldErrors.sender_contact ? 'border-red-400' : 'border-blue-200'}`}
               />
@@ -394,9 +397,10 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
                 Recipient Contact *
               </label>
               <input
-                type="text"
+                type="tel"
+                inputMode="numeric"
                 value={formData.recipient_contact}
-                onChange={(e) => { setFormData({ ...formData, recipient_contact: e.target.value }); if (fieldErrors.recipient_contact) setFieldErrors(prev => ({ ...prev, recipient_contact: '' })); }}
+                onChange={(e) => { setFormData({ ...formData, recipient_contact: e.target.value.replace(/[^0-9+]/g, '') }); if (fieldErrors.recipient_contact) setFieldErrors(prev => ({ ...prev, recipient_contact: '' })); }}
                 placeholder="e.g., +62812345678"
                 className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition ${fieldErrors.recipient_contact ? 'border-red-400' : 'border-emerald-200'}`}
               />
@@ -499,11 +503,16 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
                     ? 'No flights available for this route'
                     : 'Select a flight (optional)'}
               </option>
-              {availableFlights.map((flight) => (
-                <option key={flight.id} value={flight.id}>
-                  {flight.flight_number} - {flight.departure_city} → {flight.arrival_city} ({new Date(flight.departure_time).toLocaleDateString()})
-                </option>
-              ))}
+              {availableFlights.map((flight) => {
+                const used = parseFloat(flight.used_capacity) || 0;
+                const max = parseFloat(flight.max_capacity) || 0;
+                const remaining = max - used;
+                return (
+                  <option key={flight.id} value={flight.id}>
+                    {flight.flight_number} - {flight.departure_city} → {flight.arrival_city} (Remaining: {max > 0 ? `${remaining.toFixed(1)} kg` : 'N/A'})
+                  </option>
+                );
+              })}
             </select>
             {formData.origin && formData.destination && availableFlights.length === 0 && (
               <p className="text-orange-600 text-[10px] mt-1">⚠ No flights found for this route</p>
@@ -511,6 +520,25 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
             {(!formData.origin || !formData.destination) && (
               <p className="text-slate-500 text-[10px] mt-1">Select origin and destination to see available flights</p>
             )}
+            {/* Capacity warning */}
+            {formData.flight_id && (() => {
+              const selected = availableFlights.find(f => String(f.id) === String(formData.flight_id));
+              if (!selected) return null;
+              const used = parseFloat(selected.used_capacity) || 0;
+              const max = parseFloat(selected.max_capacity) || 0;
+              const remaining = max - used;
+              const w = parseFloat(formData.weight?.toString() || '0') || 0;
+              if (max <= 0) return null;
+              if (w > remaining) return (
+                <p className="text-red-600 text-[10px] mt-1 font-semibold">⛔ Berat melebihi kapasitas! Sisa: {remaining.toFixed(1)} kg, berat kamu: {w} kg</p>
+              );
+              if (remaining - w < max * 0.1) return (
+                <p className="text-orange-600 text-[10px] mt-1">⚠ Kapasitas hampir penuh. Sisa setelah shipment ini: {(remaining - w).toFixed(1)} kg</p>
+              );
+              return (
+                <p className="text-emerald-600 text-[10px] mt-1">✓ Kapasitas aman. Sisa: {remaining.toFixed(1)} kg</p>
+              );
+            })()}
           </div>
 
           <div>

@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════════════════════════════════════
    LOADING SKELETONS - Exact Copy of Each Page Layout
    - Each skeleton mirrors the actual page structure
    - animate-fade-in on wrapper for smooth entrance
@@ -8,7 +8,7 @@
 /* ───────────── DASHBOARD SKELETON ───────────── */
 export function DashboardLoadingSkeleton() {
   return (
-    <div className="p-3 h-full bg-[#ffe9d4] animate-fade-in">
+    <div className="p-3 h-full bg-white animate-fade-in">
       <div className="grid grid-cols-3 gap-2 h-full" style={{ gridTemplateRows: 'repeat(5, 1fr)' }}>
         {/* Overview - col 1, rows 1-3 */}
         <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-3 overflow-hidden flex flex-col" style={{ gridColumn: '1', gridRow: '1 / span 3' }}>
@@ -86,7 +86,7 @@ export function DashboardLoadingSkeleton() {
 /* ───────────── TRACKING SKELETON ───────────── */
 export function TrackingLoadingSkeleton() {
   return (
-    <div className="h-full flex flex-col bg-[#ffe9d4] animate-fade-in">
+    <div className="h-full flex flex-col bg-white animate-fade-in">
       {/* TopNavbar Skeleton */}
       <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 px-6 py-4 border-b-[2px] border-black/20">
         <div className="h-6 bg-slate-300 rounded w-48 mb-2 animate-pulse"></div>
@@ -150,7 +150,7 @@ export function TrackingLoadingSkeleton() {
 /* ───────────── FLIGHT STATUS SKELETON ───────────── */
 export function FlightStatusLoadingSkeleton() {
   return (
-    <div className="h-full flex flex-col bg-[#ffe9d4] animate-fade-in">
+    <div className="h-full flex flex-col bg-white animate-fade-in">
       {/* TopNavbar Skeleton */}
       <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 px-6 py-4 border-b-[2px] border-black/20">
         <div className="h-6 bg-slate-300 rounded w-48 mb-2 animate-pulse"></div>
@@ -207,7 +207,7 @@ export function FlightStatusLoadingSkeleton() {
 /* ───────────── SHIPMENTS SKELETON ───────────── */
 export function ShipmentsLoadingSkeleton() {
   return (
-    <div className="h-full flex flex-col bg-[#ffe9d4] animate-fade-in">
+    <div className="h-full flex flex-col bg-white animate-fade-in">
       {/* TopNavbar Skeleton */}
       <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 px-6 py-4 border-b-[2px] border-black/20">
         <div className="h-6 bg-slate-300 rounded w-48 mb-2 animate-pulse"></div>
@@ -264,7 +264,7 @@ export function ShipmentsLoadingSkeleton() {
 /* ───────────── USERS SKELETON ───────────── */
 export function UsersLoadingSkeleton() {
   return (
-    <div className="h-full flex flex-col bg-[#ffe9d4] animate-fade-in">
+    <div className="h-full flex flex-col bg-white animate-fade-in">
       {/* TopNavbar Skeleton */}
       <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 px-6 py-4 border-b-[2px] border-black/20">
         <div className="h-6 bg-slate-300 rounded w-48 mb-2 animate-pulse"></div>
@@ -324,7 +324,7 @@ export function UsersLoadingSkeleton() {
 /* ───────────── SETTINGS SKELETON ───────────── */
 export function SettingsLoadingSkeleton() {
   return (
-    <div className="h-full flex flex-col bg-[#ffe9d4] animate-fade-in">
+    <div className="h-full flex flex-col bg-white animate-fade-in">
       {/* TopNavbar Skeleton */}
       <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 px-6 py-4 border-b-[2px] border-black/20">
         <div className="h-6 bg-slate-300 rounded w-48 mb-2 animate-pulse"></div>
@@ -367,7 +367,7 @@ export function SettingsLoadingSkeleton() {
 /* ───────────── GENERIC PAGE SKELETON (Fallback) ───────────── */
 export function PageLoadingSkeleton() {
   return (
-    <div className="h-full flex flex-col bg-[#ffe9d4] animate-fade-in">
+    <div className="h-full flex flex-col bg-white animate-fade-in">
       <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 px-6 py-4 border-b-[2px] border-black/20">
         <div className="h-6 bg-slate-300 rounded w-48 mb-2 animate-pulse"></div>
         <div className="h-4 bg-slate-200 rounded w-64 animate-pulse"></div>

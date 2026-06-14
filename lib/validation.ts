@@ -107,10 +107,12 @@ export function validateShipmentInput(input: Record<string, unknown>) {
 
   if (!tracking_number) return { ok: false as const, error: 'Shipment Error: Tracking number cannot be empty' };
   if (!sender) return { ok: false as const, error: 'Shipment Error: Sender name cannot be empty' };
+  if (sender.length < 3) return { ok: false as const, error: 'Shipment Error: Sender name must be at least 3 characters' };
   if (!sender_contact) return { ok: false as const, error: 'Shipment Error: Sender contact cannot be empty' };
   if (!isValidPhone(sender_contact)) return { ok: false as const, error: 'Shipment Error: Sender phone number must be 10–13 digits (e.g., 081234567890 or +6281234567890)' };
   if (!sender_address) return { ok: false as const, error: 'Shipment Error: Sender address cannot be empty' };
   if (!recipient_name) return { ok: false as const, error: 'Shipment Error: Recipient name cannot be empty' };
+  if (recipient_name.length < 3) return { ok: false as const, error: 'Shipment Error: Recipient name must be at least 3 characters' };
   if (!recipient_contact) return { ok: false as const, error: 'Shipment Error: Recipient contact cannot be empty' };
   if (!isValidPhone(recipient_contact)) return { ok: false as const, error: 'Shipment Error: Recipient phone number must be 10–13 digits (e.g., 081234567890 or +6281234567890)' };
   if (!recipient_address) return { ok: false as const, error: 'Shipment Error: Recipient address cannot be empty' };

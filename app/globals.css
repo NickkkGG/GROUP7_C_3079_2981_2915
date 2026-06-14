@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
@@ -10,10 +10,10 @@
 
 /* CSS Variables */
 :root {
-  --agak-cream: rgba(230, 220, 207, 1);
+  --agak-cream: rgba(255, 255, 255, 1);
   --black: rgba(0, 0, 0, 1);
   --blue: rgba(43, 82, 136, 1);
-  --cream: rgba(229, 224, 217, 1);
+  --cream: rgba(255, 255, 255, 1);
   --icon-touched: rgba(33, 30, 25, 1);
   --icon-unselect: rgba(93, 84, 72, 1);
   --white: rgba(255, 255, 255, 1);

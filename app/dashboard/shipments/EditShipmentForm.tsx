@@ -154,6 +154,7 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
     }
     if (!formData.item_type.trim()) errors.item_type = 'Item type cannot be empty';
     if (!formData.sender.trim()) errors.sender = 'Sender name cannot be empty';
+    else if (formData.sender.trim().length < 3) errors.sender = 'Sender name must be at least 3 characters';
     if (!formData.sender_contact.trim()) {
       errors.sender_contact = 'Sender contact cannot be empty';
     } else if (!isValidPhone(formData.sender_contact)) {
@@ -161,6 +162,7 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
     }
     if (!formData.sender_address.trim()) errors.sender_address = 'Sender address cannot be empty';
     if (!formData.recipient_name.trim()) errors.recipient_name = 'Recipient name cannot be empty';
+    else if (formData.recipient_name.trim().length < 3) errors.recipient_name = 'Recipient name must be at least 3 characters';
     if (!formData.recipient_contact.trim()) {
       errors.recipient_contact = 'Recipient contact cannot be empty';
     } else if (!isValidPhone(formData.recipient_contact)) {
@@ -228,7 +230,7 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
           onClose={() => setNotification(null)}
         />
       )}
-    <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[16px] p-6">
+    <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-6">
       <div className="flex items-center gap-3 mb-6">
         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
           <Package size={20} className="text-white" />
@@ -256,11 +258,10 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
             <input
               type="text"
               value={formData.tracking_number}
-              onChange={(e) => { setFormData({ ...formData, tracking_number: e.target.value }); if (fieldErrors.tracking_number) setFieldErrors(prev => ({ ...prev, tracking_number: '' })); }}
-              placeholder="e.g., ALTUS001"
-              className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition ${fieldErrors.tracking_number ? 'border-red-400' : 'border-black/20'}`}
+              readOnly
+              className="w-full bg-slate-100 border-[2px] border-slate-300 rounded-[12px] px-3 py-2 text-slate-500 text-xs outline-none cursor-not-allowed"
             />
-            {fieldErrors.tracking_number && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.tracking_number}</p>}
+            <p className="text-slate-400 text-[10px] mt-1">AWB number cannot be changed</p>
           </div>
 
           <div>
@@ -551,7 +552,7 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
           <button
             type="button"
             onClick={onClose}
-            className={`flex-1 px-4 py-2.5 bg-white border-[2px] border-black/20 text-slate-900 font-bold text-xs rounded-[12px] hover:bg-slate-50 transition${isDelivered ? ' pointer-events-auto' : ''}`}
+            className={`flex-1 px-4 py-2.5 bg-white border-[2px] border-black/20 text-slate-900 font-bold text-xs rounded-[12px] hover:bg-red-50 hover:border-red-400 hover:text-red-600 transition${isDelivered ? ' pointer-events-auto' : ''}`}
           >
             Cancel
           </button>
@@ -564,14 +565,6 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
           </button>
         </div>
       </form>
-
-      {/* Warning banner saat shipment sudah delivered */}
-      {isDelivered && (
-        <div className="mt-4 p-4 bg-amber-50 border-[2px] border-amber-400 rounded-[12px]">
-          <p className="text-amber-800 font-bold text-sm">🔒 Shipment Completed</p>
-          <p className="text-amber-700 text-xs mt-1">This shipment has been delivered and can no longer be edited.</p>
-        </div>
-      )}
 
       {/* 2-step confirm modal untuk ubah status ke delivered */}
       {showDeliverConfirm && (

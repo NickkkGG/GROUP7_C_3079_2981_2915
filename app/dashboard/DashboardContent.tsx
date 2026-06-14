@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
@@ -140,7 +140,7 @@ export default function DashboardContent() {
   ];
 
   return (
-    <div className="p-3 h-full bg-[#ffe9d4] animate-fade-in">
+    <div className="p-3 h-full bg-white animate-fade-in">
       <div className="grid grid-cols-3 gap-2 h-full" style={{ gridTemplateRows: 'repeat(5, 1fr)' }}>
         {/* Overview - div1: col 1, rows 1-3 */}
         <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-3 overflow-hidden flex flex-col" style={{ gridColumn: '1', gridRow: '1 / span 3' }}>

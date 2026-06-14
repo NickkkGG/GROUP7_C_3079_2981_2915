@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -90,7 +90,7 @@ export default function SettingsContent() {
       ];
 
   return (
-    <div className="h-full flex flex-col bg-[#ffe9d4] animate-fade-in">
+    <div className="h-full flex flex-col bg-white animate-fade-in">
       {notification && (
         <CustomNotification message={notification.message} type={notification.type} />
       )}

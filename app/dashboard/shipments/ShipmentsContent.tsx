@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useAuth } from '@/context/AuthContext';
 import { Package, Plus, Download, ChevronLeft, ChevronRight, Search, Edit, Trash2, Filter } from 'lucide-react';
@@ -74,6 +74,34 @@ export default function ShipmentsContent() {
     }
   };
 
+  const handleExportCSV = async () => {
+    try {
+      const response = await fetch('/api/shipments?limit=9999');
+      const data = await response.json();
+      const all = data.shipments || [];
+      if (all.length === 0) { toast.error('No shipments to export'); return; }
+
+      const headers = ['AWB', 'Sender', 'Recipient', 'Origin', 'Destination', 'Flight', 'Weight (kg)', 'Service', 'Status', 'Created At'];
+      const rows = all.map((s: any) => [
+        s.tracking_number, s.sender, s.recipient_name, s.origin, s.destination,
+        s.flight_number || 'N/A', s.weight, s.service_type, s.status,
+        new Date(s.created_at).toLocaleDateString('id-ID')
+      ]);
+
+      const csv = [headers.join(','), ...rows.map((r: string[]) => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))].join('\n');
+      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ALTUS_Shipments_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('CSV exported successfully');
+    } catch (error) {
+      toast.error('Failed to export CSV');
+    }
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setDebouncedSearch(searchQuery);
@@ -123,14 +151,14 @@ export default function ShipmentsContent() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-[#ffe9d4] animate-fade-in">
+    <div className="h-full flex flex-col bg-white animate-fade-in">
       <TopNavbar
         title="Shipments Management"
         subtitle="Monitor all active air cargo shipments"
       />
       <div className="p-4 flex flex-col overflow-y-auto flex-1 no-scrollbar">
         {/* Content Box */}
-        <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[24px] backdrop-blur-md overflow-hidden flex flex-col flex-1">
+        <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[24px] backdrop-blur-md overflow-hidden flex flex-col flex-1">
         {/* Header Section */}
         <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 px-5 py-3 flex items-center justify-between border-b-[2px] border-black/20">
           <div>
@@ -138,9 +166,11 @@ export default function ShipmentsContent() {
             <p className="text-slate-600 text-xs mt-1">Monitor all active air cargo shipments</p>
           </div>
           <div className="flex gap-2">
-            <button className="flex items-center gap-1 px-3 py-1.5 bg-white border-[2px] border-black/20 text-slate-900 font-bold text-xs rounded-full hover:bg-cyan-50 transition">
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-1 px-3 py-1.5 bg-white border-[2px] border-black/20 text-slate-900 font-bold text-xs rounded-full hover:bg-cyan-50 transition">
               <Download size={14} />
-              Export
+              Export CSV
             </button>
             <button
               onClick={() => setIsCreating(true)}
@@ -218,7 +248,7 @@ export default function ShipmentsContent() {
           ) : (
             <>
           {/* Shipments Table Box */}
-          <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[16px] overflow-hidden">
+          <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -314,8 +344,14 @@ export default function ShipmentsContent() {
                         </td>
                         <td className="py-3 px-4">
                           <button
-                            onClick={() => handleDeleteShipment(shipment)}
-                            className="text-red-600 hover:text-red-700 font-bold text-xs flex items-center gap-1"
+                            onClick={() => shipment.status === 'booked' ? handleDeleteShipment(shipment) : null}
+                            disabled={shipment.status !== 'booked'}
+                            title={shipment.status !== 'booked' ? `Cannot delete: shipment is "${shipment.status}"` : 'Delete shipment'}
+                            className={`font-bold text-xs flex items-center gap-1 transition ${
+                              shipment.status === 'booked'
+                                ? 'text-red-600 hover:text-red-700 cursor-pointer'
+                                : 'text-slate-300 cursor-not-allowed'
+                            }`}
                           >
                             <Trash2 size={12} />
                             Delete

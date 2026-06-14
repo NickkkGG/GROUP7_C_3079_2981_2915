@@ -103,7 +103,7 @@ export default function ShipmentDetailDrawer({ isOpen, onClose, trackingNumber }
                 <div className="h-7 bg-slate-300 rounded-full w-20 animate-pulse"></div>
               </div>
             </div>
-            <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[16px] p-4">
+            <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-4">
               <div className="h-4 bg-slate-200 rounded w-40 mb-3 animate-pulse"></div>
               <div className="h-16 bg-slate-100 rounded-[12px] mb-4 animate-pulse"></div>
               <div className="grid grid-cols-2 gap-3">
@@ -148,7 +148,7 @@ export default function ShipmentDetailDrawer({ isOpen, onClose, trackingNumber }
               </div>
 
               {/* Shipment Info with Route Visualization */}
-              <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-black/20 rounded-[16px] p-4">
+              <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-4">
                 <h3 className="text-slate-900 font-bold text-sm mb-3">Shipment Information</h3>
 
                 {/* Route Visualization */}
@@ -281,7 +281,7 @@ export default function ShipmentDetailDrawer({ isOpen, onClose, trackingNumber }
 
               {/* Additional Notes */}
               {shipment.notes && (
-                <div className="bg-gradient-to-br from-white to-amber-50 border-[2px] border-amber-400 rounded-[16px] p-3">
+                <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-amber-400 rounded-[16px] p-3">
                   <h3 className="text-slate-900 font-bold text-xs mb-2 flex items-center gap-1.5">
                     <FileText size={14} className="text-amber-600" />
                     Additional Notes
