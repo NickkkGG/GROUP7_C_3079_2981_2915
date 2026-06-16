@@ -1,12 +1,12 @@
 ﻿'use client';
 
 import { useAuth } from '@/context/AuthContext';
-import { Package, Plus, Download, ChevronLeft, ChevronRight, Search, Edit, Trash2, Filter } from 'lucide-react';
+import { Package, Plus, Download, ChevronLeft, ChevronRight, Search, Edit, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
-import TopNavbar from '@/components/TopNavbar';
 import ShipmentDetailDrawer from './ShipmentDetailDrawer';
+import StatusDropdown from '@/components/StatusDropdown';
 import CreateShipmentForm from './CreateShipmentForm';
 import EditShipmentForm from './EditShipmentForm';
 
@@ -28,7 +28,7 @@ export default function ShipmentsContent() {
   const [shipmentToDelete, setShipmentToDelete] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
-  const limit = 10;
+  const limit = 8;
 
   useEffect(() => {
     if (user && user.role === 'guest') {
@@ -152,10 +152,6 @@ export default function ShipmentsContent() {
 
   return (
     <div className="h-full flex flex-col bg-white animate-fade-in">
-      <TopNavbar
-        title="Shipments Management"
-        subtitle="Monitor all active air cargo shipments"
-      />
       <div className="p-4 flex flex-col overflow-y-auto flex-1 no-scrollbar">
         {/* Content Box */}
         <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[24px] backdrop-blur-md overflow-hidden flex flex-col flex-1">
@@ -199,21 +195,18 @@ export default function ShipmentsContent() {
                   className="flex-1 bg-transparent text-slate-900 text-xs outline-none placeholder-slate-400"
                 />
               </div>
-              <div className="flex items-center gap-1 bg-white border-[2px] border-black/20 rounded-[16px] px-3 py-2">
-                <Filter size={14} className="text-slate-400" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-                  className="bg-transparent text-slate-900 text-xs outline-none cursor-pointer font-medium"
-                >
-                  <option value="">All Status</option>
-                  <option value="booked">Booked</option>
-                  <option value="received">Received</option>
-                  <option value="in_transit">In Transit</option>
-                  <option value="arrived">Arrived</option>
-                  <option value="delivered">Delivered</option>
-                </select>
-              </div>
+              <StatusDropdown
+                value={statusFilter}
+                onChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}
+                options={[
+                  { value: '', label: 'All Status' },
+                  { value: 'booked', label: 'Booked' },
+                  { value: 'received', label: 'Received' },
+                  { value: 'in_transit', label: 'In Transit' },
+                  { value: 'arrived', label: 'Arrived' },
+                  { value: 'delivered', label: 'Delivered' },
+                ]}
+              />
               <button
                 type="submit"
                 className="px-4 py-2 bg-[#1e3a5f] text-white font-bold text-xs rounded transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg hover:bg-[#2c5282]"
@@ -253,15 +246,15 @@ export default function ShipmentsContent() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b-[2px] border-black/20 bg-gradient-to-r from-cyan-500/10 to-blue-500/10">
-                    <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">AWB</th>
-                    <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">Sender</th>
-                    <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">Destination</th>
-                    <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">Flight</th>
-                    <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">Status</th>
-                    <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">Weight</th>
-                    <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">View</th>
-                    <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">Edit</th>
-                    <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">Delete</th>
+                    <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">AWB</th>
+                    <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">Sender</th>
+                    <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">Destination</th>
+                    <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">Flight</th>
+                    <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">Status</th>
+                    <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">Weight</th>
+                    <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">View</th>
+                    <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">Edit</th>
+                    <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">Delete</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -269,25 +262,25 @@ export default function ShipmentsContent() {
                     // Loading state - gray placeholders
                     [...Array(8)].map((_, idx) => (
                       <tr key={idx} className="border-b-[1px] border-black/20">
-                        <td className="py-3 px-4">
+                        <td className="py-2 px-4">
                           <div className="h-4 bg-slate-300 rounded w-28"></div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-2 px-4">
                           <div className="h-4 bg-slate-200 rounded w-32"></div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-2 px-4">
                           <div className="h-4 bg-slate-200 rounded w-24"></div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-2 px-4">
                           <div className="h-4 bg-slate-200 rounded w-20"></div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-2 px-4">
                           <div className="h-6 bg-slate-300 rounded-full w-16"></div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-2 px-4">
                           <div className="h-4 bg-slate-200 rounded w-16"></div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-2 px-4">
                           <div className="h-4 bg-slate-300 rounded w-12"></div>
                         </td>
                       </tr>
@@ -301,13 +294,13 @@ export default function ShipmentsContent() {
                   ) : (
                     shipments.map((shipment, idx) => (
                       <tr key={idx} className="border-b-[1px] border-black/20 hover:bg-cyan-50 transition">
-                        <td className="py-3 px-4">
+                        <td className="py-2 px-4">
                           <span className="font-bold text-slate-900 text-xs">{shipment.tracking_number}</span>
                         </td>
-                        <td className="py-3 px-4 text-slate-700 text-xs">{shipment.sender}</td>
-                        <td className="py-3 px-4 text-slate-700 text-xs">{shipment.destination}</td>
-                        <td className="py-3 px-4 text-slate-700 text-xs">{shipment.flight_number || 'N/A'}</td>
-                        <td className="py-3 px-4">
+                        <td className="py-2 px-4 text-slate-700 text-xs">{shipment.sender}</td>
+                        <td className="py-2 px-4 text-slate-700 text-xs">{shipment.destination}</td>
+                        <td className="py-2 px-4 text-slate-700 text-xs">{shipment.flight_number || 'N/A'}</td>
+                        <td className="py-2 px-4">
                           <span
                             className={`px-2 py-0.5 rounded-full text-xs font-semibold inline-block border ${
                               shipment.status === 'booked'
@@ -324,8 +317,8 @@ export default function ShipmentsContent() {
                             {shipment.status?.replace('_', ' ').charAt(0).toUpperCase() + shipment.status?.replace('_', ' ').slice(1)}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-700 text-xs">{shipment.weight} kg</td>
-                        <td className="py-3 px-4">
+                        <td className="py-2 px-4 text-slate-700 text-xs">{shipment.weight} kg</td>
+                        <td className="py-2 px-4">
                           <button
                             onClick={() => handleViewShipment(shipment.tracking_number)}
                             className="text-cyan-600 hover:text-cyan-700 font-bold text-xs"
@@ -333,7 +326,7 @@ export default function ShipmentsContent() {
                             View →
                           </button>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-2 px-4">
                           <button
                             onClick={() => handleEditShipment(shipment)}
                             className="text-orange-600 hover:text-orange-700 font-bold text-xs flex items-center gap-1"
@@ -342,7 +335,7 @@ export default function ShipmentsContent() {
                             Edit
                           </button>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-2 px-4">
                           <button
                             onClick={() => shipment.status === 'booked' ? handleDeleteShipment(shipment) : null}
                             disabled={shipment.status !== 'booked'}
@@ -400,7 +393,7 @@ export default function ShipmentsContent() {
                         onClick={() => setCurrentPage(pageNum)}
                         className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
                           currentPage === pageNum
-                            ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-md'
+                            ? 'bg-[#1e3a5f] text-white shadow-md'
                             : 'bg-white border-[2px] border-black/20 text-slate-900 hover:bg-slate-50'
                         }`}
                       >

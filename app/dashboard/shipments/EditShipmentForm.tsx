@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { X, Package, User, MapPin } from 'lucide-react';
-import { indonesianCities } from '@/lib/cities';
 import Notification from '@/components/Notification';
 import { isValidPhone, validateShipmentInput } from '@/lib/validation';
 
@@ -21,10 +20,6 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
   const [flights, setFlights] = useState<any[]>([]);
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [originSuggestions, setOriginSuggestions] = useState<typeof indonesianCities>([]);
-  const [destinationSuggestions, setDestinationSuggestions] = useState<typeof indonesianCities>([]);
-  const [showOriginDropdown, setShowOriginDropdown] = useState(false);
-  const [showDestinationDropdown, setShowDestinationDropdown] = useState(false);
   const [showDeliverConfirm, setShowDeliverConfirm] = useState(false);
   const isDelivered = shipment.status === 'delivered';
   const [formData, setFormData] = useState({
@@ -49,6 +44,9 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
 
   // Tarif otomatis = tarif per kg (jenis pengiriman) × berat
   const tariff = (RATES[formData.service_type] || 0) * (parseFloat(formData.weight.toString()) || 0);
+
+  // Saat edit, hanya STATUS yang boleh diubah — field lain read-only
+  const roInput = 'w-full bg-slate-100 border-[2px] border-slate-300 rounded-[12px] px-3 py-2 text-slate-600 text-xs outline-none cursor-not-allowed';
 
   useEffect(() => {
     loadFlights();
@@ -89,44 +87,6 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
   };
 
   const availableFlights = getAvailableFlights();
-
-  const handleOriginChange = (value: string) => {
-    setFormData({ ...formData, origin: value });
-    if (value.trim()) {
-      const filtered = indonesianCities.filter(city =>
-        city.name.toLowerCase().includes(value.toLowerCase()) ||
-        city.code.toLowerCase().includes(value.toLowerCase())
-      );
-      setOriginSuggestions(filtered);
-      setShowOriginDropdown(true);
-    } else {
-      setShowOriginDropdown(false);
-    }
-  };
-
-  const handleDestinationChange = (value: string) => {
-    setFormData({ ...formData, destination: value });
-    if (value.trim()) {
-      const filtered = indonesianCities.filter(city =>
-        city.name.toLowerCase().includes(value.toLowerCase()) ||
-        city.code.toLowerCase().includes(value.toLowerCase())
-      );
-      setDestinationSuggestions(filtered);
-      setShowDestinationDropdown(true);
-    } else {
-      setShowDestinationDropdown(false);
-    }
-  };
-
-  const selectOrigin = (city: typeof indonesianCities[0]) => {
-    setFormData({ ...formData, origin: city.fullName });
-    setShowOriginDropdown(false);
-  };
-
-  const selectDestination = (city: typeof indonesianCities[0]) => {
-    setFormData({ ...formData, destination: city.fullName });
-    setShowDestinationDropdown(false);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -237,15 +197,19 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
         </div>
         <div>
           <h2 className="text-slate-900 font-bold text-lg">Edit Shipment</h2>
-          <p className="text-slate-600 text-xs">Update shipment details below</p>
+          <p className="text-slate-600 text-xs">Only the shipment status can be changed</p>
         </div>
       </div>
 
       {/* Peringatan jika shipment sudah selesai */}
-      {isDelivered && (
+      {isDelivered ? (
         <div className="mb-4 p-4 bg-amber-50 border-[2px] border-amber-400 rounded-[12px]">
           <p className="text-amber-800 font-bold text-sm">🔒 Shipment Completed</p>
           <p className="text-amber-700 text-xs mt-1">This shipment has been delivered and can no longer be edited.</p>
+        </div>
+      ) : (
+        <div className="mb-4 p-3 bg-blue-50 border-[2px] border-blue-300 rounded-[12px]">
+          <p className="text-blue-800 text-xs">Shipment details are locked. You can only update the <strong>Status</strong> field below.</p>
         </div>
       )}
 
@@ -272,11 +236,10 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
               type="number"
               step="0.01"
               value={formData.weight}
-              onChange={(e) => { setFormData({ ...formData, weight: e.target.value }); if (fieldErrors.weight) setFieldErrors(prev => ({ ...prev, weight: '' })); }}
+              readOnly
               placeholder="e.g., 25.5"
-              className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition ${fieldErrors.weight ? 'border-red-400' : 'border-black/20'}`}
+              className={roInput}
             />
-            {fieldErrors.weight && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.weight}</p>}
           </div>
         </div>
 
@@ -287,18 +250,17 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
             <input
               type="text"
               value={formData.item_type}
-              onChange={(e) => { setFormData({ ...formData, item_type: e.target.value }); if (fieldErrors.item_type) setFieldErrors(prev => ({ ...prev, item_type: '' })); }}
+              readOnly
               placeholder="cth: Electronics, Documents"
-              className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition ${fieldErrors.item_type ? 'border-red-400' : 'border-black/20'}`}
+              className={roInput}
             />
-            {fieldErrors.item_type && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.item_type}</p>}
           </div>
           <div>
             <label className="block text-slate-900 font-bold text-xs mb-2">Jenis Pengiriman *</label>
             <select
               value={formData.service_type}
-              onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
-              className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+              disabled
+              className="w-full bg-slate-100 border-[2px] border-slate-300 rounded-[12px] px-3 py-2 text-slate-600 text-xs outline-none cursor-not-allowed"
             >
               <option value="Regular">Regular (Rp 5.000/kg)</option>
               <option value="Express">Express (Rp 10.000/kg)</option>
@@ -333,11 +295,10 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
               <input
                 type="text"
                 value={formData.sender}
-                onChange={(e) => { setFormData({ ...formData, sender: e.target.value }); if (fieldErrors.sender) setFieldErrors(prev => ({ ...prev, sender: '' })); }}
+                readOnly
                 placeholder="e.g., John Doe"
-                className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-blue-500 transition ${fieldErrors.sender ? 'border-red-400' : 'border-blue-200'}`}
+                className={roInput}
               />
-              {fieldErrors.sender && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.sender}</p>}
             </div>
 
             <div>
@@ -347,11 +308,10 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
               <input
                 type="text"
                 value={formData.sender_contact}
-                onChange={(e) => { setFormData({ ...formData, sender_contact: e.target.value }); if (fieldErrors.sender_contact) setFieldErrors(prev => ({ ...prev, sender_contact: '' })); }}
+                readOnly
                 placeholder="e.g., +62812345678"
-                className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-blue-500 transition ${fieldErrors.sender_contact ? 'border-red-400' : 'border-blue-200'}`}
+                className={roInput}
               />
-              {fieldErrors.sender_contact && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.sender_contact}</p>}
             </div>
           </div>
 
@@ -361,12 +321,11 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
             </label>
             <textarea
               value={formData.sender_address}
-              onChange={(e) => { setFormData({ ...formData, sender_address: e.target.value }); if (fieldErrors.sender_address) setFieldErrors(prev => ({ ...prev, sender_address: '' })); }}
+              readOnly
               placeholder="Full address..."
               rows={2}
-              className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-blue-500 transition resize-none ${fieldErrors.sender_address ? 'border-red-400' : 'border-blue-200'}`}
+              className={`${roInput} resize-none`}
             />
-            {fieldErrors.sender_address && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.sender_address}</p>}
           </div>
         </div>
 
@@ -386,11 +345,10 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
               <input
                 type="text"
                 value={formData.recipient_name}
-                onChange={(e) => { setFormData({ ...formData, recipient_name: e.target.value }); if (fieldErrors.recipient_name) setFieldErrors(prev => ({ ...prev, recipient_name: '' })); }}
+                readOnly
                 placeholder="e.g., Jane Smith"
-                className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition ${fieldErrors.recipient_name ? 'border-red-400' : 'border-emerald-200'}`}
+                className={roInput}
               />
-              {fieldErrors.recipient_name && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.recipient_name}</p>}
             </div>
 
             <div>
@@ -400,11 +358,10 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
               <input
                 type="text"
                 value={formData.recipient_contact}
-                onChange={(e) => { setFormData({ ...formData, recipient_contact: e.target.value }); if (fieldErrors.recipient_contact) setFieldErrors(prev => ({ ...prev, recipient_contact: '' })); }}
+                readOnly
                 placeholder="e.g., +62812345678"
-                className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition ${fieldErrors.recipient_contact ? 'border-red-400' : 'border-emerald-200'}`}
+                className={roInput}
               />
-              {fieldErrors.recipient_contact && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.recipient_contact}</p>}
             </div>
           </div>
 
@@ -414,74 +371,39 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
             </label>
             <textarea
               value={formData.recipient_address}
-              onChange={(e) => { setFormData({ ...formData, recipient_address: e.target.value }); if (fieldErrors.recipient_address) setFieldErrors(prev => ({ ...prev, recipient_address: '' })); }}
+              readOnly
               placeholder="Full address..."
               rows={2}
-              className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition resize-none ${fieldErrors.recipient_address ? 'border-red-400' : 'border-emerald-200'}`}
+              className={`${roInput} resize-none`}
             />
-            {fieldErrors.recipient_address && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.recipient_address}</p>}
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div className="relative">
+          <div>
             <label className="block text-slate-900 font-bold text-xs mb-2">
               Origin City *
             </label>
             <input
               type="text"
               value={formData.origin}
-              onChange={(e) => { handleOriginChange(e.target.value); if (fieldErrors.origin) setFieldErrors(prev => ({ ...prev, origin: '' })); }}
-              onFocus={() => formData.origin && setShowOriginDropdown(true)}
-              onBlur={() => setTimeout(() => setShowOriginDropdown(false), 200)}
+              readOnly
               placeholder="e.g., Jakarta or YIA"
-              className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition ${fieldErrors.origin ? 'border-red-400' : 'border-black/20'}`}
+              className={roInput}
             />
-            {fieldErrors.origin && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.origin}</p>}
-            {showOriginDropdown && originSuggestions.length > 0 && (
-              <div className="absolute z-50 w-full mt-1 bg-white border-[2px] border-black/20 rounded-[12px] shadow-lg max-h-48 overflow-y-auto">
-                {originSuggestions.map((city, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => selectOrigin(city)}
-                    className="w-full text-left px-3 py-2 text-slate-900 text-xs hover:bg-emerald-50 transition border-b border-slate-200 last:border-b-0"
-                  >
-                    <span className="font-bold">{city.name}</span> <span className="text-slate-600">({city.code})</span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
-          <div className="relative">
+          <div>
             <label className="block text-slate-900 font-bold text-xs mb-2">
               Destination City *
             </label>
             <input
               type="text"
               value={formData.destination}
-              onChange={(e) => { handleDestinationChange(e.target.value); if (fieldErrors.destination) setFieldErrors(prev => ({ ...prev, destination: '' })); }}
-              onFocus={() => formData.destination && setShowDestinationDropdown(true)}
-              onBlur={() => setTimeout(() => setShowDestinationDropdown(false), 200)}
+              readOnly
               placeholder="e.g., Surabaya or SUB"
-              className={`w-full bg-white border-[2px] rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition ${fieldErrors.destination ? 'border-red-400' : 'border-black/20'}`}
+              className={roInput}
             />
-            {fieldErrors.destination && <p className="text-red-500 text-[10px] mt-1">{fieldErrors.destination}</p>}
-            {showDestinationDropdown && destinationSuggestions.length > 0 && (
-              <div className="absolute z-50 w-full mt-1 bg-white border-[2px] border-black/20 rounded-[12px] shadow-lg max-h-48 overflow-y-auto">
-                {destinationSuggestions.map((city, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => selectDestination(city)}
-                    className="w-full text-left px-3 py-2 text-slate-900 text-xs hover:bg-emerald-50 transition border-b border-slate-200 last:border-b-0"
-                  >
-                    <span className="font-bold">{city.name}</span> <span className="text-slate-600">({city.code})</span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
@@ -492,16 +414,11 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
             </label>
             <select
               value={formData.flight_id}
-              onChange={(e) => setFormData({ ...formData, flight_id: e.target.value })}
-              disabled={!formData.origin || !formData.destination}
-              className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition disabled:bg-slate-100 disabled:cursor-not-allowed"
+              disabled
+              className="w-full bg-slate-100 border-[2px] border-slate-300 rounded-[12px] px-3 py-2 text-slate-600 text-xs outline-none cursor-not-allowed"
             >
               <option value="">
-                {!formData.origin || !formData.destination
-                  ? 'Select origin and destination first'
-                  : availableFlights.length === 0
-                    ? 'No flights available for this route'
-                    : 'Select a flight (optional)'}
+                {availableFlights.length === 0 ? 'No flight assigned' : 'Select a flight (optional)'}
               </option>
               {availableFlights.map((flight) => (
                 <option key={flight.id} value={flight.id}>
@@ -509,12 +426,6 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
                 </option>
               ))}
             </select>
-            {formData.origin && formData.destination && availableFlights.length === 0 && (
-              <p className="text-orange-600 text-[10px] mt-1">⚠ No flights found for this route</p>
-            )}
-            {(!formData.origin || !formData.destination) && (
-              <p className="text-slate-500 text-[10px] mt-1">Select origin and destination to see available flights</p>
-            )}
           </div>
 
           <div>
@@ -524,7 +435,7 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition"
+              className="w-full bg-white border-[2px] border-emerald-400 rounded-[12px] px-3 py-2 text-slate-900 text-xs font-bold outline-none focus:border-emerald-500 ring-2 ring-emerald-100 transition"
             >
               <option value="booked">Booked</option>
               <option value="received">Received</option>
@@ -532,6 +443,7 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
               <option value="arrived">Arrived</option>
               <option value="delivered">Delivered</option>
             </select>
+            <p className="text-emerald-600 text-[10px] mt-1">This is the only editable field</p>
           </div>
         </div>
 
@@ -541,10 +453,10 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
           </label>
           <textarea
             value={formData.notes}
-            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            readOnly
             placeholder="Any special instructions or notes..."
             rows={2}
-            className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-emerald-500 transition resize-none"
+            className={`${roInput} resize-none`}
           />
         </div>
 

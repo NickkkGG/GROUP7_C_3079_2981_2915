@@ -3,8 +3,7 @@
 import { useAuth } from '@/context/AuthContext';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import TopNavbar from '@/components/TopNavbar';
-import { Plus, Download, Search, UserCheck, UserX, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Plus, Download, Search, UserCheck, UserX, Trash2, Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import CustomNotification, { useNotification } from '@/components/CustomNotification';
 
 interface User {
@@ -31,6 +30,8 @@ export default function UsersContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 7;
 
   useEffect(() => {
     // Wait for auth to finish loading before redirecting
@@ -61,6 +62,29 @@ export default function UsersContent() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleExportCSV = () => {
+    if (users.length === 0) { showNotification('No users to export', 'error'); return; }
+
+    const headers = ['ID', 'Full Name', 'Email', 'Role', 'Created At'];
+    const rows = users.map((u) => [
+      u.id,
+      u.fullname,
+      u.email,
+      u.role,
+      u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID') : '-',
+    ]);
+
+    const csv = [headers.join(','), ...rows.map((r) => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ALTUS_Users_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showNotification('CSV exported successfully', 'success');
   };
 
   const handleUpdateRole = async (userId: number, newRole: string) => {
@@ -164,6 +188,10 @@ export default function UsersContent() {
       u.role.toLowerCase().includes(search.toLowerCase())
   );
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / usersPerPage));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice((safePage - 1) * usersPerPage, safePage * usersPerPage);
+
   const activeCount = users.length;
   const userCount = users.filter((u) => u.role === 'user').length;
 
@@ -172,10 +200,6 @@ export default function UsersContent() {
       {notification && (
         <CustomNotification message={notification.message} type={notification.type} />
       )}
-      <TopNavbar
-        title="Users Management"
-        subtitle="Manage operator and admin accounts"
-      />
 
       <div className="p-4 flex flex-col overflow-y-auto flex-1 no-scrollbar">
         <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[24px] backdrop-blur-md overflow-hidden flex flex-col flex-1">
@@ -185,48 +209,46 @@ export default function UsersContent() {
               <p className="text-slate-600 text-xs mt-1">Manage user accounts and roles</p>
             </div>
             <div className="flex gap-2">
-              <button className="flex items-center gap-1 px-3 py-1.5 bg-white border-[2px] border-black/20 text-slate-900 font-bold text-xs rounded-full hover:bg-cyan-50 transition">
+              <button
+                onClick={handleExportCSV}
+                className="flex items-center gap-1 px-3 py-1.5 bg-white border-[2px] border-black/20 text-slate-900 font-bold text-xs rounded-full hover:bg-cyan-50 transition">
                 <Download size={14} />
-                Export
+                Export CSV
               </button>
             </div>
           </div>
 
-          <div className="px-5 py-3 flex gap-3 border-b-[2px] border-black/20 bg-white">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
-              <UserCheck size={13} className="text-green-600" />
-              <span className="text-green-700 font-bold text-xs">{activeCount} Total</span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full">
-              <span className="text-blue-700 font-bold text-xs">{userCount} Users</span>
-            </div>
-          </div>
-
-          <div className="bg-white px-6 py-3 border-b-[2px] border-black/20">
-            <p className="text-slate-900 font-medium text-xs mb-2.5">Search and filter users</p>
+          <div className="bg-white px-5 py-2.5 flex items-center gap-3 border-b-[2px] border-black/20">
             <div className="flex-1 bg-white border-[2px] border-black/20 rounded-[16px] px-3.5 py-2 flex items-center gap-2">
               <Search size={14} className="text-slate-400" />
               <input
                 type="text"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
                 placeholder="Search by name, email or role..."
                 className="flex-1 bg-transparent text-slate-900 text-xs outline-none placeholder-slate-400"
               />
             </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full flex-shrink-0">
+              <UserCheck size={13} className="text-green-600" />
+              <span className="text-green-700 font-bold text-xs">{activeCount} Total</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full flex-shrink-0">
+              <span className="text-blue-700 font-bold text-xs">{userCount} Users</span>
+            </div>
           </div>
 
-          <div className="space-y-3 p-5 bg-white overflow-y-auto flex-1 no-scrollbar">
+          <div className="space-y-3 p-3 bg-white overflow-y-auto flex-1 no-scrollbar">
             <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b-[2px] border-black/20 bg-gradient-to-r from-cyan-500/10 to-blue-500/10">
-                      <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">#</th>
-                      <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">Name</th>
-                      <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">Email</th>
-                      <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">Role</th>
-                      <th className="text-left py-3 px-4 text-slate-900 font-bold text-xs">Actions</th>
+                      <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">#</th>
+                      <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">Name</th>
+                      <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">Email</th>
+                      <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">Role</th>
+                      <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -243,10 +265,10 @@ export default function UsersContent() {
                         </td>
                       </tr>
                     ) : (
-                      filtered.map((u, idx) => (
+                      paginated.map((u, idx) => (
                         <tr key={u.id} onClick={() => openEditModal(u)} className="border-b-[1px] border-black/10 hover:bg-cyan-50 transition cursor-pointer">
-                          <td className="py-3 px-4 text-slate-500 text-xs">{idx + 1}</td>
-                          <td className="py-3 px-4">
+                          <td className="py-2 px-4 text-slate-500 text-xs">{(safePage - 1) * usersPerPage + idx + 1}</td>
+                          <td className="py-2 px-4">
                             <div className="flex items-center gap-2">
                               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                                 {u.fullname.charAt(0).toUpperCase()}
@@ -254,8 +276,8 @@ export default function UsersContent() {
                               <span className="font-bold text-slate-900 text-xs">{u.fullname}</span>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-slate-600 text-xs">{u.email}</td>
-                          <td className="py-3 px-4">
+                          <td className="py-2 px-4 text-slate-600 text-xs">{u.email}</td>
+                          <td className="py-2 px-4">
                             {editingId === u.id ? (
                               <select
                                 value={selectedRole}
@@ -279,7 +301,7 @@ export default function UsersContent() {
                               </span>
                             )}
                           </td>
-                          <td className="py-3 px-4 text-xs space-x-2" onClick={(e) => e.stopPropagation()}>
+                          <td className="py-2 px-4 text-xs space-x-2" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={(e) => { e.stopPropagation(); openEditModal(u); }}
                               className="text-cyan-600 hover:text-cyan-700 font-bold text-xs"
@@ -301,6 +323,63 @@ export default function UsersContent() {
                 </table>
               </div>
             </div>
+
+            {/* Pagination */}
+            {!loading && filtered.length > 0 && (
+              <div className="flex items-center justify-between px-4 py-2">
+                <div className="text-xs text-slate-600">
+                  Showing {((safePage - 1) * usersPerPage) + 1} to {Math.min(safePage * usersPerPage, filtered.length)} of {filtered.length} users
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={safePage === 1}
+                    className="px-3 py-1.5 bg-white border-[2px] border-black/20 rounded-lg text-slate-900 font-bold text-xs hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1"
+                  >
+                    <ChevronLeft size={14} />
+                    Previous
+                  </button>
+
+                  <div className="flex gap-1">
+                    {[...Array(Math.min(5, totalPages))].map((_, idx) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = idx + 1;
+                      } else if (safePage <= 3) {
+                        pageNum = idx + 1;
+                      } else if (safePage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + idx;
+                      } else {
+                        pageNum = safePage - 2 + idx;
+                      }
+
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+                            safePage === pageNum
+                              ? 'bg-[#1e3a5f] text-white shadow-md'
+                              : 'bg-white border-[2px] border-black/20 text-slate-900 hover:bg-slate-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={safePage === totalPages}
+                    className="px-3 py-1.5 bg-white border-[2px] border-black/20 rounded-lg text-slate-900 font-bold text-xs hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1"
+                  >
+                    Next
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

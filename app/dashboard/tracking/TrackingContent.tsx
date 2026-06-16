@@ -218,9 +218,28 @@ export default function TrackingContent() {
       <div className="p-4 flex flex-col gap-3 flex-1 overflow-y-auto">
       {!hasSearched ? (
         /* LANDING HERO — sebelum search, hanya kotak search */
-        <div className="flex-1 flex flex-col items-center justify-center text-center px-4 animate-fade-in">
-          <div className="w-24 h-24 bg-white rounded-[26px] border-[2px] border-black/10 shadow-lg shadow-slate-300/50 flex items-center justify-center mb-6 relative overflow-hidden">
-            <Image src="/images/icon_altus.png" alt="ALTUS" fill className="object-contain p-2" priority />
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-4 animate-fade-in relative overflow-hidden">
+          {/* ===== Dekorasi background (tanpa gradient, warna solid) ===== */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+            {/* Grid garis halus */}
+            <div
+              className="absolute inset-0 opacity-50"
+              style={{
+                backgroundImage:
+                  'linear-gradient(to right, #cbd5e1 1px, transparent 1px), linear-gradient(to bottom, #cbd5e1 1px, transparent 1px)',
+                backgroundSize: '38px 38px',
+              }}
+            />
+            {/* Soft color blobs — warna solid + blur, bukan gradient */}
+            <div className="absolute -top-16 -left-16 w-72 h-72 rounded-full bg-blue-600/25 blur-3xl" />
+            <div className="absolute -bottom-24 -right-10 w-80 h-80 rounded-full bg-[#1e3a5f]/30 blur-3xl" />
+            <div className="absolute top-1/3 right-1/4 w-40 h-40 rounded-full bg-indigo-500/20 blur-2xl" />
+          </div>
+
+          {/* ===== Konten utama (di atas dekorasi) ===== */}
+          <div className="relative z-10 flex flex-col items-center">
+          <div className="w-28 h-28 bg-white rounded-[28px] border-[2px] border-black/10 shadow-lg shadow-slate-300/50 flex items-center justify-center mb-6 relative overflow-hidden">
+            <Image src="/images/icon_altus.png" alt="ALTUS" fill className="object-contain scale-[1.7] translate-y-[6px]" priority />
           </div>
           <h1 className="text-slate-900 font-black text-2xl md:text-3xl tracking-tight">Track Your Airway Bill Here</h1>
           <p className="text-slate-500 text-sm mt-2.5 max-w-md leading-relaxed">
@@ -236,7 +255,7 @@ export default function TrackingContent() {
                 autoFocus
                 onChange={(e) => setAwb(e.target.value)}
                 className="flex-1 bg-transparent text-slate-900 text-sm outline-none placeholder-slate-400"
-                placeholder="e.g. AWB-EP-24127"
+                placeholder="e.g. AWB-EP-00000"
               />
               {awb && (
                 <button
@@ -256,6 +275,7 @@ export default function TrackingContent() {
             </button>
           </form>
           <p className="text-slate-400 text-[11px] mt-4">AWB numbers are case-insensitive.</p>
+          </div>
         </div>
       ) : loading ? (
         /* LOADING SCREEN — while loading the shipment */

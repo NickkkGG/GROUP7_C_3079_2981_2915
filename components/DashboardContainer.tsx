@@ -34,7 +34,7 @@ const operatorNavItems = [
 
 export default function DashboardContainer({ children }: DashboardContainerProps) {
   const pathname = usePathname();
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const { user, isLoading } = useAuth();
 
   const isActive = (href: string) => {

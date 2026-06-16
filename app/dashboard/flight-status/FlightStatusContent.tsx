@@ -1,10 +1,10 @@
 ﻿'use client';
 
 import { useAuth } from '@/context/AuthContext';
-import { Plane, ChevronLeft, ChevronRight, Search, Filter } from 'lucide-react';
+import { Plane, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import TopNavbar from '@/components/TopNavbar';
 import FlightCargoManifest from './FlightCargoManifest';
+import StatusDropdown from '@/components/StatusDropdown';
 
 export default function FlightStatusContent() {
   const { user, loginAsGuest } = useAuth();
@@ -18,7 +18,7 @@ export default function FlightStatusContent() {
   const [manifestOpen, setManifestOpen] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const limit = 10;
+  const limit = 8;
 
   useEffect(() => {
     if (!user) {
@@ -84,11 +84,6 @@ export default function FlightStatusContent() {
 
   return (
     <div className="h-full flex flex-col bg-white animate-fade-in">
-      <TopNavbar
-        title="Flight Status"
-        subtitle="Monitor live flight schedules and status updates"
-        showLiveUpdate={false}
-      />
       <div className="p-4 flex flex-col overflow-y-auto flex-1 no-scrollbar">
         {/* Content Box */}
         <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[24px] backdrop-blur-md overflow-hidden flex flex-col flex-1">
@@ -105,12 +100,8 @@ export default function FlightStatusContent() {
         </div>
 
         {/* Search Section */}
-        <div className="bg-white px-6 py-5 border-b-[2px] border-black/20">
-          <form onSubmit={handleSearch} className="space-y-2.5">
-            <p className="text-slate-900 font-medium text-xs">
-              Search for flight information to view status and details.
-            </p>
-            <div className="flex gap-2">
+        <div className="bg-white px-6 py-2.5 border-b-[2px] border-black/20">
+          <form onSubmit={handleSearch} className="flex gap-2">
               <div className="flex-1 bg-white border-[2px] border-black/20 rounded-[16px] px-3.5 py-2 flex items-center gap-2">
                 <Search size={16} className="text-slate-400" />
                 <input
@@ -121,75 +112,71 @@ export default function FlightStatusContent() {
                   className="flex-1 bg-transparent text-slate-900 text-xs outline-none placeholder-slate-400"
                 />
               </div>
-              <div className="flex items-center gap-1 bg-white border-[2px] border-black/20 rounded-[16px] px-3 py-2">
-                <Filter size={14} className="text-slate-400" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-                  className="bg-transparent text-slate-900 text-xs outline-none cursor-pointer font-medium"
-                >
-                  <option value="">All Status</option>
-                  <option value="scheduled">Scheduled</option>
-                  <option value="on-time">On Time</option>
-                  <option value="delayed">Delayed</option>
-                  <option value="departed">Departed</option>
-                  <option value="arrived">Arrived</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
+              <StatusDropdown
+                value={statusFilter}
+                onChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}
+                options={[
+                  { value: '', label: 'All Status' },
+                  { value: 'scheduled', label: 'Scheduled' },
+                  { value: 'on-time', label: 'On Time' },
+                  { value: 'delayed', label: 'Delayed' },
+                  { value: 'departed', label: 'Departed' },
+                  { value: 'arrived', label: 'Arrived' },
+                  { value: 'cancelled', label: 'Cancelled' },
+                ]}
+              />
               <button
                 type="submit"
                 className="px-4 py-2 bg-[#1e3a5f] text-white font-bold text-xs rounded transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg hover:bg-[#2c5282] transition"
               >
                 Search
               </button>
-            </div>
           </form>
         </div>
 
         {/* Content Section */}
-        <div className="space-y-3 p-5 bg-white overflow-y-auto flex-1 no-scrollbar">
+        <div className="space-y-3 p-3 bg-white overflow-y-auto flex-1 no-scrollbar">
           {/* Flights Table Box */}
           <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm table-fixed">
+              <table className="w-full text-xs table-fixed">
                 <thead>
                   <tr className="border-b-[2px] border-black/20 bg-gradient-to-r from-cyan-500/10 to-blue-500/10">
-                    <th className="text-left py-3 px-4 text-slate-900 font-bold">Flight</th>
-                    <th className="text-left py-3 px-4 text-slate-900 font-bold">Route</th>
-                    <th className="text-left py-3 px-4 text-slate-900 font-bold">Scheduled</th>
-                    <th className="text-left py-3 px-4 text-slate-900 font-bold">Status</th>
-                    <th className="text-left py-3 px-4 text-slate-900 font-bold">Capacity</th>
-                    <th className="text-left py-3 px-4 text-slate-900 font-bold">Action</th>
+                    <th className="text-left py-1.5 px-4 text-slate-900 font-bold">Flight</th>
+                    <th className="text-left py-1.5 px-4 text-slate-900 font-bold">Route</th>
+                    <th className="text-left py-1.5 px-4 text-slate-900 font-bold">Scheduled</th>
+                    <th className="text-left py-1.5 px-4 text-slate-900 font-bold">Status</th>
+                    <th className="text-left py-1.5 px-4 text-slate-900 font-bold">Capacity</th>
+                    <th className="text-left py-1.5 px-4 text-slate-900 font-bold">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
                     // Loading state - gray placeholders
-                    [...Array(6)].map((_, idx) => (
+                    [...Array(8)].map((_, idx) => (
                       <tr key={idx} className="border-b-[1px] border-black/20">
-                        <td className="py-5 px-4">
+                        <td className="py-1.5 px-4">
                           <div className="flex items-center gap-2">
                             <div className="w-4 h-4 bg-slate-300 rounded"></div>
                             <div className="h-4 bg-slate-300 rounded w-20"></div>
                           </div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-1.5 px-4">
                           <div className="h-4 bg-slate-200 rounded w-32"></div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-1.5 px-4">
                           <div className="h-3 bg-slate-200 rounded w-24"></div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-1.5 px-4">
                           <div className="h-6 bg-slate-300 rounded-full w-16"></div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-1.5 px-4">
                           <div className="flex items-center gap-2">
                             <div className="w-20 h-2 bg-slate-200 rounded-full"></div>
                             <div className="h-3 bg-slate-200 rounded w-8"></div>
                           </div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-1.5 px-4">
                           <div className="h-4 bg-slate-300 rounded w-16"></div>
                         </td>
                       </tr>
@@ -203,22 +190,22 @@ export default function FlightStatusContent() {
                   ) : (
                     flights.map((flight, idx) => (
                       <tr key={idx} className="border-b-[1px] border-black/20 hover:bg-cyan-50 transition">
-                        <td className="py-5 px-4">
+                        <td className="py-1.5 px-4">
                           <div className="flex items-center gap-2">
                             <Plane size={16} className="text-cyan-600" />
                             <span className="font-bold text-slate-900">{flight.flight_number}</span>
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-slate-900">{flight.departure_city} → {flight.arrival_city}</td>
-                        <td className="py-3 px-4 text-slate-900 text-xs">
+                        <td className="py-1.5 px-4 text-slate-900">{flight.departure_city} → {flight.arrival_city}</td>
+                        <td className="py-1.5 px-4 text-slate-900 text-xs">
                           {new Date(flight.departure_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-1.5 px-4">
                           <span className={`px-3 py-1.5 rounded-full border-[2px] text-xs font-bold ${getStatusColor(flight.status)}`}>
                             {flight.status === 'on-time' ? 'On Time' : flight.status === 'delayed' ? 'Delayed' : flight.status.charAt(0).toUpperCase() + flight.status.slice(1)}
                           </span>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-1.5 px-4">
                           {(() => {
                             const used = parseFloat(flight.used_capacity) || 0;
                             const max = parseFloat(flight.max_capacity) || 0;
@@ -236,7 +223,7 @@ export default function FlightStatusContent() {
                             );
                           })()}
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-1.5 px-4">
                           <button
                             onClick={() => handleViewManifest(flight.flight_number)}
                             className="text-cyan-600 hover:text-cyan-700 font-bold text-xs"
@@ -287,7 +274,7 @@ export default function FlightStatusContent() {
                         onClick={() => setCurrentPage(pageNum)}
                         className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
                           currentPage === pageNum
-                            ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-md'
+                            ? 'bg-[#1e3a5f] text-white shadow-md'
                             : 'bg-white border-[2px] border-black/20 text-slate-900 hover:bg-slate-50'
                         }`}
                       >

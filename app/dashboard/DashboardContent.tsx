@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
-import { TrendingUp, TrendingDown, Package, Clock, AlertCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Package, Clock, AlertCircle, LayoutDashboard, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import StatsSlide from './StatsSlide';
 
 const WorldMapLeaflet = dynamic(() => import('@/components/WorldMapLeaflet'), {
   ssr: false,
@@ -49,6 +50,7 @@ export default function DashboardContent() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [slide, setSlide] = useState(0); // 0 = main dashboard, 1 = statistics
 
   useEffect(() => {
     // Jika ada ?role=guest parameter dan belum ada user, set guest
@@ -147,9 +149,20 @@ export default function DashboardContent() {
     },
   ];
 
+  const isOperator = user?.role === 'operator';
+
   return (
-    <div className="p-3 h-full bg-white animate-fade-in overflow-hidden">
-      <div className="grid grid-cols-3 gap-2 h-full" style={{ gridTemplateRows: 'repeat(5, minmax(0, 1fr))' }}>
+    <div className="h-full bg-white animate-fade-in overflow-hidden flex flex-col">
+      {/* Carousel viewport */}
+      <div className="flex-1 overflow-hidden relative">
+      {/* Carousel track — 2 slide, geser horizontal */}
+      <div
+        className="flex h-full transition-transform duration-[650ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform"
+        style={{ width: '200%', transform: `translateX(-${slide * 50}%)` }}
+      >
+        {/* SLIDE 1 — Main dashboard */}
+        <div className="w-1/2 h-full p-3 overflow-hidden flex-shrink-0">
+          <div className="grid grid-cols-3 gap-2 h-full" style={{ gridTemplateRows: 'repeat(5, minmax(0, 1fr))' }}>
         {/* Overview - div1: col 1, rows 1-3 */}
         <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-3 overflow-hidden flex flex-col" style={{ gridColumn: '1', gridRow: '1 / span 3' }}>
           <h3 className="text-xs font-bold text-slate-900 mb-2 flex-shrink-0">Overview</h3>
@@ -354,7 +367,39 @@ export default function DashboardContent() {
             </table>
           </div>
         </div>
+          </div>
+        </div>
+
+        {/* SLIDE 2 — Statistics (operator only) */}
+        <div className="w-1/2 h-full flex-shrink-0">
+          {isOperator && <StatsSlide />}
+        </div>
       </div>
+      </div>
+
+      {/* Toggle bar — di bawah, hanya untuk operator */}
+      {isOperator && (
+        <div className="flex items-center justify-center gap-2 px-3 pt-0.5 pb-2 flex-shrink-0">
+          <button
+            onClick={() => setSlide(0)}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
+              slide === 0 ? 'bg-[#1e3a5f] text-white' : 'bg-white border-[2px] border-black/15 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <LayoutDashboard size={13} />
+            Overview
+          </button>
+          <button
+            onClick={() => setSlide(1)}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
+              slide === 1 ? 'bg-[#1e3a5f] text-white' : 'bg-white border-[2px] border-black/15 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <BarChart3 size={13} />
+            Statistics
+          </button>
+        </div>
+      )}
     </div>
   );
 }
