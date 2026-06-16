@@ -65,8 +65,13 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < COUNT; i++) {
       const tracking = `AWB-EP-${(nextNum + i).toString().padStart(5, '0')}`;
 
-      // Sebar di 90 hari terakhir, agak dipadatkan ke hari-hari terbaru
-      const daysAgo = Math.floor(rng() * rng() * 90); // bias ke kecil = lebih banyak data baru
+      // Sebar lintas waktu: ~40% di 7 hari terakhir (biar Today/7d keisi),
+      // sisanya tersebar sampai ~3 tahun ke belakang (biar Month & Year keisi).
+      let daysAgo: number;
+      const r = rng();
+      if (r < 0.4) daysAgo = Math.floor(rng() * 7);          // minggu ini
+      else if (r < 0.75) daysAgo = 7 + Math.floor(rng() * 358);  // dalam ~1 tahun
+      else daysAgo = 365 + Math.floor(rng() * 730);          // 1-3 tahun lalu
       const hour = 6 + Math.floor(rng() * 14);
       const minute = Math.floor(rng() * 60);
 

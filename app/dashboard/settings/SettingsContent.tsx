@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import TopNavbar from '@/components/TopNavbar';
 import Image from 'next/image';
@@ -103,12 +104,12 @@ export default function SettingsContent() {
         <div
           className="flex-1 rounded-[20px] overflow-hidden flex"
           style={{
-            background: '#f0ebe3',
+            background: '#ffffff',
             border: '1.5px solid rgba(0,0,0,0.12)',
           }}
         >
           {/* Sidebar */}
-          <div className="w-56 flex-shrink-0 flex flex-col justify-between p-4" style={{ background: '#e8e0d6' }}>
+          <div className="w-56 flex-shrink-0 flex flex-col justify-between p-4 border-r border-black/10" style={{ background: '#ffffff' }}>
             <div className="space-y-1">
               {menuItems.map(({ id, label, icon: Icon }) => (
                 <button
@@ -116,8 +117,8 @@ export default function SettingsContent() {
                   onClick={() => setActiveTab(id)}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                     activeTab === id
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-600 hover:bg-white/50 hover:text-slate-800'
+                      ? 'bg-[#1e3a5f] text-white shadow-sm'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
                   }`}
                 >
                   <Icon size={15} />
@@ -317,7 +318,7 @@ function AccountTab({
                 <button
                   onClick={handleSaveProfile}
                   disabled={isSaving}
-                  className="px-6 py-2 rounded-xl text-white text-sm font-bold bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 transition-all shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2 rounded-xl text-white text-sm font-bold bg-[#14532d] hover:bg-[#166534] transition-all shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSaving ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -393,7 +394,7 @@ function NotificationsTab({
             <div className="flex items-center gap-3 flex-1">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                 toggles[key]
-                  ? 'bg-gradient-to-br from-emerald-500 to-cyan-500'
+                  ? 'bg-[#1e3a5f]'
                   : 'bg-gray-200'
               }`}>
                 <Icon size={18} className={toggles[key] ? 'text-white' : 'text-gray-400'} />
@@ -408,7 +409,7 @@ function NotificationsTab({
               aria-checked={toggles[key]}
               onClick={() => flip(key)}
               className={`relative w-12 h-6 rounded-full transition-all flex-shrink-0 shadow-inner ${
-                toggles[key] ? 'bg-gradient-to-r from-emerald-500 to-cyan-500' : 'bg-gray-300'
+                toggles[key] ? 'bg-[#1e3a5f]' : 'bg-gray-300'
               }`}
             >
               <span
@@ -452,100 +453,76 @@ function NotificationsTab({
 
 /* ───────────── Display Tab ───────────── */
 function DisplayTab() {
+  const { theme, setTheme } = useTheme();
+
+  const options: { id: 'light' | 'dark'; label: string; desc: string }[] = [
+    { id: 'light', label: 'Light Mode', desc: 'Bright and clean, ideal for daytime' },
+    { id: 'dark', label: 'Dark Mode', desc: 'Easy on the eyes, perfect for night work' },
+  ];
+
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-xl font-bold text-slate-900 mb-1">Display Settings</h2>
-        <p className="text-xs text-slate-500">Customize your visual experience</p>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-1">Display Settings</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400">Customize your visual experience</p>
       </div>
 
-      {/* Current Theme Preview */}
-      <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/10 rounded-[20px] p-5 shadow-sm">
+      {/* Theme Selector */}
+      <div className="bg-white dark:bg-slate-800 border-[2px] border-black/10 dark:border-white/10 rounded-[20px] p-5 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-sm font-bold text-slate-900">Current Theme</h3>
-            <p className="text-xs text-slate-500">Light Mode (Active)</p>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Appearance</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Choose your preferred theme</p>
           </div>
           <div className="px-3 py-1 bg-emerald-100 text-emerald-700 border-2 border-emerald-300 rounded-full text-xs font-bold">
-            ACTIVE
+            {theme === 'dark' ? 'DARK' : 'LIGHT'}
           </div>
         </div>
 
-        {/* Theme Preview Card */}
-        <div className="bg-gradient-to-br from-[#ffe9d4] to-[#ffd9b8] border-2 border-black/20 rounded-[16px] p-4 space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold">
-              A
-            </div>
-            <div className="flex-1">
-              <div className="h-3 bg-slate-300 rounded w-24 mb-1.5"></div>
-              <div className="h-2 bg-slate-200 rounded w-16"></div>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="h-16 bg-white border-2 border-black/10 rounded-lg"></div>
-            <div className="h-16 bg-gradient-to-r from-emerald-500 to-cyan-500 border-2 border-white/20 rounded-lg"></div>
-            <div className="h-16 bg-white border-2 border-black/10 rounded-lg"></div>
-          </div>
-        </div>
-      </div>
-
-      {/* Coming Soon Cards */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Dark Mode */}
-        <div className="bg-gradient-to-br from-slate-800 to-slate-900 border-[2px] border-slate-700 rounded-[20px] p-5 shadow-sm relative overflow-hidden">
-          <div className="absolute top-2 right-2 px-2 py-0.5 bg-cyan-500 text-white rounded-full text-[10px] font-bold">
-            SOON
-          </div>
-          <div className="space-y-3">
-            <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center">
-              <Monitor size={20} className="text-slate-400" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-white mb-1">Dark Mode</h3>
-              <p className="text-xs text-slate-400">Easy on the eyes, perfect for night work</p>
-            </div>
-            {/* Mini Preview */}
-            <div className="bg-slate-950 border-2 border-slate-700 rounded-lg p-2 space-y-1.5">
-              <div className="h-2 bg-slate-700 rounded w-16"></div>
-              <div className="h-2 bg-slate-800 rounded w-12"></div>
-            </div>
-          </div>
-        </div>
-
-        {/* Custom Themes */}
-        <div className="bg-gradient-to-br from-purple-100 to-pink-100 border-[2px] border-purple-300 rounded-[20px] p-5 shadow-sm relative overflow-hidden">
-          <div className="absolute top-2 right-2 px-2 py-0.5 bg-purple-500 text-white rounded-full text-[10px] font-bold">
-            SOON
-          </div>
-          <div className="space-y-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-              <Camera size={20} className="text-white" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-purple-900 mb-1">Custom Themes</h3>
-              <p className="text-xs text-purple-700">Personalize colors and styles</p>
-            </div>
-            {/* Color Palette Preview */}
-            <div className="flex gap-1.5">
-              <div className="w-6 h-6 bg-gradient-to-br from-red-400 to-orange-400 rounded-full border-2 border-white"></div>
-              <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full border-2 border-white"></div>
-              <div className="w-6 h-6 bg-gradient-to-br from-green-400 to-emerald-400 rounded-full border-2 border-white"></div>
-              <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full border-2 border-white"></div>
-            </div>
-          </div>
+        <div className="grid grid-cols-2 gap-3">
+          {options.map((opt) => {
+            const active = theme === opt.id;
+            const isDark = opt.id === 'dark';
+            return (
+              <button
+                key={opt.id}
+                onClick={() => setTheme(opt.id)}
+                className={`text-left rounded-[16px] p-4 border-2 transition-all ${
+                  active
+                    ? 'border-[#1e3a5f] ring-4 ring-[#1e3a5f]/15'
+                    : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                } ${isDark ? 'bg-slate-900' : 'bg-white'}`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
+                    <Monitor size={20} className={isDark ? 'text-slate-300' : 'text-slate-600'} />
+                  </div>
+                  {active && (
+                    <BadgeCheck size={20} className="text-[#1e3a5f] dark:text-blue-400" />
+                  )}
+                </div>
+                <h3 className={`text-sm font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{opt.label}</h3>
+                <p className={`text-xs mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{opt.desc}</p>
+                {/* Mini Preview */}
+                <div className={`rounded-lg p-2 space-y-1.5 border-2 ${isDark ? 'bg-slate-950 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className={`h-2 rounded w-16 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`}></div>
+                  <div className={`h-2 rounded w-12 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}></div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Info Card */}
-      <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-[16px] p-4">
+      <div className="bg-blue-50 dark:bg-slate-800 border-2 border-blue-200 dark:border-white/10 rounded-[16px] p-4">
         <div className="flex items-start gap-3">
-          <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+          <div className="w-9 h-9 bg-[#1e3a5f] rounded-full flex items-center justify-center flex-shrink-0">
             <Bell size={18} className="text-white" />
           </div>
           <div>
-            <p className="text-sm font-bold text-blue-900 mb-1">More Display Options Coming Soon</p>
-            <p className="text-xs text-blue-700">We're working on dark mode, custom themes, and more personalization options to make ALTUS truly yours.</p>
+            <p className="text-sm font-bold text-blue-900 dark:text-slate-100 mb-1">Theme is saved automatically</p>
+            <p className="text-xs text-blue-700 dark:text-slate-400">Your choice is remembered on this device and applied across the whole app.</p>
           </div>
         </div>
       </div>

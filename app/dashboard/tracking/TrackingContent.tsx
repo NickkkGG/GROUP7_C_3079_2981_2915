@@ -239,7 +239,7 @@ export default function TrackingContent() {
           {/* ===== Konten utama (di atas dekorasi) ===== */}
           <div className="relative z-10 flex flex-col items-center">
           <div className="w-28 h-28 bg-white rounded-[28px] border-[2px] border-black/10 shadow-lg shadow-slate-300/50 flex items-center justify-center mb-6 relative overflow-hidden">
-            <Image src="/images/icon_altus.png" alt="ALTUS" fill className="object-contain scale-[1.7] translate-y-[6px]" priority />
+            <Image src="/images/icon_altus.png" alt="ALTUS" fill sizes="112px" className="object-contain scale-[1.7] translate-y-[6px]" priority />
           </div>
           <h1 className="text-slate-900 font-black text-2xl md:text-3xl tracking-tight">Track Your Airway Bill Here</h1>
           <p className="text-slate-500 text-sm mt-2.5 max-w-md leading-relaxed">

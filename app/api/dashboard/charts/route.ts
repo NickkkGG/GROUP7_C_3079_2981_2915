@@ -8,32 +8,53 @@ export async function GET(request: NextRequest) {
     const sp = request.nextUrl.searchParams;
     const start = sp.get('start'); // YYYY-MM-DD
     const end = sp.get('end');     // YYYY-MM-DD
-    const days = parseInt(sp.get('days') || '7');
+    const range = sp.get('range') || '7'; // today | 7 | month | year | custom
 
-    // Tentukan rentang waktu
+    // Tentukan rentang waktu + granularity (day / month / year)
     let rangeCondition: string;
+    let bucket: 'day' | 'month' | 'year' = 'day';
     const params: any[] = [];
-    if (start && end) {
+
+    if (range === 'custom' && start && end) {
       rangeCondition = `created_at >= $1::date AND created_at < ($2::date + INTERVAL '1 day')`;
       params.push(start, end);
+      bucket = 'day';
+    } else if (range === 'today') {
+      rangeCondition = `created_at >= CURRENT_DATE`;
+      bucket = 'day';
+    } else if (range === 'month') {
+      // 12 bulan terakhir, rekap per bulan
+      rangeCondition = `created_at >= date_trunc('month', CURRENT_DATE) - INTERVAL '11 months'`;
+      bucket = 'month';
+    } else if (range === 'year') {
+      // 5 tahun terakhir, rekap per tahun
+      rangeCondition = `created_at >= date_trunc('year', CURRENT_DATE) - INTERVAL '4 years'`;
+      bucket = 'year';
     } else {
-      const safeDays = [7, 30, 90].includes(days) ? days : 7;
-      rangeCondition = `created_at >= CURRENT_DATE - INTERVAL '${safeDays - 1} days'`;
+      // default 7 hari, rekap per hari
+      rangeCondition = `created_at >= CURRENT_DATE - INTERVAL '6 days'`;
+      bucket = 'day';
     }
 
-    // 1. Shipments per day (dalam range)
+    // Kolom bucket untuk GROUP BY time-series
+    const bucketCol =
+      bucket === 'month' ? `date_trunc('month', created_at)` :
+      bucket === 'year' ? `date_trunc('year', created_at)` :
+      `DATE(created_at)`;
+
+    // 1. Shipments per bucket (day/month/year)
     const perDay = await sql.query(
-      `SELECT DATE(created_at) AS day, COUNT(*) AS total
+      `SELECT ${bucketCol} AS day, COUNT(*) AS total
        FROM shipments WHERE ${rangeCondition}
-       GROUP BY DATE(created_at) ORDER BY day ASC;`,
+       GROUP BY ${bucketCol} ORDER BY day ASC;`,
       params
     );
 
-    // 2. Revenue per day (dalam range)
+    // 2. Revenue per bucket
     const revenuePerDay = await sql.query(
-      `SELECT DATE(created_at) AS day, COALESCE(SUM(tariff), 0) AS revenue
+      `SELECT ${bucketCol} AS day, COALESCE(SUM(tariff), 0) AS revenue
        FROM shipments WHERE ${rangeCondition}
-       GROUP BY DATE(created_at) ORDER BY day ASC;`,
+       GROUP BY ${bucketCol} ORDER BY day ASC;`,
       params
     );
 

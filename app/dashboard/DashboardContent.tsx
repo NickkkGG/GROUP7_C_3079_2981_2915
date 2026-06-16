@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
-import { TrendingUp, TrendingDown, Package, Clock, AlertCircle, LayoutDashboard, BarChart3 } from 'lucide-react';
+import { TrendingUp, Package, Clock, AlertCircle, LayoutDashboard, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import StatsSlide from './StatsSlide';
@@ -123,28 +123,28 @@ export default function DashboardContent() {
       label: 'Total Shipments Today',
       value: stats?.totalShipments || 0,
       change: stats?.shipmentsChange || '+0%',
-      icon: <Package className="text-blue-500" size={32} />,
+      icon: <Package className="text-[#1e3a5f]" size={32} />,
       isPositive: true,
     },
     {
       label: 'Flight On Time',
       value: stats?.onTime || 0,
       change: stats?.onTimeChange || '+0%',
-      icon: <Clock className="text-green-500" size={32} />,
+      icon: <Clock className="text-[#2c5282]" size={32} />,
       isPositive: true,
     },
     {
       label: 'Flight Delay',
       value: stats?.delayed || 0,
       change: stats?.delayedChange || '0%',
-      icon: <AlertCircle className="text-orange-500" size={32} />,
+      icon: <AlertCircle className="text-[#3b82f6]" size={32} />,
       isPositive: false,
     },
     {
       label: 'Ready To Land',
       value: stats?.readyToLand || 0,
       change: '+0%',
-      icon: <TrendingUp className="text-purple-500" size={32} />,
+      icon: <TrendingUp className="text-[#1e3a5f]" size={32} />,
       isPositive: true,
     },
   ];
@@ -152,7 +152,7 @@ export default function DashboardContent() {
   const isOperator = user?.role === 'operator';
 
   return (
-    <div className="h-full bg-white animate-fade-in overflow-hidden flex flex-col">
+    <div className="h-full bg-white dark:bg-slate-900 animate-fade-in overflow-hidden flex flex-col">
       {/* Carousel viewport */}
       <div className="flex-1 overflow-hidden relative">
       {/* Carousel track — 2 slide, geser horizontal */}
@@ -164,34 +164,26 @@ export default function DashboardContent() {
         <div className="w-1/2 h-full p-3 overflow-hidden flex-shrink-0">
           <div className="grid grid-cols-3 gap-2 h-full" style={{ gridTemplateRows: 'repeat(5, minmax(0, 1fr))' }}>
         {/* Overview - div1: col 1, rows 1-3 */}
-        <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-3 overflow-hidden flex flex-col" style={{ gridColumn: '1', gridRow: '1 / span 3' }}>
-          <h3 className="text-xs font-bold text-slate-900 mb-2 flex-shrink-0">Overview</h3>
+        <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-800 border-[2px] border-black/20 dark:border-white/10 rounded-[16px] p-3 overflow-hidden flex flex-col" style={{ gridColumn: '1', gridRow: '1 / span 3' }}>
+          <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 mb-2 flex-shrink-0">Overview</h3>
           <div className="grid grid-cols-2 gap-3 flex-1 overflow-visible">
             {statCards.map((stat, idx) => (
               <div
                 key={idx}
                 className="relative group"
               >
-                <div className="relative bg-gradient-to-br from-slate-100 to-slate-50 border-[2px] border-black/15 rounded-[14px] p-4 transition-all duration-300 cursor-pointer h-full flex flex-col justify-between hover:shadow-lg hover:-translate-y-1">
+                <div className="relative bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-700 dark:to-slate-700 border-[2px] border-black/15 dark:border-white/10 rounded-[14px] p-4 transition-all duration-300 cursor-pointer h-full flex flex-col justify-between hover:shadow-lg hover:-translate-y-1">
                   <div className="flex items-start justify-between">
-                    <div className="p-2.5 bg-slate-200/40 rounded-lg flex-shrink-0">
+                    <div className="p-2.5 bg-slate-200/40 dark:bg-slate-600/40 rounded-lg flex-shrink-0">
                       {stat.icon}
-                    </div>
-                    <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full flex-shrink-0 ${
-                      stat.isPositive
-                        ? 'bg-green-100/60 text-green-700 border border-green-300'
-                        : 'bg-orange-100/60 text-orange-700 border border-orange-299'
-                    }`}>
-                      {stat.isPositive ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-                      <span>{stat.change}</span>
                     </div>
                   </div>
                   <div className="overflow-hidden">
-                    <p className="text-slate-500 text-xs font-semibold leading-tight mb-2">{stat.label}</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold leading-tight mb-2">{stat.label}</p>
                     {loading ? (
-                      <div className="h-8 bg-slate-300 rounded w-16 animate-pulse"></div>
+                      <div className="h-8 bg-slate-300 dark:bg-slate-600 rounded w-16 animate-pulse"></div>
                     ) : (
-                      <p className="text-2xl font-black text-slate-900 leading-tight">{stat.value}</p>
+                      <p className="text-2xl font-black text-slate-900 dark:text-slate-100 leading-tight">{stat.value}</p>
                     )}
                   </div>
                 </div>
@@ -201,16 +193,16 @@ export default function DashboardContent() {
         </div>
 
         {/* Tracking Map - div3: cols 2-3, rows 1-3 */}
-        <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-2 overflow-hidden w-full h-full flex flex-col" style={{ gridColumn: '2 / span 2', gridRow: '1 / span 3' }}>
-          <h3 className="text-xs font-bold text-slate-900 mb-2 flex-shrink-0">Live Flight Tracking Map</h3>
+        <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-800 border-[2px] border-black/20 dark:border-white/10 rounded-[16px] p-2 overflow-hidden w-full h-full flex flex-col" style={{ gridColumn: '2 / span 2', gridRow: '1 / span 3' }}>
+          <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 mb-2 flex-shrink-0">Live Flight Tracking Map</h3>
           <div className="w-full h-full overflow-hidden flex-1">
             <WorldMapLeaflet />
           </div>
         </div>
 
         {/* Flight Status - div2: col 1, rows 4-5 */}
-        <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-2 overflow-hidden flex flex-col" style={{ gridColumn: '1', gridRow: '4 / span 2' }}>
-          <h3 className="text-xs font-bold text-slate-900 mb-1.5 flex-shrink-0">Flight Status</h3>
+        <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-800 border-[2px] border-black/20 dark:border-white/10 rounded-[16px] p-2 overflow-hidden flex flex-col" style={{ gridColumn: '1', gridRow: '4 / span 2' }}>
+          <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 mb-1.5 flex-shrink-0">Flight Status</h3>
           <div className="overflow-y-auto flex-1 space-y-1 mb-2 no-scrollbar">
             {loading ? (
               // Loading state - gray placeholders
@@ -227,15 +219,15 @@ export default function DashboardContent() {
               <div className="text-slate-500 text-[9px] py-2 text-center">No flights available</div>
             ) : (
               flights.map((flight, idx) => (
-                <div key={idx} className="flex items-center justify-between p-1.5 bg-gradient-to-r from-slate-50 to-white rounded-lg border-[1px] border-black/20 hover:border-black/40 hover:bg-slate-100 transition-all gap-1 cursor-pointer group">
+                <div key={idx} className="flex items-center justify-between p-1.5 bg-gradient-to-r from-slate-50 to-white dark:from-slate-700 dark:to-slate-700 rounded-lg border-[1px] border-black/20 dark:border-white/10 hover:border-black/40 hover:bg-slate-100 dark:hover:bg-slate-600 transition-all gap-1 cursor-pointer group">
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-slate-900 text-[11px] leading-tight group-hover:text-emerald-600">{flight.flight_number}</p>
-                    <p className="text-slate-600 text-[9px] leading-tight truncate">{flight.departure_city}→{flight.arrival_city}</p>
+                    <p className="font-bold text-slate-900 dark:text-slate-100 text-[11px] leading-tight group-hover:text-[#1e3a5f] dark:group-hover:text-blue-400">{flight.flight_number}</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-[9px] leading-tight truncate">{flight.departure_city}→{flight.arrival_city}</p>
                   </div>
                   <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold whitespace-nowrap flex-shrink-0 ${
                     flight.status === 'scheduled' || flight.status === 'active'
-                      ? 'bg-green-500/20 text-green-700 border border-green-400'
-                      : 'bg-orange-500/20 text-orange-700 border border-orange-400'
+                      ? 'bg-blue-100/60 text-[#1e3a5f] border border-blue-400'
+                      : 'bg-blue-100/60 text-[#2c5282] border border-blue-400'
                   }`}>
                     {flight.status === 'scheduled' || flight.status === 'active' ? 'On Time' : 'Delayed'}
                   </span>
@@ -249,9 +241,9 @@ export default function DashboardContent() {
         </div>
 
         {/* Active Shipments - div4: cols 2-3, rows 4-5 */}
-        <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-2 overflow-hidden flex flex-col" style={{ gridColumn: '2 / span 2', gridRow: '4 / span 2' }}>
+        <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-800 border-[2px] border-black/20 dark:border-white/10 rounded-[16px] p-2 overflow-hidden flex flex-col" style={{ gridColumn: '2 / span 2', gridRow: '4 / span 2' }}>
           <div className="flex items-center justify-between mb-2 gap-2 flex-shrink-0">
-            <h2 className="text-xs font-bold text-slate-900 whitespace-nowrap">Latest Shipments</h2>
+            <h2 className="text-xs font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">Latest Shipments</h2>
             <div className="flex gap-1 flex-1">
               <input
                 type="text"
@@ -259,7 +251,7 @@ export default function DashboardContent() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                className="px-2 py-1 bg-white border-[2px] border-black/20 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200 text-[10px] flex-1 transition-all"
+                className="px-2 py-1 bg-white dark:bg-slate-700 border-[2px] border-black/20 dark:border-white/10 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200 text-[10px] flex-1 transition-all"
               />
               <button
                 onClick={handleSearch}
@@ -272,14 +264,14 @@ export default function DashboardContent() {
           <div className="overflow-x-auto overflow-y-auto flex-1 no-scrollbar">
             <table className="w-full text-[10px]">
               <thead>
-                <tr className="border-b-[2px] border-black/20 sticky top-0 bg-gradient-to-r from-slate-50 to-white">
-                  <th className="text-left py-1.5 px-2 text-slate-900 font-bold uppercase tracking-wide whitespace-nowrap">AWB</th>
-                  <th className="text-left py-1.5 px-2 text-slate-900 font-bold uppercase tracking-wide whitespace-nowrap">Origin</th>
-                  <th className="text-left py-1.5 px-2 text-slate-900 font-bold uppercase tracking-wide whitespace-nowrap">Dest</th>
-                  <th className="text-left py-1.5 px-2 text-slate-900 font-bold uppercase tracking-wide whitespace-nowrap">Flight</th>
-                  <th className="text-left py-1.5 px-2 text-slate-900 font-bold uppercase tracking-wide whitespace-nowrap">Status</th>
-                  <th className="text-left py-1.5 px-2 text-slate-900 font-bold uppercase tracking-wide whitespace-nowrap">Weight</th>
-                  <th className="text-left py-1.5 px-2 text-slate-900 font-bold uppercase tracking-wide whitespace-nowrap">Action</th>
+                <tr className="border-b-[2px] border-black/20 dark:border-white/10 sticky top-0 bg-gradient-to-r from-slate-50 to-white dark:from-slate-700 dark:to-slate-700">
+                  <th className="text-left py-1.5 px-2 text-slate-900 dark:text-slate-100 font-bold uppercase tracking-wide whitespace-nowrap">AWB</th>
+                  <th className="text-left py-1.5 px-2 text-slate-900 dark:text-slate-100 font-bold uppercase tracking-wide whitespace-nowrap">Origin</th>
+                  <th className="text-left py-1.5 px-2 text-slate-900 dark:text-slate-100 font-bold uppercase tracking-wide whitespace-nowrap">Dest</th>
+                  <th className="text-left py-1.5 px-2 text-slate-900 dark:text-slate-100 font-bold uppercase tracking-wide whitespace-nowrap">Flight</th>
+                  <th className="text-left py-1.5 px-2 text-slate-900 dark:text-slate-100 font-bold uppercase tracking-wide whitespace-nowrap">Status</th>
+                  <th className="text-left py-1.5 px-2 text-slate-900 dark:text-slate-100 font-bold uppercase tracking-wide whitespace-nowrap">Weight</th>
+                  <th className="text-left py-1.5 px-2 text-slate-900 dark:text-slate-100 font-bold uppercase tracking-wide whitespace-nowrap">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -320,37 +312,37 @@ export default function DashboardContent() {
                   shipments.map((shipment, idx) => {
                     const isOperator = user?.role === 'operator';
                     return (
-                    <tr key={idx} className="border-b-[1px] border-black/20 hover:bg-emerald-50 transition-all duration-200 group">
+                    <tr key={idx} className="border-b-[1px] border-black/20 dark:border-white/10 hover:bg-blue-50 dark:hover:bg-slate-700 transition-all duration-200 group">
                       <td className="py-1.5 px-2">
                         {isOperator ? (
-                          <Link href={`/dashboard/tracking?search=${encodeURIComponent(shipment.tracking_number)}`} className="text-emerald-600 hover:text-emerald-700 font-bold transition-colors truncate block group-hover:underline">
+                          <Link href={`/dashboard/tracking?search=${encodeURIComponent(shipment.tracking_number)}`} className="text-[#1e3a5f] hover:text-[#2c5282] font-bold transition-colors truncate block group-hover:underline">
                             {shipment.tracking_number}
                           </Link>
                         ) : (
                           <span className="text-slate-400 font-bold truncate block text-[9px]">{maskAwb(shipment.tracking_number)}</span>
                         )}
                       </td>
-                      <td className="py-1.5 px-2 text-slate-700 whitespace-nowrap text-[9px]">{isOperator ? shipment.origin : '***'}</td>
-                      <td className="py-1.5 px-2 text-slate-700 whitespace-nowrap text-[9px]">{isOperator ? shipment.destination : '***'}</td>
-                      <td className="py-1.5 px-2 text-slate-700 whitespace-nowrap text-[9px]">{isOperator ? (shipment.flight_number || 'N/A') : '***'}</td>
+                      <td className="py-1.5 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[9px]">{isOperator ? shipment.origin : '***'}</td>
+                      <td className="py-1.5 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[9px]">{isOperator ? shipment.destination : '***'}</td>
+                      <td className="py-1.5 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[9px]">{isOperator ? (shipment.flight_number || 'N/A') : '***'}</td>
                       <td className="py-1.5 px-2">
                         <span
                           className={`px-2 py-0.5 rounded-full text-[9px] font-bold inline-block whitespace-nowrap transition-all ${
                             shipment.status === 'booked'
-                              ? 'bg-blue-100 text-blue-700 border border-blue-400'
+                              ? 'bg-blue-100 text-[#1e3a5f] border border-blue-400'
                               : shipment.status === 'received'
-                                ? 'bg-purple-100 text-purple-700 border border-purple-400'
+                                ? 'bg-blue-100 text-[#2c5282] border border-blue-400'
                                 : shipment.status === 'in_transit'
-                                  ? 'bg-orange-100 text-orange-700 border border-orange-400'
+                                  ? 'bg-blue-100 text-[#3b82f6] border border-blue-400'
                                   : shipment.status === 'arrived'
-                                    ? 'bg-cyan-100 text-cyan-700 border border-cyan-400'
-                                    : 'bg-emerald-100 text-emerald-700 border border-emerald-400'
+                                    ? 'bg-blue-100 text-[#60a5fa] border border-blue-400'
+                                    : 'bg-blue-100 text-[#1e3a5f] border border-blue-400'
                           }`}
                         >
                           {shipment.status?.replace('_', ' ').charAt(0).toUpperCase() + shipment.status?.replace('_', ' ').slice(1) || 'Pending'}
                         </span>
                       </td>
-                      <td className="py-1.5 px-2 text-slate-700 whitespace-nowrap text-[9px] font-medium">{isOperator ? `${shipment.weight || 'N/A'} kg` : '***'}</td>
+                      <td className="py-1.5 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[9px] font-medium">{isOperator ? `${shipment.weight || 'N/A'} kg` : '***'}</td>
                       <td className="py-1.5 px-2">
                         {isOperator ? (
                           <Link href={`/dashboard/tracking?search=${encodeURIComponent(shipment.tracking_number)}`} className="px-2 py-1 rounded-lg text-white text-[9px] font-bold bg-[#1e3a5f] hover:bg-[#2c5282] transition-all duration-200 inline-block hover:shadow-md active:scale-95">
@@ -383,7 +375,7 @@ export default function DashboardContent() {
           <button
             onClick={() => setSlide(0)}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
-              slide === 0 ? 'bg-[#1e3a5f] text-white' : 'bg-white border-[2px] border-black/15 text-slate-600 hover:bg-slate-50'
+              slide === 0 ? 'bg-[#1e3a5f] text-white' : 'bg-white dark:bg-slate-800 border-[2px] border-black/15 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
             }`}
           >
             <LayoutDashboard size={13} />
@@ -392,7 +384,7 @@ export default function DashboardContent() {
           <button
             onClick={() => setSlide(1)}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
-              slide === 1 ? 'bg-[#1e3a5f] text-white' : 'bg-white border-[2px] border-black/15 text-slate-600 hover:bg-slate-50'
+              slide === 1 ? 'bg-[#1e3a5f] text-white' : 'bg-white dark:bg-slate-800 border-[2px] border-black/15 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
             }`}
           >
             <BarChart3 size={13} />

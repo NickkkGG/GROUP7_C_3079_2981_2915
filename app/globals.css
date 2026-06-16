@@ -545,3 +545,29 @@ body {
     @apply font-sans;
   }
 }
+
+/* ===== react-day-picker theme override (fix tampilan putih/bug) ===== */
+.rdp-root {
+  --rdp-accent-color: #1e3a5f;
+  --rdp-accent-background-color: #e0e7f1;
+  --rdp-day-width: 32px;
+  --rdp-day-height: 32px;
+  --rdp-day_button-width: 32px;
+  --rdp-day_button-height: 32px;
+  --rdp-font-family: inherit;
+  margin: 0;
+  color: #0f172a;
+}
+.rdp-month_caption { font-size: 12px; font-weight: 700; color: #0f172a; padding: 2px 0; }
+.rdp-weekday { font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase; }
+.rdp-day { font-size: 11px; color: #334155; }
+.rdp-day_button { border-radius: 8px; }
+.rdp-day_button:hover { background-color: #f1f5f9; }
+.rdp-today .rdp-day_button { color: #1e3a5f; font-weight: 800; }
+.rdp-selected .rdp-day_button { background-color: #1e3a5f !important; color: #fff !important; font-weight: 700; }
+.rdp-range_start .rdp-day_button,
+.rdp-range_end .rdp-day_button { background-color: #1e3a5f !important; color: #fff !important; }
+.rdp-range_middle { background-color: #e0e7f1; }
+.rdp-range_middle .rdp-day_button { color: #1e3a5f; background-color: transparent !important; }
+.rdp-chevron { fill: #1e3a5f; }
+.rdp-nav button:hover { background-color: #f1f5f9; border-radius: 8px; }

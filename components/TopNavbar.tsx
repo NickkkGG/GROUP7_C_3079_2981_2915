@@ -14,10 +14,10 @@ export default function TopNavbar({
   liveUpdateColor = '#22c55e'
 }: TopNavbarProps) {
   return (
-    <div className="bg-white border-b-[2px] border-black/20 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+    <div className="bg-white dark:bg-slate-900 border-b-[2px] border-black/20 dark:border-white/10 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
       <div>
-        <h1 className="text-slate-900 font-bold text-lg">{title}</h1>
-        {subtitle && <p className="text-slate-600 text-xs mt-1">{subtitle}</p>}
+        <h1 className="text-slate-900 dark:text-slate-100 font-bold text-lg">{title}</h1>
+        {subtitle && <p className="text-slate-600 dark:text-slate-400 text-xs mt-1">{subtitle}</p>}
       </div>
 
       {showLiveUpdate && (
@@ -26,7 +26,7 @@ export default function TopNavbar({
             className="w-2.5 h-2.5 rounded-full animate-pulse border"
             style={{ backgroundColor: liveUpdateColor }}
           />
-          <span className="text-slate-600 text-xs font-medium">Live Update</span>
+          <span className="text-slate-600 dark:text-slate-400 text-xs font-medium">Live Update</span>
         </div>
       )}
     </div>
