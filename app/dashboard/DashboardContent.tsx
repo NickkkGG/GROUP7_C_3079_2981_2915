@@ -31,6 +31,14 @@ async function fetchDashboardData() {
   };
 }
 
+// Sensor AWB untuk user/guest — "AWB-EP-24127" → "AWB-**-***27"
+function maskAwb(awb: string): string {
+  if (!awb) return '-';
+  if (awb.length <= 4) return '****';
+  const visible = awb.slice(-2);
+  return awb.slice(0, 4) + '*'.repeat(Math.max(awb.length - 6, 2)) + visible;
+}
+
 export default function DashboardContent() {
   const { user, setUser } = useAuth();
   const router = useRouter();
@@ -140,8 +148,8 @@ export default function DashboardContent() {
   ];
 
   return (
-    <div className="p-3 h-full bg-white animate-fade-in">
-      <div className="grid grid-cols-3 gap-2 h-full" style={{ gridTemplateRows: 'repeat(5, 1fr)' }}>
+    <div className="p-3 h-full bg-white animate-fade-in overflow-hidden">
+      <div className="grid grid-cols-3 gap-2 h-full" style={{ gridTemplateRows: 'repeat(5, minmax(0, 1fr))' }}>
         {/* Overview - div1: col 1, rows 1-3 */}
         <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-3 overflow-hidden flex flex-col" style={{ gridColumn: '1', gridRow: '1 / span 3' }}>
           <h3 className="text-xs font-bold text-slate-900 mb-2 flex-shrink-0">Overview</h3>
@@ -230,7 +238,7 @@ export default function DashboardContent() {
         {/* Active Shipments - div4: cols 2-3, rows 4-5 */}
         <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] p-2 overflow-hidden flex flex-col" style={{ gridColumn: '2 / span 2', gridRow: '4 / span 2' }}>
           <div className="flex items-center justify-between mb-2 gap-2 flex-shrink-0">
-            <h2 className="text-xs font-bold text-slate-900 whitespace-nowrap">Active Shipments</h2>
+            <h2 className="text-xs font-bold text-slate-900 whitespace-nowrap">Latest Shipments</h2>
             <div className="flex gap-1 flex-1">
               <input
                 type="text"
@@ -296,16 +304,22 @@ export default function DashboardContent() {
                     </td>
                   </tr>
                 ) : (
-                  shipments.map((shipment, idx) => (
+                  shipments.map((shipment, idx) => {
+                    const isOperator = user?.role === 'operator';
+                    return (
                     <tr key={idx} className="border-b-[1px] border-black/20 hover:bg-emerald-50 transition-all duration-200 group">
                       <td className="py-1.5 px-2">
-                        <Link href={`/dashboard/tracking?search=${encodeURIComponent(shipment.tracking_number)}`} className="text-emerald-600 hover:text-emerald-700 font-bold transition-colors truncate block group-hover:underline">
-                          {shipment.tracking_number}
-                        </Link>
+                        {isOperator ? (
+                          <Link href={`/dashboard/tracking?search=${encodeURIComponent(shipment.tracking_number)}`} className="text-emerald-600 hover:text-emerald-700 font-bold transition-colors truncate block group-hover:underline">
+                            {shipment.tracking_number}
+                          </Link>
+                        ) : (
+                          <span className="text-slate-400 font-bold truncate block text-[9px]">{maskAwb(shipment.tracking_number)}</span>
+                        )}
                       </td>
-                      <td className="py-1.5 px-2 text-slate-700 whitespace-nowrap text-[9px]">{shipment.origin}</td>
-                      <td className="py-1.5 px-2 text-slate-700 whitespace-nowrap text-[9px]">{shipment.destination}</td>
-                      <td className="py-1.5 px-2 text-slate-700 whitespace-nowrap text-[9px]">{shipment.flight_number || 'N/A'}</td>
+                      <td className="py-1.5 px-2 text-slate-700 whitespace-nowrap text-[9px]">{isOperator ? shipment.origin : '***'}</td>
+                      <td className="py-1.5 px-2 text-slate-700 whitespace-nowrap text-[9px]">{isOperator ? shipment.destination : '***'}</td>
+                      <td className="py-1.5 px-2 text-slate-700 whitespace-nowrap text-[9px]">{isOperator ? (shipment.flight_number || 'N/A') : '***'}</td>
                       <td className="py-1.5 px-2">
                         <span
                           className={`px-2 py-0.5 rounded-full text-[9px] font-bold inline-block whitespace-nowrap transition-all ${
@@ -323,14 +337,18 @@ export default function DashboardContent() {
                           {shipment.status?.replace('_', ' ').charAt(0).toUpperCase() + shipment.status?.replace('_', ' ').slice(1) || 'Pending'}
                         </span>
                       </td>
-                      <td className="py-1.5 px-2 text-slate-700 whitespace-nowrap text-[9px] font-medium">{shipment.weight || 'N/A'} kg</td>
+                      <td className="py-1.5 px-2 text-slate-700 whitespace-nowrap text-[9px] font-medium">{isOperator ? `${shipment.weight || 'N/A'} kg` : '***'}</td>
                       <td className="py-1.5 px-2">
-                        <Link href={`/dashboard/tracking?search=${encodeURIComponent(shipment.tracking_number)}`} className="px-2 py-1 rounded-lg text-white text-[9px] font-bold bg-[#1e3a5f] hover:bg-[#2c5282] transition-all duration-200 inline-block hover:shadow-md active:scale-95">
-                          Details →
-                        </Link>
+                        {isOperator ? (
+                          <Link href={`/dashboard/tracking?search=${encodeURIComponent(shipment.tracking_number)}`} className="px-2 py-1 rounded-lg text-white text-[9px] font-bold bg-[#1e3a5f] hover:bg-[#2c5282] transition-all duration-200 inline-block hover:shadow-md active:scale-95">
+                            Details →
+                          </Link>
+                        ) : (
+                          <span className="px-2 py-1 rounded-lg text-slate-400 text-[9px] font-bold bg-slate-100 inline-block cursor-not-allowed italic">Operator only</span>
+                        )}
                       </td>
                     </tr>
-                  ))
+                  )})
                 )}
               </tbody>
             </table>

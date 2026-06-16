@@ -57,7 +57,7 @@ export default function DashboardContainer({ children }: DashboardContainerProps
       {/* Modern Container */}
       <div className="w-full bg-white rounded-[24px] border-[2px] border-black/30 overflow-hidden flex h-[92vh] shadow-2xl shadow-black/30 hover:shadow-2xl hover:shadow-cyan-500/10">
         {/* LEFT SIDEBAR */}
-        <div className={`${sidebarExpanded ? 'w-48' : 'w-20'} bg-white border-r-[2px] border-black/20 flex flex-col items-center py-6 transition-all duration-300 ease-out`}>
+        <div className={`${sidebarExpanded ? 'w-48' : 'w-20'} bg-white border-r-[2px] border-black/20 flex flex-col items-center py-6 transition-[width] duration-300 ease-out will-change-[width]`}>
           {/* Logo/ALTUS */}
           <Link href="/dashboard" className="group flex flex-col items-center relative top-[-48px] transition-transform duration-300 hover:scale-110">
             <div className="w-30 h-30 relative drop-shadow-lg group-hover:drop-shadow-2xl transition-all duration-300">
@@ -83,7 +83,7 @@ export default function DashboardContainer({ children }: DashboardContainerProps
                 href={item.href}
                 className={`relative flex items-center justify-center ${sidebarExpanded ? 'justify-start' : ''} gap-3 px-4 py-3.5 rounded-[12px] overflow-hidden transition-all duration-300 group font-medium ${
                   isActive(item.href)
-                    ? "bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg shadow-cyan-500/30 border-[2px] border-white/20"
+                    ? "bg-[#0d1c32] text-white shadow-lg shadow-[#0d1c32]/40 border-[2px] border-white/20"
                     : "text-slate-700 hover:text-slate-900 border-[2px] border-transparent hover:bg-gradient-to-r hover:from-cyan-400/10 hover:to-emerald-400/10 hover:border-cyan-400/30 hover:shadow-md hover:shadow-cyan-400/20"
                 }`}
               >
@@ -140,7 +140,9 @@ export default function DashboardContainer({ children }: DashboardContainerProps
         {/* RIGHT CONTENT AREA */}
         <div className="flex-1 overflow-hidden relative" style={{ contain: 'layout style paint' }}>
           <div className="absolute inset-0 overflow-y-scroll overflow-x-hidden no-scrollbar">
-            {children}
+            <div key={pathname} className="animate-page-transition h-full">
+              {children}
+            </div>
           </div>
         </div>
       </div>

@@ -91,8 +91,8 @@ export default function LoginPage() {
       }
 
       showNotification('Login successful! Redirecting to ALTUS dashboard...', 'success');
-      localStorage.setItem('user', JSON.stringify(data.user));
-      localStorage.setItem('userRole', data.user.role);
+      sessionStorage.setItem('user', JSON.stringify(data.user));
+      sessionStorage.setItem('userRole', data.user.role);
       // Cookie untuk middleware proteksi route /dashboard
       document.cookie = `auth_role=${data.user.role}; path=/; max-age=86400; samesite=lax`;
 

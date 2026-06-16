@@ -152,7 +152,7 @@ export default function FlightStatusContent() {
           {/* Flights Table Box */}
           <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[16px] overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm table-fixed">
                 <thead>
                   <tr className="border-b-[2px] border-black/20 bg-gradient-to-r from-cyan-500/10 to-blue-500/10">
                     <th className="text-left py-3 px-4 text-slate-900 font-bold">Flight</th>

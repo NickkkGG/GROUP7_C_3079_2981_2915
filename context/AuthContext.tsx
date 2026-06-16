@@ -33,8 +33,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserFromStorage = () => {
     if (typeof window !== 'undefined') {
-      const storedUser = localStorage.getItem('user');
-      const userRole = localStorage.getItem('userRole');
+      // sessionStorage = per-tab, jadi tab user & tab operator tidak saling timpa
+      const storedUser = sessionStorage.getItem('user');
+      const userRole = sessionStorage.getItem('userRole');
 
       if (storedUser) {
         try {
@@ -60,8 +61,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('user');
-      localStorage.removeItem('userRole');
+      sessionStorage.removeItem('user');
+      sessionStorage.removeItem('userRole');
       // Hapus cookie middleware
       document.cookie = 'auth_role=; path=/; max-age=0';
     }

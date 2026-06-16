@@ -252,6 +252,23 @@ body {
   animation: fadeIn 0.8s ease-out forwards;
 }
 
+/* Page transition saat pindah halaman dashboard */
+@keyframes pageTransition {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-transition {
+  animation: pageTransition 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: opacity, transform;
+}
+
 .animate-fade-up {
   animation: fadeUp 0.8s ease-out forwards;
 }

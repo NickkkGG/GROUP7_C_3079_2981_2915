@@ -29,6 +29,7 @@ export default function UsersContent() {
   const [editUser, setEditUser] = useState<User | null>(null);
   const [editForm, setEditForm] = useState({ fullname: '', email: '', role: 'user', password: '' });
   const [showPassword, setShowPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -90,6 +91,7 @@ export default function UsersContent() {
     setEditUser(u);
     setEditForm({ fullname: u.fullname, email: u.email, role: u.role, password: '' });
     setShowPassword(false);
+    setShowCurrentPassword(false);
   };
 
   const handleSaveUser = async () => {
@@ -279,10 +281,10 @@ export default function UsersContent() {
                           </td>
                           <td className="py-3 px-4 text-xs space-x-2" onClick={(e) => e.stopPropagation()}>
                             <button
-                              onClick={(e) => { e.stopPropagation(); setEditingId(u.id); setSelectedRole(u.role); }}
+                              onClick={(e) => { e.stopPropagation(); openEditModal(u); }}
                               className="text-cyan-600 hover:text-cyan-700 font-bold text-xs"
                             >
-                              Edit Role
+                              Edit User
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleDeleteUser(u); }}
@@ -356,9 +358,30 @@ export default function UsersContent() {
                 </select>
               </div>
 
+              {/* Current Password (read-only — bcrypt encrypted, cannot reveal plaintext) */}
+              <div>
+                <label className="block text-slate-900 font-bold text-xs mb-1">Current Password</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    readOnly
+                    value={showCurrentPassword ? '🔒 Encrypted — cannot be revealed' : '••••••••••••'}
+                    className="w-full bg-slate-100 border-[2px] border-slate-300 rounded-[12px] px-3 py-2 pr-9 text-slate-500 text-xs outline-none cursor-not-allowed"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                  >
+                    {showCurrentPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
+                <p className="text-slate-400 text-[10px] mt-1">Passwords are securely hashed and cannot be displayed. Set a new one below to change it.</p>
+              </div>
+
               {/* Password */}
               <div>
-                <label className="block text-slate-900 font-bold text-xs mb-1">Password <span className="text-slate-400 font-normal">(leave blank to keep current)</span></label>
+                <label className="block text-slate-900 font-bold text-xs mb-1">New Password <span className="text-slate-400 font-normal">(leave blank to keep current)</span></label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}

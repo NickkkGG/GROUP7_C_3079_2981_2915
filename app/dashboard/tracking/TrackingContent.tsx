@@ -1,9 +1,10 @@
 ﻿'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Settings, Info, MapPin, Search, Package, Download } from 'lucide-react';
+import { Settings, Info, MapPin, Search, Package, Download, Plane } from 'lucide-react';
 import TopNavbar from '@/components/TopNavbar';
 import { jsPDF } from 'jspdf';
 
@@ -21,6 +22,16 @@ function maskPhone(phone: string): string {
   const digits = phone.replace(/\D/g, '');
   if (digits.length <= 4) return '****';
   return '****' + digits.slice(-4);
+}
+
+// Estimasi waktu tiba: created_at + hari sesuai service type
+function estimateArrival(createdAt: string, serviceType: string): string {
+  if (!createdAt) return 'Not scheduled';
+  const days: Record<string, number> = { Priority: 1, Express: 2, Regular: 4 };
+  const addDays = days[serviceType] ?? 4;
+  const eta = new Date(createdAt);
+  eta.setDate(eta.getDate() + addDays);
+  return eta.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 export default function TrackingContent() {
@@ -204,30 +215,34 @@ export default function TrackingContent() {
         title="Track Airway Bill"
         subtitle="Locate and track specific airway bills."
       />
-      <div className="p-4 flex flex-col gap-3 flex-1 overflow-y-auto no-scrollbar">
-      {/* SECTION 1: Search Header */}
-      <div className="bg-gradient-to-br from-white to-slate-50 border-[2px] border-black/20 rounded-[20px] backdrop-blur-md overflow-hidden p-3">
-        <div className="flex flex-col gap-3">
-          <div>
-            <h1 className="text-slate-900 font-bold text-base">Track Airway Bill</h1>
-            <p className="text-slate-600 text-xs">Enter your 10-12 digit AWB number to get real-time status updates.</p>
+      <div className="p-4 flex flex-col gap-3 flex-1 overflow-y-auto">
+      {!hasSearched ? (
+        /* LANDING HERO — sebelum search, hanya kotak search */
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-4 animate-fade-in">
+          <div className="w-24 h-24 bg-white rounded-[26px] border-[2px] border-black/10 shadow-lg shadow-slate-300/50 flex items-center justify-center mb-6 relative overflow-hidden">
+            <Image src="/images/icon_altus.png" alt="ALTUS" fill className="object-contain p-2" priority />
           </div>
+          <h1 className="text-slate-900 font-black text-2xl md:text-3xl tracking-tight">Track Your Airway Bill Here</h1>
+          <p className="text-slate-500 text-sm mt-2.5 max-w-md leading-relaxed">
+            Enter your AWB number below to get real-time shipment status, route details, and the delivery timeline.
+          </p>
 
-          <form onSubmit={handleSearch} className="flex gap-1.5 items-center">
-            <div className="flex-1 max-w-md bg-white border-[2px] border-black/33 rounded-[12px] px-3 py-2 flex items-center gap-2">
-              <Search size={16} className="text-slate-400" />
+          <form onSubmit={handleSearch} className="flex gap-2 items-center w-full max-w-lg mt-8">
+            <div className="flex-1 bg-white border-[2px] border-black/20 rounded-[14px] px-4 py-3 flex items-center gap-2.5 shadow-sm focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+              <Search size={18} className="text-slate-400 flex-shrink-0" />
               <input
                 type="text"
                 value={awb}
+                autoFocus
                 onChange={(e) => setAwb(e.target.value)}
-                className="flex-1 bg-transparent text-slate-900 text-xs outline-none placeholder-slate-400"
-                placeholder="Enter AWB number..."
+                className="flex-1 bg-transparent text-slate-900 text-sm outline-none placeholder-slate-400"
+                placeholder="e.g. AWB-EP-24127"
               />
               {awb && (
                 <button
                   type="button"
                   onClick={() => setAwb('')}
-                  className="text-slate-900 opacity-40 hover:opacity-70 transition text-xs"
+                  className="text-slate-900 opacity-40 hover:opacity-70 transition text-sm flex-shrink-0"
                 >
                   ✕
                 </button>
@@ -235,13 +250,37 @@ export default function TrackingContent() {
             </div>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#1e3a5f] text-white font-bold text-xs rounded-lg transition-all duration-300 hover:bg-[#2c5282] active:scale-95 whitespace-nowrap"
+              className="px-7 py-3 bg-[#1e3a5f] text-white font-bold text-sm rounded-[14px] transition-all duration-300 hover:bg-[#2c5282] active:scale-95 whitespace-nowrap shadow-md shadow-blue-900/20"
             >
-              Track AWB
+              Track
             </button>
           </form>
+          <p className="text-slate-400 text-[11px] mt-4">AWB numbers are case-insensitive.</p>
         </div>
-      </div>
+      ) : loading ? (
+        /* LOADING SCREEN — while loading the shipment */
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-4 animate-fade-in">
+          <div className="relative w-20 h-20 mb-5">
+            <div className="absolute inset-0 rounded-full border-4 border-blue-100" />
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-600 animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Image src="/images/icon_altus.png" alt="ALTUS" width={38} height={38} className="object-contain" />
+            </div>
+          </div>
+          <h2 className="text-slate-900 font-bold text-lg">Loading the shipment</h2>
+          <p className="text-slate-500 text-sm mt-1.5 font-mono">{awb}</p>
+          <p className="text-slate-400 text-xs mt-3">Fetching status, route, and tracking history…</p>
+        </div>
+      ) : (
+      <>
+      {/* Tombol kecil untuk balik ke landing & search AWB lain */}
+      <button
+        onClick={() => { setHasSearched(false); setShipment(null); setTrackingHistory([]); setNotFound(false); setAwb(''); }}
+        className="flex items-center gap-1.5 text-slate-500 hover:text-slate-900 text-xs font-semibold transition self-start flex-shrink-0"
+      >
+        <Search size={13} />
+        Track another AWB
+      </button>
 
       {/* SECTION 2 & 3: Details and Timeline */}
       {notFound ? (
@@ -313,8 +352,8 @@ export default function TrackingContent() {
 
             {/* Bottom White Section */}
             <div className="bg-white px-4 py-6">
-              <div className="grid grid-cols-4 gap-4 text-xs">
-                {['ORIGIN', 'DESTINATION', 'FLIGHT', 'EST.ARRIVAL'].map((label, idx) => (
+              <div className="grid grid-cols-5 gap-4 text-xs">
+                {['ORIGIN', 'DESTINATION', 'FLIGHT', 'EST. ARRIVAL', 'CREATED'].map((label, idx) => (
                   <div key={idx} className="text-center">
                     <p className="text-slate-600 font-bold opacity-70 mb-1.5">{label}</p>
                     {loading ? (
@@ -326,7 +365,8 @@ export default function TrackingContent() {
                         {idx === 0 ? shipment.origin :
                          idx === 1 ? shipment.destination :
                          idx === 2 ? (shipment.flight_number || 'N/A') :
-                         (shipment.arrival_time ? new Date(shipment.arrival_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'TBD')}
+                         idx === 3 ? (shipment.arrival_time ? new Date(shipment.arrival_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : estimateArrival(shipment.created_at, shipment.service_type)) :
+                         (shipment.created_at ? new Date(shipment.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-')}
                       </p>
                     )}
                   </div>
@@ -351,31 +391,58 @@ export default function TrackingContent() {
                   Export PDF
                 </button>
               </div>
-              <div className="bg-gradient-to-br from-white to-slate-50 px-4 py-3">
-                <div className="flex items-stretch gap-4">
+              <div className="bg-white px-4 py-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Sender */}
-                  <div className="flex-1 bg-blue-50/60 rounded-xl px-3 py-2.5 border border-blue-100">
-                    <p className="text-blue-600 font-bold text-[10px] uppercase tracking-wider mb-1.5">✉ Sender</p>
-                    <p className="text-slate-900 text-xs font-semibold">{maskName(shipment.sender)}</p>
-                    <p className="text-slate-500 text-[11px] font-mono mt-0.5">{maskPhone(shipment.sender_contact)}</p>
-                  </div>
-                  {/* Arrow */}
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center">
-                      <span className="text-slate-400 text-sm">→</span>
+                  <div className="bg-blue-50/40 rounded-xl p-4 border border-blue-100">
+                    <p className="text-blue-700 font-bold text-[11px] uppercase tracking-wider mb-3 pb-2 border-b border-blue-100">Sender</p>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-slate-400 text-[10px] uppercase tracking-wide">Name</p>
+                        <p className="text-slate-900 text-xs font-semibold">{maskName(shipment.sender)}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[10px] uppercase tracking-wide">Phone</p>
+                        <p className="text-slate-700 text-xs font-mono">{maskPhone(shipment.sender_contact)}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[10px] uppercase tracking-wide">Address</p>
+                        <p className="text-slate-700 text-xs leading-relaxed">{shipment.sender_address || '-'}</p>
+                      </div>
                     </div>
                   </div>
                   {/* Recipient */}
-                  <div className="flex-1 bg-emerald-50/60 rounded-xl px-3 py-2.5 border border-emerald-100">
-                    <p className="text-emerald-600 font-bold text-[10px] uppercase tracking-wider mb-1.5">📦 Recipient</p>
-                    <p className="text-slate-900 text-xs font-semibold">{maskName(shipment.recipient_name)}</p>
-                    <p className="text-slate-500 text-[11px] font-mono mt-0.5">{maskPhone(shipment.recipient_contact)}</p>
+                  <div className="bg-emerald-50/40 rounded-xl p-4 border border-emerald-100">
+                    <p className="text-emerald-700 font-bold text-[11px] uppercase tracking-wider mb-3 pb-2 border-b border-emerald-100">Recipient</p>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-slate-400 text-[10px] uppercase tracking-wide">Name</p>
+                        <p className="text-slate-900 text-xs font-semibold">{maskName(shipment.recipient_name)}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[10px] uppercase tracking-wide">Phone</p>
+                        <p className="text-slate-700 text-xs font-mono">{maskPhone(shipment.recipient_contact)}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[10px] uppercase tracking-wide">Address</p>
+                        <p className="text-slate-700 text-xs leading-relaxed">{shipment.recipient_address || '-'}</p>
+                      </div>
+                    </div>
                   </div>
-                  {/* Shipment Info */}
-                  <div className="flex-1 bg-amber-50/60 rounded-xl px-3 py-2.5 border border-amber-100">
-                    <p className="text-amber-600 font-bold text-[10px] uppercase tracking-wider mb-1.5">📋 Info</p>
-                    <p className="text-slate-900 text-xs font-semibold">{shipment.item_type || 'General'}</p>
-                    <p className="text-slate-500 text-[11px] mt-0.5">{shipment.weight} kg · {shipment.service_type || 'Regular'}</p>
+                </div>
+                {/* Shipment Info row */}
+                <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-slate-200">
+                  <div>
+                    <p className="text-slate-400 text-[10px] uppercase tracking-wide">Route</p>
+                    <p className="text-slate-900 text-xs font-semibold">{shipment.origin} - {shipment.destination}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-[10px] uppercase tracking-wide">Item / Service</p>
+                    <p className="text-slate-900 text-xs font-semibold">{shipment.item_type || 'General'} · {shipment.service_type || 'Regular'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-[10px] uppercase tracking-wide">Weight</p>
+                    <p className="text-slate-900 text-xs font-semibold">{shipment.weight} kg</p>
                   </div>
                 </div>
               </div>
@@ -393,7 +460,7 @@ export default function TrackingContent() {
             </div>
 
             {/* Timeline Content */}
-            <div className="bg-gradient-to-br from-white to-slate-50 px-4 py-4 flex-1 flex flex-col justify-center">
+            <div className="bg-gradient-to-br from-white to-slate-50 px-4 py-6 flex flex-col justify-center">
               {loading ? (
                 <div className="relative">
                   {/* Timeline line background */}
@@ -494,6 +561,8 @@ export default function TrackingContent() {
           </div>
         </div>
       )}
+      </>
+      )}
       </div>
 
       {/* Guest popup — harus login untuk export PDF */}
@@ -506,7 +575,7 @@ export default function TrackingContent() {
               </div>
               <h3 className="text-slate-900 font-bold text-lg">Login Required</h3>
               <p className="text-slate-600 text-sm mt-2">
-                Kamu perlu punya akun untuk download tracking receipt dalam bentuk PDF. Silakan login atau buat akun dulu.
+                You need an account to download the tracking receipt as PDF. Please log in or create an account first.
               </p>
             </div>
             <div className="flex gap-3">
@@ -514,13 +583,13 @@ export default function TrackingContent() {
                 onClick={() => setShowGuestPopup(false)}
                 className="flex-1 px-4 py-2.5 bg-white border-[2px] border-black/20 text-slate-900 font-bold text-xs rounded-[12px] hover:bg-slate-50 transition"
               >
-                Nanti Saja
+                Later
               </button>
               <button
                 onClick={() => { window.location.href = '/login'; }}
                 className="flex-1 px-4 py-2.5 bg-[#1e3a5f] text-white font-bold text-xs rounded-[12px] hover:bg-[#2c5282] transition"
               >
-                Login / Daftar
+                Login / Sign Up
               </button>
             </div>
           </div>
