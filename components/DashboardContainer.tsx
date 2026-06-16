@@ -65,6 +65,7 @@ export default function DashboardContainer({ children }: DashboardContainerProps
                 src="/images/icon_altus.png"
                 alt="ALTUS"
                 fill
+                sizes="120px"
                 priority
                 style={{ objectFit: 'contain' }}
               />

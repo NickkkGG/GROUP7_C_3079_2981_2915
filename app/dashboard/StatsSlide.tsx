@@ -170,7 +170,7 @@ export default function StatsSlide() {
             ) : shipChart.length === 0 ? (
               <div className="h-full flex items-center justify-center text-slate-400 text-xs">No data in this range</div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <AreaChart data={shipChart} margin={{ top: 5, right: 5, left: -22, bottom: 0 }}>
                   <defs>
                     <linearGradient id="shipGrad" x1="0" y1="0" x2="0" y2="1">
@@ -201,7 +201,7 @@ export default function StatsSlide() {
             ) : (
               <>
                 <div className="w-[45%] h-full">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                     <PieChart>
                       <Pie data={data!.serviceType} dataKey="total" nameKey="type" cx="50%" cy="50%" innerRadius="55%" outerRadius="90%" paddingAngle={2} stroke="none">
                         {data!.serviceType.map((s, i) => <Cell key={i} fill={SERVICE_COLORS[s.type] || '#94a3b8'} />)}
@@ -239,7 +239,7 @@ export default function StatsSlide() {
             ) : revChart.length === 0 ? (
               <div className="h-full flex items-center justify-center text-slate-400 text-xs">No data in this range</div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <BarChart data={revChart} margin={{ top: 5, right: 5, left: -8, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                   <XAxis dataKey="label" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
@@ -262,7 +262,7 @@ export default function StatsSlide() {
             {loading || routeChart.length === 0 ? (
               <div className="h-full flex items-center justify-center text-slate-400 text-xs">{loading ? 'Loading…' : 'No data'}</div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <BarChart data={routeChart} layout="vertical" margin={{ top: 2, right: 8, left: 2, bottom: 2 }}>
                   <XAxis type="number" hide allowDecimals={false} />
                   <YAxis type="category" dataKey="label" tick={{ fontSize: 9, fill: '#64748b', fontWeight: 600 }} axisLine={false} tickLine={false} width={62} />
