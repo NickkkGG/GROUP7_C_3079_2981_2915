@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     // Build search query
     let query = `
       SELECT f.*, a.registration, a.model, a.airline, a.capacity as max_capacity,
-        COALESCE((SELECT SUM(s.weight) FROM shipments s WHERE s.flight_id = f.id), 0) as used_capacity
+        COALESCE((SELECT SUM(s.weight) FROM shipments s WHERE s.flight_id = f.id AND s.status <> 'cancelled'), 0) as used_capacity
       FROM flights f
       LEFT JOIN aircraft a ON f.aircraft_id = a.id
       WHERE 1=1

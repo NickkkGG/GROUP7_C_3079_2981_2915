@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
     if (flight_id) {
       const capacityResult = await sql.query(
         `SELECT a.capacity as max_capacity,
-          COALESCE((SELECT SUM(s.weight) FROM shipments s WHERE s.flight_id = $1), 0) as used_capacity
+          COALESCE((SELECT SUM(s.weight) FROM shipments s WHERE s.flight_id = $1 AND s.status <> 'cancelled'), 0) as used_capacity
          FROM flights f
          LEFT JOIN aircraft a ON f.aircraft_id = a.id
          WHERE f.id = $1`,
@@ -324,6 +324,33 @@ export async function PUT(request: NextRequest) {
 
     // Sinkronkan tracking_history dengan status terbaru
     await syncTrackingHistory(tracking_number, status);
+
+    // Notifikasi: kalau status berubah, kasih tau user yang pernah track AWB ini
+    const oldStatus = currentShipment.rows[0].status;
+    if (oldStatus !== status) {
+      try {
+        const usersWhoTracked = await sql.query(
+          `SELECT DISTINCT user_email FROM user_activity
+           WHERE tracking_number = $1 AND activity_type = 'track'`,
+          [tracking_number]
+        );
+
+        for (const row of usersWhoTracked.rows) {
+          await sql.query(
+            `INSERT INTO notifications (user_email, tracking_number, message)
+             VALUES ($1, $2, $3)`,
+            [
+              row.user_email,
+              tracking_number,
+              `Shipment ${tracking_number} status changed from ${oldStatus} to ${status}`
+            ]
+          );
+        }
+      } catch (notifError) {
+        console.error('Error creating notifications:', notifError);
+        // Jangan fail shipment update kalau notifikasi gagal
+      }
+    }
 
     return NextResponse.json({
       success: true,

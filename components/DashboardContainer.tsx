@@ -3,10 +3,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Map, Plane, Settings, Truck, Users } from 'lucide-react';
+import { LayoutDashboard, Map, Plane, Settings, Truck, Users, History } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import SecurityGuard from '@/components/SecurityGuard';
+import NotificationBell from '@/components/NotificationBell';
 
 interface DashboardContainerProps {
   children: React.ReactNode;
@@ -22,6 +23,7 @@ const userNavItems = [
   { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard size={20} strokeWidth={2.5} /> },
   { label: 'Track AWB', href: '/dashboard/tracking', icon: <Map size={20} strokeWidth={2.5} /> },
   { label: 'Flight Status', href: '/dashboard/flight-status', icon: <Plane size={20} strokeWidth={2.5} /> },
+  { label: 'My History', href: '/dashboard/history', icon: <History size={20} strokeWidth={2.5} /> },
 ];
 
 const operatorNavItems = [
@@ -30,6 +32,7 @@ const operatorNavItems = [
   { label: 'Flight Status', href: '/dashboard/flight-status', icon: <Plane size={20} strokeWidth={2.5} /> },
   { label: 'Shipments', href: '/dashboard/shipments', icon: <Truck size={20} strokeWidth={2.5} /> },
   { label: 'Users', href: '/dashboard/users', icon: <Users size={20} strokeWidth={2.5} /> },
+  { label: 'My History', href: '/dashboard/history', icon: <History size={20} strokeWidth={2.5} /> },
 ];
 
 export default function DashboardContainer({ children }: DashboardContainerProps) {
@@ -100,8 +103,9 @@ export default function DashboardContainer({ children }: DashboardContainerProps
           {/* Spacer */}
           <div className="flex-1" />
 
-          {/* Settings & Expand Toggle */}
+          {/* Notification, Settings & Expand Toggle */}
           <div className="w-full flex flex-col gap-2.5 px-2 mb-3">
+            <NotificationBell />
             <button
               onClick={() => setSidebarExpanded(!sidebarExpanded)}
               className="flex items-center justify-center w-full p-3 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-transparent hover:bg-gradient-to-r hover:from-cyan-400/10 hover:to-emerald-400/10 border-[2px] border-transparent hover:border-cyan-400/30 rounded-[12px] transition-all duration-300 hover:shadow-md hover:shadow-cyan-400/20 active:scale-95 font-bold text-lg"
@@ -151,7 +155,7 @@ export default function DashboardContainer({ children }: DashboardContainerProps
       {/* Footer - Fixed at bottom */}
       <div className="w-full absolute bottom-0 left-0 right-0 bg-[#0d1c32] py-1.5">
         <p className="text-[#ffe9d4] text-center text-[10px] font-medium opacity-70">
-          © 2025 PT Altus Air Logistics. All Rights Reserved.
+          © {new Date().getFullYear()} PT Altus Air Logistics. All Rights Reserved.
           <span className="mx-1.5">·</span>
           <a href="#" className="hover:opacity-100 transition-opacity duration-200">Terms of Service</a>
           <span className="mx-1.5">·</span>

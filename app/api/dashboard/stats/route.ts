@@ -15,11 +15,11 @@ export async function GET(request: NextRequest) {
       FROM flights;
     `;
 
-    // Get shipment stats - count today's shipments
+    // Get shipment stats - count today's shipments (exclude cancelled)
     const shipmentStats = await sql`
       SELECT COUNT(*) as total
       FROM shipments
-      WHERE DATE(created_at) = CURRENT_DATE;
+      WHERE DATE(created_at) = CURRENT_DATE AND status <> 'cancelled';
     `;
 
     // Get active shipments with optional search

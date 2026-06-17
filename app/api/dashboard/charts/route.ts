@@ -36,6 +36,9 @@ export async function GET(request: NextRequest) {
       bucket = 'day';
     }
 
+    // Exclude cancelled shipments from all analytics (no revenue, no capacity, not real volume)
+    rangeCondition = `(${rangeCondition}) AND status <> 'cancelled'`;
+
     // Kolom bucket untuk GROUP BY time-series
     const bucketCol =
       bucket === 'month' ? `date_trunc('month', created_at)` :

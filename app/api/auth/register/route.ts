@@ -80,7 +80,7 @@ export async function POST(request: Request) {
       } catch (dbError: any) {
         console.error('Database error:', dbError);
 
-        if ((dbError.message && dbError.message.includes('unique')) || dbError.code === 'SQLITE_CONSTRAINT') {
+        if (dbError.code === '23505' || (dbError.message && dbError.message.toLowerCase().includes('unique'))) {
           return Response.json({
             error: 'ALTUS Register Error: Email already registered in system. Use another email.'
           }, { status: 409 });

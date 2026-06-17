@@ -69,12 +69,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loginAsGuest = () => {
-    setUser({
+    const guestUser = {
       id: 'guest-001',
       name: 'Guest User',
       email: 'guest@altus.local',
-      role: 'guest',
-    });
+      role: 'guest' as UserRole,
+    };
+    setUser(guestUser);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('user', JSON.stringify({ ...guestUser, fullname: guestUser.name }));
+      sessionStorage.setItem('userRole', 'guest');
+      document.cookie = 'auth_role=guest; path=/; max-age=86400; samesite=lax';
+    }
   };
 
   return (

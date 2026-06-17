@@ -23,11 +23,12 @@ export async function GET(
       );
     }
 
-    // Get all shipments for this flight
+    // Get all shipments for this flight (exclude cancelled — not loaded on the aircraft)
     const shipmentsResult = await sql`
       SELECT tracking_number, sender, origin, destination, weight, status
       FROM shipments
       WHERE flight_id = (SELECT id FROM flights WHERE flight_number = ${flightNumber})
+        AND status <> 'cancelled'
       ORDER BY tracking_number ASC;
     `;
 

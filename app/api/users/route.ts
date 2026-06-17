@@ -34,6 +34,9 @@ export async function PUT(request: Request) {
     if (password !== undefined && password.length > 0 && password.length < 6) {
       return Response.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
     }
+    if (role !== undefined && !['guest', 'user', 'operator'].includes(role)) {
+      return Response.json({ error: 'Invalid role. Allowed roles: guest, user, operator' }, { status: 400 });
+    }
 
     // Build dynamic update
     const fields: string[] = [];

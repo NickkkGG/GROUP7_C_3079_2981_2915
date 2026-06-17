@@ -51,6 +51,16 @@ export default function TrackingContent() {
     }
   }, [user, loginAsGuest]);
 
+  // Log user activity (tracking / download) for logged-in non-guest users only
+  const logActivity = (type: 'track' | 'download', trackingNumber: string) => {
+    if (!user || user.role === 'guest' || !user.email || !trackingNumber) return;
+    fetch('/api/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: user.email, type, trackingNumber }),
+    }).catch(() => {});
+  };
+
   const handleExportPDF = () => {
     // Cek guest
     if (!user || user.role === 'guest') {
@@ -161,6 +171,7 @@ export default function TrackingContent() {
     doc.text('PT Altus Air Logistics — altus.id', pageW / 2, y + 10, { align: 'center' });
 
     doc.save(`ALTUS_${shipment.tracking_number}.pdf`);
+    logActivity('download', shipment.tracking_number);
   };
 
   const handleSearchWithAwb = async (awbNumber: string) => {
@@ -179,6 +190,7 @@ export default function TrackingContent() {
         setShipment(data.shipment);
         setTrackingHistory(data.history || []);
         setNotFound(false);
+        logActivity('track', data.shipment?.tracking_number || normalizedAwb);
       } else {
         setShipment(null);
         setTrackingHistory([]);
@@ -519,6 +531,47 @@ export default function TrackingContent() {
                         <div className="h-2.5 bg-slate-200 rounded w-16 mx-auto animate-pulse"></div>
                       </div>
                     ))}
+                  </div>
+                </div>
+              ) : shipment && shipment.status === 'cancelled' ? (
+                <div className="relative">
+                  {/* Timeline line: booked -> cancelled */}
+                  <div className="absolute top-[28px] -translate-y-1/2 left-[25%] right-[25%] h-[2px] bg-red-200" />
+                  <div className="flex justify-center items-start gap-16">
+                    {/* Booked step (completed) */}
+                    <div className="flex flex-col items-center">
+                      <div className="relative z-10 mb-2">
+                        <div className="w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl font-bold border-4 border-white" style={{ backgroundColor: '#2563eb' }}>
+                          ✓
+                        </div>
+                      </div>
+                      <h4 className="text-slate-900 font-bold text-sm text-center mb-1">Booked</h4>
+                      {(() => {
+                        const bookedItem = trackingHistory.find(h => h.status === 'booked');
+                        return bookedItem ? (
+                          <p className="text-slate-600 text-sm opacity-70 font-mono">
+                            {new Date(bookedItem.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </p>
+                        ) : <p className="text-slate-300 text-sm">-</p>;
+                      })()}
+                    </div>
+                    {/* Cancelled step */}
+                    <div className="flex flex-col items-center">
+                      <div className="relative z-10 mb-2">
+                        <div className="w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl font-bold border-4 border-white" style={{ backgroundColor: '#dc2626' }}>
+                          ✕
+                        </div>
+                      </div>
+                      <h4 className="text-red-700 font-bold text-sm text-center mb-1">Cancelled</h4>
+                      {(() => {
+                        const cancelledItem = trackingHistory.find(h => h.status === 'cancelled');
+                        return cancelledItem ? (
+                          <p className="text-slate-600 text-sm opacity-70 font-mono">
+                            {new Date(cancelledItem.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </p>
+                        ) : <p className="text-slate-300 text-sm">-</p>;
+                      })()}
+                    </div>
                   </div>
                 </div>
               ) : !hasSearched || trackingHistory.length === 0 ? (

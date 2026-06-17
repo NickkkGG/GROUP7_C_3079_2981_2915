@@ -123,6 +123,7 @@ export function validateShipmentInput(input: Record<string, unknown>) {
   if (!SHIPMENT_SERVICE_TYPES.includes(service_type)) return { ok: false as const, error: 'Shipment Error: Service type is invalid' };
   if (!status) return { ok: false as const, error: 'Shipment Error: Status cannot be empty' };
   if (!SHIPMENT_STATUSES.includes(status)) return { ok: false as const, error: 'Shipment Error: Status is invalid' };
+  if (status === 'cancelled') return { ok: false as const, error: 'Shipment Error: Cancellation must be done via the Cancel action, not by setting status directly' };
   if (!Number.isFinite(weight)) return { ok: false as const, error: 'Shipment Error: Weight must be a valid number' };
   if (weight <= 0) return { ok: false as const, error: 'Shipment Error: Weight must be greater than 0' };
 
