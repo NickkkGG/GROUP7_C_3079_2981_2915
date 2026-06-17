@@ -19,11 +19,50 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [pos, setPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dragOffset = useRef<{ x: number; y: number } | null>(null);
+
+  // Buka dropdown: posisikan di kanan tombol bell, menjorok ke atas (bell ada di bawah sidebar)
+  const openDropdown = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const left = rect.right + 12;
+      const top = Math.max(8, rect.bottom - 480);
+      setPos({ left, top });
+    }
+    setIsOpen((prev) => !prev);
+  };
+
+  // Drag handlers — header jadi "title bar" window float
+  const startDrag = (e: React.MouseEvent) => {
+    e.preventDefault();
+    dragOffset.current = { x: e.clientX - pos.left, y: e.clientY - pos.top };
+  };
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!dragOffset.current) return;
+      const width = 360;
+      const maxLeft = window.innerWidth - width - 8;
+      const maxTop = window.innerHeight - 80;
+      const nextLeft = Math.min(Math.max(8, e.clientX - dragOffset.current.x), maxLeft);
+      const nextTop = Math.min(Math.max(8, e.clientY - dragOffset.current.y), maxTop);
+      setPos({ left: nextLeft, top: nextTop });
+    };
+    const onUp = () => { dragOffset.current = null; };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [pos.left, pos.top]);
 
   // Fetch notifications
   useEffect(() => {
-    if (!user || user.role === 'guest' || !user.email) return;
+    if (!user || user.role === 'guest' || user.role === 'operator' || !user.email) return;
 
     const fetchNotifications = async () => {
       try {
@@ -54,7 +93,7 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  if (!user || user.role === 'guest' || !user.email) return null;
+  if (!user || user.role === 'guest' || user.role === 'operator' || !user.email) return null;
 
   const handleNotificationClick = async (notif: Notification) => {
     // Mark as read
@@ -89,6 +128,21 @@ export default function NotificationBell() {
     }
   };
 
+  const handleMarkAllRead = async () => {
+    if (!user.email || unreadCount === 0) return;
+    try {
+      await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email, markAll: true }),
+      });
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+    }
+  };
+
   const formatTime = (dateStr: string) => {
     const date = new Date(dateStr);
     const now = new Date();
@@ -108,7 +162,8 @@ export default function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       {/* Bell Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        ref={buttonRef}
+        onClick={openDropdown}
         className="relative flex items-center justify-center w-full p-3 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-transparent hover:bg-gradient-to-r hover:from-cyan-400/10 hover:to-emerald-400/10 border-[2px] border-transparent hover:border-cyan-400/30 rounded-[12px] transition-all duration-300 hover:shadow-md hover:shadow-cyan-400/20 active:scale-95 group"
         title="Notifications"
       >
@@ -120,11 +175,17 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {/* Dropdown */}
+      {/* Dropdown — fixed di kanan tombol bell, lepas dari clipping sidebar */}
       {isOpen && (
-        <div className="absolute right-full bottom-0 mr-3 w-[360px] max-h-[500px] bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden flex flex-col z-50">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b-2 border-slate-200 dark:border-slate-700 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-slate-700 dark:to-slate-700">
+        <div
+          style={{ left: pos.left, top: pos.top }}
+          className="fixed w-[360px] max-h-[500px] bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden flex flex-col z-[9999]"
+        >
+          {/* Header — drag handle (window float style) */}
+          <div
+            onMouseDown={startDrag}
+            className="flex items-center justify-between px-4 py-3 border-b-2 border-slate-200 dark:border-slate-700 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-slate-700 dark:to-slate-700 cursor-move select-none"
+          >
             <div className="flex items-center gap-2">
               <Bell size={18} className="text-blue-600 dark:text-blue-400" />
               <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">Notifications</h3>
@@ -134,22 +195,12 @@ export default function NotificationBell() {
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              {notifications.length > 0 && (
-                <button
-                  onClick={handleClearAll}
-                  className="text-[11px] text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-semibold"
-                >
-                  Clear all
-                </button>
-              )}
-              <button
-                onClick={() => setIsOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                <X size={18} />
-              </button>
-            </div>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              <X size={18} />
+            </button>
           </div>
 
           {/* Notification List */}
@@ -193,6 +244,25 @@ export default function NotificationBell() {
               </div>
             )}
           </div>
+
+          {/* Footer actions */}
+          {notifications.length > 0 && (
+            <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-t-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+              <button
+                onClick={handleMarkAllRead}
+                disabled={unreadCount === 0}
+                className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:text-slate-300 dark:disabled:text-slate-600 disabled:cursor-not-allowed transition"
+              >
+                Mark all as read
+              </button>
+              <button
+                onClick={handleClearAll}
+                className="text-[11px] font-bold text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

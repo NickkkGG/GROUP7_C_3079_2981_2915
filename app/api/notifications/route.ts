@@ -35,14 +35,27 @@ export async function GET(request: Request) {
   }
 }
 
-// PATCH: mark notification as read
+// PATCH: mark notification as read (single by id, or all via markAll)
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { id, email } = body;
+    const { id, email, markAll } = body;
 
-    if (!id || !email) {
-      return NextResponse.json({ error: 'ID and email required' }, { status: 400 });
+    if (!email) {
+      return NextResponse.json({ error: 'Email required' }, { status: 400 });
+    }
+
+    if (markAll) {
+      await sql`
+        UPDATE notifications
+        SET is_read = TRUE
+        WHERE user_email = ${email} AND is_read = FALSE;
+      `;
+      return NextResponse.json({ success: true });
+    }
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID required' }, { status: 400 });
     }
 
     await sql`

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, Package, User, MapPin } from 'lucide-react';
 import Notification from '@/components/Notification';
 import { isValidPhone, validateShipmentInput } from '@/lib/validation';
+import { useAuth } from '@/context/AuthContext';
 
 const RATES: Record<string, number> = { Regular: 5000, Express: 10000, Priority: 15000 };
 const formatRupiah = (n: number) =>
@@ -16,6 +17,7 @@ interface EditShipmentFormProps {
 }
 
 export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditShipmentFormProps) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [flights, setFlights] = useState<any[]>([]);
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null);
@@ -150,6 +152,7 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
         body: JSON.stringify({
           id: formData.id,
           ...validation.sanitized,
+          requesterEmail: user?.email,
         })
       });
 

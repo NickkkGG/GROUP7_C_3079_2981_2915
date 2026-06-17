@@ -5,6 +5,7 @@ import { X, Package, User, MapPin } from 'lucide-react';
 import { indonesianCities } from '@/lib/cities';
 import Notification from '@/components/Notification';
 import { isValidPhone, validateShipmentInput } from '@/lib/validation';
+import { useAuth } from '@/context/AuthContext';
 
 const RATES: Record<string, number> = { Regular: 5000, Express: 10000, Priority: 15000 };
 const formatRupiah = (n: number) =>
@@ -16,6 +17,7 @@ interface CreateShipmentFormProps {
 }
 
 export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmentFormProps) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [flights, setFlights] = useState<any[]>([]);
   const [originSuggestions, setOriginSuggestions] = useState<typeof indonesianCities>([]);
@@ -196,7 +198,7 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
       const response = await fetch('/api/shipments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(validation.sanitized)
+        body: JSON.stringify({ ...validation.sanitized, requesterEmail: user?.email })
       });
 
       const data = await response.json();

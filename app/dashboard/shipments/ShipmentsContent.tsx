@@ -136,7 +136,7 @@ export default function ShipmentsContent() {
       const response = await fetch(`/api/shipments?id=${shipmentToCancel.id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason }),
+        body: JSON.stringify({ reason, requesterEmail: user?.email }),
       });
 
       if (response.ok) {

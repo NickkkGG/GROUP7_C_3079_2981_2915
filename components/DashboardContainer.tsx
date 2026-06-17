@@ -32,7 +32,6 @@ const operatorNavItems = [
   { label: 'Flight Status', href: '/dashboard/flight-status', icon: <Plane size={20} strokeWidth={2.5} /> },
   { label: 'Shipments', href: '/dashboard/shipments', icon: <Truck size={20} strokeWidth={2.5} /> },
   { label: 'Users', href: '/dashboard/users', icon: <Users size={20} strokeWidth={2.5} /> },
-  { label: 'My History', href: '/dashboard/history', icon: <History size={20} strokeWidth={2.5} /> },
 ];
 
 export default function DashboardContainer({ children }: DashboardContainerProps) {

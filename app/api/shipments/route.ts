@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { validateShipmentInput } from '@/lib/validation';
+import { getRoleByEmail } from '@/lib/db';
+
+// Hanya operator yang boleh membuat/mengubah/membatalkan shipment.
+// Role diverifikasi dari DB, bukan dari cookie yang bisa dipalsukan client.
+async function requireOperator(requesterEmail: unknown): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+  const email = typeof requesterEmail === 'string' ? requesterEmail.toLowerCase().trim() : '';
+  if (!email) {
+    return { ok: false, status: 401, error: 'Unauthorized: requester identity is required' };
+  }
+  const role = await getRoleByEmail(email);
+  if (role !== 'operator') {
+    return { ok: false, status: 403, error: 'Forbidden: only operators can manage shipments' };
+  }
+  return { ok: true };
+}
 
 // Tarif per kg berdasarkan jenis pengiriman
 const RATES: Record<string, number> = { Regular: 5000, Express: 10000, Priority: 15000 };
@@ -105,6 +120,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
+    const auth = await requireOperator(body?.requesterEmail);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const validation = validateShipmentInput(body);
 
     if (!validation.ok) {
@@ -213,6 +234,11 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const { id } = body;
+
+    const auth = await requireOperator(body?.requesterEmail);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
 
     if (!id) {
       return NextResponse.json({ error: 'Shipment Error: Shipment ID is required' }, { status: 400 });
@@ -368,11 +394,18 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get('id');
 
     let reason = '';
+    let requesterEmail: unknown = '';
     try {
       const body = await request.json();
       reason = typeof body?.reason === 'string' ? body.reason.trim() : '';
+      requesterEmail = body?.requesterEmail;
     } catch {
       reason = '';
+    }
+
+    const auth = await requireOperator(requesterEmail);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     if (!id) {

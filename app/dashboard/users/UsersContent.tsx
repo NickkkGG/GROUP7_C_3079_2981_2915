@@ -92,7 +92,7 @@ export default function UsersContent() {
       const response = await fetch('/api/users', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, role: newRole }),
+        body: JSON.stringify({ userId, role: newRole, requesterEmail: user?.email }),
       });
 
       const data = await response.json();
@@ -131,6 +131,7 @@ export default function UsersContent() {
           email: editForm.email,
           role: editForm.role,
           password: editForm.password,
+          requesterEmail: user?.email,
         }),
       });
       const data = await response.json();
@@ -157,7 +158,7 @@ export default function UsersContent() {
     if (!userToDelete) return;
     setDeleting(true);
     try {
-      const response = await fetch(`/api/users?id=${userToDelete.id}`, {
+      const response = await fetch(`/api/users?id=${userToDelete.id}&requesterEmail=${encodeURIComponent(user?.email || '')}`, {
         method: 'DELETE',
       });
 

@@ -14,6 +14,19 @@ export async function insertUser(fullName: string, email: string, password: stri
   }
 }
 
+// Verifikasi role requester langsung dari DB (jangan percaya cookie/role dari client)
+export async function getRoleByEmail(email: string): Promise<string | null> {
+  try {
+    const result = await sql`
+      SELECT role FROM users WHERE email = ${email.toLowerCase().trim()};
+    `;
+    return result.rows[0]?.role ?? null;
+  } catch (error) {
+    console.error('Error getting role:', error);
+    return null;
+  }
+}
+
 export async function getUserByEmail(email: string) {
   try {
     const result = await sql`

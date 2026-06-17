@@ -24,13 +24,13 @@ export default function HistoryContent() {
   const [filter, setFilter] = useState<'all' | 'track' | 'download'>('all');
 
   useEffect(() => {
-    if (!isLoading && (!user || user.role === 'guest')) {
+    if (!isLoading && (!user || user.role !== 'user')) {
       router.push('/dashboard');
     }
   }, [user, isLoading, router]);
 
   useEffect(() => {
-    if (!user || user.role === 'guest' || !user.email) return;
+    if (!user || user.role !== 'user' || !user.email) return;
     setLoading(true);
     fetch(`/api/history?email=${encodeURIComponent(user.email)}`)
       .then((res) => res.json())
@@ -39,7 +39,7 @@ export default function HistoryContent() {
       .finally(() => setLoading(false));
   }, [user]);
 
-  if (!user || user.role === 'guest') return null;
+  if (!user || user.role !== 'user') return null;
 
   const filtered = activities.filter((a) => filter === 'all' || a.activity_type === filter);
 
