@@ -356,7 +356,7 @@ export default function TrackingContent() {
                 ) : (
                   <>
                     <div
-                      style={{ backgroundColor: 'rgba(18, 60, 149, 0.3)' }}
+                      style={{ backgroundColor: shipment.status === 'cancelled' ? 'rgba(220, 38, 38, 0.85)' : 'rgba(18, 60, 149, 0.3)' }}
                       className="px-3 py-1.5 rounded-full text-xs font-medium mb-2"
                     >
                       {shipment.status?.replace('_', ' ').charAt(0).toUpperCase() + shipment.status?.replace('_', ' ').slice(1)}
@@ -394,6 +394,23 @@ export default function TrackingContent() {
               </div>
             </div>
           </div>
+
+          {/* Cancellation Notice — only for cancelled shipments */}
+          {hasSearched && shipment && shipment.status === 'cancelled' && (
+            <div className="border-[2px] border-red-300 bg-red-50 rounded-[20px] overflow-hidden">
+              <div className="px-4 py-3 flex items-start gap-3">
+                <div className="w-9 h-9 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Info size={18} className="text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-red-900 font-bold text-sm">Shipment Cancelled</h3>
+                  <p className="text-red-700 text-xs mt-1 leading-relaxed">
+                    <span className="font-semibold">Reason:</span> {shipment.cancellation_reason || 'No reason provided.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* SECTION 2.5: Sender & Recipient Details */}
           {hasSearched && shipment && (

@@ -6,7 +6,7 @@ const PHONE_DIGIT_MAX = 13;
 const VERIFICATION_CODE_REGEX = /^[A-Z0-9]{6}$/;
 
 export const SHIPMENT_SERVICE_TYPES = ['Regular', 'Express', 'Priority'] as const;
-export const SHIPMENT_STATUSES = ['booked', 'received', 'in_transit', 'arrived', 'delivered'] as const;
+export const SHIPMENT_STATUSES = ['booked', 'received', 'in_transit', 'arrived', 'delivered', 'cancelled'] as const;
 
 type ShipmentServiceType = typeof SHIPMENT_SERVICE_TYPES[number];
 type ShipmentStatus = typeof SHIPMENT_STATUSES[number];

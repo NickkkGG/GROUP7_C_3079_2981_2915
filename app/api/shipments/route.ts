@@ -232,6 +232,12 @@ export async function PUT(request: NextRequest) {
         { status: 403 }
       );
     }
+    if (currentShipment.rows[0].status === 'cancelled') {
+      return NextResponse.json(
+        { error: 'Shipment Error: This shipment has been cancelled and can no longer be edited.' },
+        { status: 403 }
+      );
+    }
 
     const validation = validateShipmentInput(body);
 
@@ -334,38 +340,67 @@ export async function DELETE(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');
 
+    let reason = '';
+    try {
+      const body = await request.json();
+      reason = typeof body?.reason === 'string' ? body.reason.trim() : '';
+    } catch {
+      reason = '';
+    }
+
     if (!id) {
       return NextResponse.json({ error: 'Shipment ID is required' }, { status: 400 });
     }
 
-    // LOCK: Hanya shipment dengan status 'booked' yang bisa dihapus
-    const current = await sql.query('SELECT status FROM shipments WHERE id = $1', [id]);
+    if (!reason) {
+      return NextResponse.json({ error: 'Cancellation reason is required' }, { status: 400 });
+    }
+    if (reason.length < 5) {
+      return NextResponse.json({ error: 'Cancellation reason must be at least 5 characters' }, { status: 400 });
+    }
+
+    // LOCK: Only shipments with status 'booked' can be cancelled
+    const current = await sql.query('SELECT tracking_number, status FROM shipments WHERE id = $1', [id]);
     if (current.rows.length === 0) {
       return NextResponse.json({ error: 'Shipment not found' }, { status: 404 });
     }
+    if (current.rows[0].status === 'cancelled') {
+      return NextResponse.json({ error: 'This shipment has already been cancelled.' }, { status: 400 });
+    }
     if (current.rows[0].status !== 'booked') {
       return NextResponse.json(
-        { error: `Shipment cannot be deleted because it is already "${current.rows[0].status}". Only shipments with status "booked" can be deleted.` },
+        { error: `Shipment cannot be cancelled because it is already "${current.rows[0].status}". Only shipments with status "booked" can be cancelled.` },
         { status: 403 }
       );
     }
 
-    // Delete shipment
+    // Soft cancel: keep the record, set status to 'cancelled' and store the reason
     const result = await sql.query(
-      'DELETE FROM shipments WHERE id = $1 RETURNING *',
-      [id]
+      `UPDATE shipments
+       SET status = 'cancelled', cancellation_reason = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING *`,
+      [reason, id]
     );
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Shipment not found' }, { status: 404 });
     }
 
+    // Record a tracking-history entry so the cancellation shows up on the timeline
+    await sql.query(
+      `INSERT INTO tracking_history (tracking_number, status, location, notes, timestamp)
+       VALUES ($1, 'cancelled', 'Cancelled', $2, NOW())`,
+      [current.rows[0].tracking_number, `Shipment cancelled: ${reason}`]
+    );
+
     return NextResponse.json({
       success: true,
-      message: 'Shipment deleted successfully'
+      message: 'Shipment cancelled successfully',
+      shipment: result.rows[0]
     });
   } catch (error) {
-    console.error('Error deleting shipment:', error);
-    return NextResponse.json({ error: 'Failed to delete shipment' }, { status: 500 });
+    console.error('Error cancelling shipment:', error);
+    return NextResponse.json({ error: 'Failed to cancel shipment' }, { status: 500 });
   }
 }

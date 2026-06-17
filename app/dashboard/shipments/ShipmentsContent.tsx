@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useAuth } from '@/context/AuthContext';
-import { Package, Plus, Download, ChevronLeft, ChevronRight, Search, Edit, Trash2 } from 'lucide-react';
+import { Package, Plus, Download, ChevronLeft, ChevronRight, Search, Edit, Ban } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
@@ -25,8 +25,9 @@ export default function ShipmentsContent() {
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedShipment, setSelectedShipment] = useState<any>(null);
-  const [shipmentToDelete, setShipmentToDelete] = useState<any>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [shipmentToCancel, setShipmentToCancel] = useState<any>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelling, setCancelling] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const limit = 8;
 
@@ -118,31 +119,40 @@ export default function ShipmentsContent() {
     setIsEditing(true);
   };
 
-  const handleDeleteShipment = (shipment: any) => {
-    setShipmentToDelete(shipment);
+  const handleCancelShipment = (shipment: any) => {
+    setShipmentToCancel(shipment);
+    setCancelReason('');
   };
 
-  const confirmDelete = async () => {
-    if (!shipmentToDelete) return;
-    setDeleting(true);
+  const confirmCancel = async () => {
+    if (!shipmentToCancel) return;
+    const reason = cancelReason.trim();
+    if (reason.length < 5) {
+      toast.error('Please enter a reason (at least 5 characters)');
+      return;
+    }
+    setCancelling(true);
     try {
-      const response = await fetch(`/api/shipments?id=${shipmentToDelete.id}`, {
+      const response = await fetch(`/api/shipments?id=${shipmentToCancel.id}`, {
         method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
       });
 
       if (response.ok) {
-        toast.success(`Shipment ${shipmentToDelete.tracking_number} berhasil dihapus`);
-        setShipmentToDelete(null);
+        toast.success(`Shipment ${shipmentToCancel.tracking_number} has been cancelled`);
+        setShipmentToCancel(null);
+        setCancelReason('');
         loadShipments();
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Gagal menghapus shipment');
+        toast.error(error.error || 'Failed to cancel shipment');
       }
     } catch (error) {
-      console.error('Error deleting shipment:', error);
-      toast.error('Gagal menghapus shipment. Coba lagi.');
+      console.error('Error cancelling shipment:', error);
+      toast.error('Failed to cancel shipment. Please try again.');
     } finally {
-      setDeleting(false);
+      setCancelling(false);
     }
   };
 
@@ -205,6 +215,7 @@ export default function ShipmentsContent() {
                   { value: 'in_transit', label: 'In Transit' },
                   { value: 'arrived', label: 'Arrived' },
                   { value: 'delivered', label: 'Delivered' },
+                  { value: 'cancelled', label: 'Cancelled' },
                 ]}
               />
               <button
@@ -254,7 +265,7 @@ export default function ShipmentsContent() {
                     <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">Weight</th>
                     <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">View</th>
                     <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">Edit</th>
-                    <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">Delete</th>
+                    <th className="text-left py-2 px-4 text-slate-900 font-bold text-xs">Cancel</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -283,11 +294,17 @@ export default function ShipmentsContent() {
                         <td className="py-2 px-4">
                           <div className="h-4 bg-slate-300 rounded w-12"></div>
                         </td>
+                        <td className="py-2 px-4">
+                          <div className="h-4 bg-slate-200 rounded w-12"></div>
+                        </td>
+                        <td className="py-2 px-4">
+                          <div className="h-4 bg-slate-200 rounded w-14"></div>
+                        </td>
                       </tr>
                     ))
                   ) : shipments.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-10 text-center text-slate-400 text-xs">
+                      <td colSpan={9} className="py-10 text-center text-slate-400 text-xs">
                         No shipments found.
                       </td>
                     </tr>
@@ -311,7 +328,9 @@ export default function ShipmentsContent() {
                                     ? 'bg-orange-100 text-orange-700 border-orange-400'
                                     : shipment.status === 'arrived'
                                       ? 'bg-cyan-100 text-cyan-700 border-cyan-400'
-                                      : 'bg-emerald-100 text-emerald-700 border-emerald-400'
+                                      : shipment.status === 'cancelled'
+                                        ? 'bg-red-100 text-red-700 border-red-400'
+                                        : 'bg-emerald-100 text-emerald-700 border-emerald-400'
                             }`}
                           >
                             {shipment.status?.replace('_', ' ').charAt(0).toUpperCase() + shipment.status?.replace('_', ' ').slice(1)}
@@ -337,17 +356,17 @@ export default function ShipmentsContent() {
                         </td>
                         <td className="py-2 px-4">
                           <button
-                            onClick={() => shipment.status === 'booked' ? handleDeleteShipment(shipment) : null}
+                            onClick={() => shipment.status === 'booked' ? handleCancelShipment(shipment) : null}
                             disabled={shipment.status !== 'booked'}
-                            title={shipment.status !== 'booked' ? `Cannot delete: shipment is "${shipment.status}"` : 'Delete shipment'}
+                            title={shipment.status !== 'booked' ? `Cannot cancel: shipment is "${shipment.status}"` : 'Cancel shipment'}
                             className={`font-bold text-xs flex items-center gap-1 transition ${
                               shipment.status === 'booked'
                                 ? 'text-red-600 hover:text-red-700 cursor-pointer'
                                 : 'text-slate-300 cursor-not-allowed'
                             }`}
                           >
-                            <Trash2 size={12} />
-                            Delete
+                            <Ban size={12} />
+                            Cancel
                           </button>
                         </td>
                       </tr>
@@ -427,33 +446,46 @@ export default function ShipmentsContent() {
         trackingNumber={selectedTracking}
       />
 
-      {/* Delete Confirmation Modal */}
-      {shipmentToDelete && (
+      {/* Cancel Confirmation Modal */}
+      {shipmentToCancel && (
         <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
           <div className="bg-white border-[2px] border-black/20 rounded-[20px] p-6 max-w-sm w-full mx-4 shadow-2xl">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-11 h-11 bg-red-100 rounded-full flex items-center justify-center">
-                <Trash2 size={20} className="text-red-600" />
+                <Ban size={20} className="text-red-600" />
               </div>
-              <h3 className="text-slate-900 font-bold text-lg">Hapus Shipment?</h3>
+              <h3 className="text-slate-900 font-bold text-lg">Cancel Shipment?</h3>
             </div>
-            <p className="text-slate-600 text-sm mb-5">
-              Yakin ingin menghapus shipment <span className="font-bold text-slate-900">{shipmentToDelete.tracking_number}</span>? Tindakan ini tidak bisa dibatalkan.
+            <p className="text-slate-600 text-sm mb-4">
+              You are about to cancel shipment <span className="font-bold text-slate-900">{shipmentToCancel.tracking_number}</span>. The record will be kept and marked as cancelled. Please provide a reason.
             </p>
+            <div className="mb-5">
+              <label className="text-slate-700 font-semibold text-xs mb-1.5 block">Cancellation Reason</label>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                rows={3}
+                maxLength={300}
+                autoFocus
+                placeholder="e.g. Customer requested cancellation, wrong destination, duplicate booking..."
+                className="w-full bg-white border-[2px] border-black/20 rounded-[12px] px-3 py-2 text-slate-900 text-xs outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition resize-none"
+              />
+              <p className="text-slate-400 text-[10px] mt-1">{cancelReason.length}/300 · minimum 5 characters</p>
+            </div>
             <div className="flex gap-3">
               <button
-                onClick={() => setShipmentToDelete(null)}
-                disabled={deleting}
+                onClick={() => { setShipmentToCancel(null); setCancelReason(''); }}
+                disabled={cancelling}
                 className="flex-1 px-4 py-2.5 bg-slate-200 border-[2px] border-slate-400 text-slate-900 font-bold text-xs rounded-[12px] hover:bg-slate-300 transition disabled:opacity-50"
               >
-                Batal
+                Keep It
               </button>
               <button
-                onClick={confirmDelete}
-                disabled={deleting}
+                onClick={confirmCancel}
+                disabled={cancelling || cancelReason.trim().length < 5}
                 className="flex-1 px-4 py-2.5 bg-red-600 text-white font-bold text-xs rounded-[12px] hover:bg-red-700 transition disabled:opacity-50 shadow-md"
               >
-                {deleting ? 'Menghapus...' : 'Ya, Hapus'}
+                {cancelling ? 'Cancelling...' : 'Cancel Shipment'}
               </button>
             </div>
           </div>
