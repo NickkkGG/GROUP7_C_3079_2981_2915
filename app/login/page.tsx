@@ -7,10 +7,12 @@ import { inter } from '@/app/ui/fonts';
 import Header from '@/components/Header';
 import FloatingInput from '@/components/FloatingInput';
 import CustomNotification, { useNotification } from '@/components/CustomNotification';
+import { useAuth } from '@/context/AuthContext';
 import { Mail, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const { notification, show: showNotification } = useNotification();
+  const { loginAsGuest } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -107,8 +109,10 @@ export default function LoginPage() {
   };
 
   const handleGuestLogin = () => {
-    document.cookie = `auth_role=guest; path=/; max-age=86400; samesite=lax`;
-    window.location.href = '/dashboard?role=guest';
+    loginAsGuest();
+    setTimeout(() => {
+      window.location.href = '/dashboard';
+    }, 300);
   };
 
   return (

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import TopNavbar from '@/components/TopNavbar';
 import Image from 'next/image';
 import CustomNotification, { useNotification } from '@/components/CustomNotification';
@@ -47,8 +47,9 @@ const notificationItems: ToggleItem[] = [
 ];
 
 export default function SettingsContent() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { notification, show: showNotification } = useNotification();
   const [activeTab, setActiveTab] = useState<Tab>('account');
   const [toggles, setToggles] = useState<Record<string, boolean>>(
@@ -62,6 +63,30 @@ export default function SettingsContent() {
   });
   const [isSaving, setIsSaving] = useState(false);
 
+  // Redirect to login if no user session
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isLoading, router]);
+
+  // Handle guest login from URL param
+  useEffect(() => {
+    if (!user && searchParams.get('role') === 'guest') {
+      const guestUser = {
+        id: 'guest-001',
+        name: 'Guest User',
+        email: 'guest@altus.local',
+        role: 'guest',
+        fullname: 'Guest User'
+      };
+      sessionStorage.setItem('user', JSON.stringify(guestUser));
+      sessionStorage.setItem('userRole', 'guest');
+      document.cookie = 'auth_role=guest; path=/; max-age=86400; samesite=lax';
+      window.location.reload();
+    }
+  }, [user, searchParams]);
+
   useEffect(() => {
     if (user && user.role !== 'guest') {
       setProfileData({
@@ -72,7 +97,13 @@ export default function SettingsContent() {
     }
   }, [user]);
 
-  if (!user) return null;
+  if (isLoading || !user) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-slate-500">Loading...</div>
+      </div>
+    );
+  }
 
   const isGuest = user.role === 'guest';
 
