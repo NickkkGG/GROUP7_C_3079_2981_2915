@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Map, Plane, Settings, Truck, Users, History } from 'lucide-react';
+import { LayoutDashboard, Map, Plane, Settings, Truck, Users, History, BarChart3 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import SecurityGuard from '@/components/SecurityGuard';
@@ -32,6 +32,7 @@ const operatorNavItems = [
   { label: 'Flight Status', href: '/dashboard/flight-status', icon: <Plane size={20} strokeWidth={2.5} /> },
   { label: 'Shipments', href: '/dashboard/shipments', icon: <Truck size={20} strokeWidth={2.5} /> },
   { label: 'Users', href: '/dashboard/users', icon: <Users size={20} strokeWidth={2.5} /> },
+  { label: 'Reports', href: '/dashboard/reports', icon: <BarChart3 size={20} strokeWidth={2.5} /> },
 ];
 
 export default function DashboardContainer({ children }: DashboardContainerProps) {
@@ -79,12 +80,12 @@ export default function DashboardContainer({ children }: DashboardContainerProps
           <div className="flex-1" />
 
           {/* Navigation Items */}
-          <nav className="w-full flex flex-col gap-2.5 px-2">
+          <nav className="w-full flex flex-col gap-1.5 px-2">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`relative flex items-center justify-center ${sidebarExpanded ? 'justify-start' : ''} gap-3 px-4 py-3.5 rounded-[12px] overflow-hidden transition-all duration-300 group font-medium ${
+                className={`relative flex items-center justify-center ${sidebarExpanded ? 'justify-start' : ''} gap-3 px-4 py-2.5 rounded-[12px] overflow-hidden transition-all duration-300 group font-medium ${
                   isActive(item.href)
                     ? "bg-[#1e3a5f] dark:bg-blue-900 text-white shadow-lg shadow-[#1e3a5f]/40 border-[2px] border-white/20"
                     : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border-[2px] border-transparent hover:bg-gradient-to-r hover:from-cyan-400/10 hover:to-emerald-400/10 hover:border-cyan-400/30 hover:shadow-md hover:shadow-cyan-400/20"
@@ -103,7 +104,7 @@ export default function DashboardContainer({ children }: DashboardContainerProps
           <div className="flex-1" />
 
           {/* Notification, Settings & Expand Toggle */}
-          <div className="w-full flex flex-col gap-2.5 px-2 mb-3">
+          <div className="w-full flex flex-col gap-1.5 px-2 mb-2">
             <NotificationBell />
             <button
               onClick={() => setSidebarExpanded(!sidebarExpanded)}
@@ -118,7 +119,7 @@ export default function DashboardContainer({ children }: DashboardContainerProps
           </div>
 
           {/* Profile Section */}
-          <div className="w-full border-t-[2px] border-black/20 dark:border-white/10 bg-gradient-to-b from-white/40 via-white/20 to-transparent dark:from-white/5 dark:via-white/[0.02] transition-all duration-300 pt-5">
+          <div className="w-full border-t-[2px] border-black/20 dark:border-white/10 bg-gradient-to-b from-white/40 via-white/20 to-transparent dark:from-white/5 dark:via-white/[0.02] transition-all duration-300 pt-3">
             <Link href="/dashboard/settings" className={`flex cursor-pointer group gap-3 items-center transition-all duration-300 ${sidebarExpanded ? 'flex-row px-3 py-1' : 'flex-col justify-center px-2 py-1'}`}>
               <div className="w-10 h-10 flex-shrink-0 bg-gradient-to-br from-emerald-500 via-cyan-500 to-blue-500 rounded-full flex items-center justify-center text-white font-black shadow-md shadow-cyan-500/30 text-sm transition-all duration-300 hover:scale-110 border-[2px] border-white/40 hover:border-white/60 group-hover:shadow-lg group-hover:shadow-cyan-500/50 overflow-hidden relative">
                 {user?.profileImage && (

@@ -36,6 +36,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || '';
+    const dateFrom = searchParams.get('dateFrom') || '';
+    const dateTo = searchParams.get('dateTo') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
@@ -69,6 +71,18 @@ export async function GET(request: NextRequest) {
     if (status) {
       query += ` AND s.status = $${paramIndex}`;
       params.push(status);
+      paramIndex++;
+    }
+
+    if (dateFrom) {
+      query += ` AND s.created_at >= $${paramIndex}::timestamptz`;
+      params.push(dateFrom + 'T00:00:00Z');
+      paramIndex++;
+    }
+
+    if (dateTo) {
+      query += ` AND s.created_at <= $${paramIndex}::timestamptz`;
+      params.push(dateTo + 'T23:59:59Z');
       paramIndex++;
     }
 

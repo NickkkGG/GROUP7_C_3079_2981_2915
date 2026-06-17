@@ -43,7 +43,7 @@ export default function StatusDropdown({ value, options, onChange }: StatusDropd
       </button>
 
       {open && (
-        <div className="absolute z-50 top-full mt-1.5 left-0 w-full min-w-[150px] bg-white border-[2px] border-black/15 rounded-[14px] shadow-xl overflow-hidden py-1 animate-fade-in">
+        <div className="absolute z-50 top-full mt-1.5 left-0 w-full min-w-[150px] bg-white border-[2px] border-black/15 rounded-[14px] shadow-xl overflow-hidden py-1 animate-slide-down">
           {options.map((opt) => (
             <button
               key={opt.value}

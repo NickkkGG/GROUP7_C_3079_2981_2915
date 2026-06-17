@@ -491,7 +491,7 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
                 Are you sure you want to mark this shipment as <strong className="text-emerald-600">Delivered</strong>?
               </p>
               <p className="text-red-600 text-xs mt-2 font-bold">
-                ⚠️ Once completed, this shipment can no longer be edited.
+                Once completed, this shipment can no longer be edited.
               </p>
             </div>
             <div className="flex gap-3">
@@ -506,7 +506,7 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
                 type="button"
                 onClick={() => { setShowDeliverConfirm(false); submitForm(); }}
                 disabled={loading}
-                className="flex-1 px-4 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-[12px] hover:bg-emerald-700 transition disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 bg-[#1e3a5f] text-white font-bold text-xs rounded-[12px] hover:bg-[#2c5282] transition disabled:opacity-50"
               >
                 {loading ? 'Processing...' : 'Yes, Complete Shipment'}
               </button>

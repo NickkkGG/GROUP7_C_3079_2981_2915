@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useAuth } from '@/context/AuthContext';
-import { Package, Plus, Download, ChevronLeft, ChevronRight, Search, Edit, Ban } from 'lucide-react';
+import { Package, Plus, ChevronLeft, ChevronRight, Search, Edit, Ban } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
@@ -9,7 +9,6 @@ import ShipmentDetailDrawer from './ShipmentDetailDrawer';
 import StatusDropdown from '@/components/StatusDropdown';
 import CreateShipmentForm from './CreateShipmentForm';
 import EditShipmentForm from './EditShipmentForm';
-import { downloadCsv } from '@/lib/csv';
 import { getStatusBadgeClass, formatStatusLabel } from '@/lib/shipmentStatus';
 
 export default function ShipmentsContent() {
@@ -74,27 +73,6 @@ export default function ShipmentsContent() {
     } catch (error) {
       console.error('Error fetching shipments:', error);
       setLoading(false);
-    }
-  };
-
-  const handleExportCSV = async () => {
-    try {
-      const response = await fetch('/api/shipments?limit=9999');
-      const data = await response.json();
-      const all = data.shipments || [];
-      if (all.length === 0) { toast.error('No shipments to export'); return; }
-
-      const headers = ['AWB', 'Sender', 'Recipient', 'Origin', 'Destination', 'Flight', 'Weight (kg)', 'Service', 'Status', 'Created At'];
-      const rows = all.map((s: any) => [
-        s.tracking_number, s.sender, s.recipient_name, s.origin, s.destination,
-        s.flight_number || 'N/A', s.weight, s.service_type, s.status,
-        new Date(s.created_at).toLocaleDateString('id-ID')
-      ]);
-
-      downloadCsv(`ALTUS_Shipments_${new Date().toISOString().slice(0,10)}.csv`, headers, rows);
-      toast.success('CSV exported successfully');
-    } catch (error) {
-      toast.error('Failed to export CSV');
     }
   };
 
@@ -167,12 +145,6 @@ export default function ShipmentsContent() {
             <p className="text-slate-600 text-xs mt-1">Monitor all active air cargo shipments</p>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={handleExportCSV}
-              className="flex items-center gap-1 px-3 py-1.5 bg-white border-[2px] border-black/20 text-slate-900 font-bold text-xs rounded-full hover:bg-cyan-50 transition">
-              <Download size={14} />
-              Export CSV
-            </button>
             <button
               onClick={() => setIsCreating(true)}
               className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 text-white font-bold text-xs rounded-full hover:bg-emerald-600 transition"

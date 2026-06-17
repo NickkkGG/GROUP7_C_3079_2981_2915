@@ -44,6 +44,7 @@ export default function TrackingContent() {
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showGuestPopup, setShowGuestPopup] = useState(false);
+  const [searchError, setSearchError] = useState('');
 
   useEffect(() => {
     if (!user) {
@@ -175,8 +176,12 @@ export default function TrackingContent() {
   };
 
   const handleSearchWithAwb = async (awbNumber: string) => {
-    if (!awbNumber.trim()) return;
+    if (!awbNumber.trim()) {
+      setSearchError('AWB number is required. Please enter a tracking number.');
+      return;
+    }
 
+    setSearchError('');
     const normalizedAwb = awbNumber.trim().toUpperCase();
     setHasSearched(true);
     setLoading(true);
@@ -265,7 +270,7 @@ export default function TrackingContent() {
                 type="text"
                 value={awb}
                 autoFocus
-                onChange={(e) => setAwb(e.target.value)}
+                onChange={(e) => { setAwb(e.target.value); setSearchError(''); }}
                 className="flex-1 bg-transparent text-slate-900 text-sm outline-none placeholder-slate-400"
                 placeholder="e.g. AWB-EP-00000"
               />
@@ -286,6 +291,11 @@ export default function TrackingContent() {
               Track
             </button>
           </form>
+          {searchError && (
+            <div className="flex items-center gap-2 mt-3 px-4 py-2.5 bg-red-50 border border-red-300 rounded-[12px] max-w-lg w-full">
+              <span className="text-red-600 text-xs font-semibold">{searchError}</span>
+            </div>
+          )}
           <p className="text-slate-400 text-[11px] mt-4">AWB numbers are case-insensitive.</p>
           </div>
         </div>

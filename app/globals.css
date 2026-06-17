@@ -247,6 +247,22 @@ body {
   }
 }
 
+/* Dropdown slide from top to bottom */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slideDown 150ms ease-out forwards;
+}
+
 /* Utility Classes */
 .animate-fade-in {
   animation: fadeIn 0.8s ease-out forwards;
