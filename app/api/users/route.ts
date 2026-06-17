@@ -1,20 +1,6 @@
 import { sql } from '@vercel/postgres';
 import bcrypt from 'bcrypt';
-import { getRoleByEmail } from '@/lib/db';
-
-// Hanya operator yang boleh mengelola user. Role diverifikasi langsung dari DB,
-// bukan dari cookie/role yang dikirim client (cookie bisa dipalsukan).
-async function requireOperator(requesterEmail: unknown): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
-  const email = typeof requesterEmail === 'string' ? requesterEmail.toLowerCase().trim() : '';
-  if (!email) {
-    return { ok: false, status: 401, error: 'Unauthorized: requester identity is required' };
-  }
-  const role = await getRoleByEmail(email);
-  if (role !== 'operator') {
-    return { ok: false, status: 403, error: 'Forbidden: only operators can manage users' };
-  }
-  return { ok: true };
-}
+import { requireOperator } from '@/lib/auth';
 
 export async function GET() {
   try {
@@ -32,7 +18,7 @@ export async function PUT(request: Request) {
   try {
     const { userId, fullname, email, role, password, requesterEmail } = await request.json();
 
-    const auth = await requireOperator(requesterEmail);
+    const auth = await requireOperator(requesterEmail, 'users');
     if (!auth.ok) {
       return Response.json({ error: auth.error }, { status: auth.status });
     }
@@ -56,6 +42,20 @@ export async function PUT(request: Request) {
     }
     if (role !== undefined && !['guest', 'user', 'operator'].includes(role)) {
       return Response.json({ error: 'Invalid role. Allowed roles: guest, user, operator' }, { status: 400 });
+    }
+
+    // Cegah operator terakhir di-downgrade jadi non-operator (sistem bisa terkunci tanpa operator)
+    if (role !== undefined && role !== 'operator') {
+      const targetCheck = await sql`SELECT role FROM users WHERE id = ${userId};`;
+      if (targetCheck.rows.length > 0 && targetCheck.rows[0].role === 'operator') {
+        const operatorCount = await sql`SELECT COUNT(*) as count FROM users WHERE role = 'operator';`;
+        if (parseInt(operatorCount.rows[0].count) <= 1) {
+          return Response.json(
+            { error: 'Cannot change the role of the last operator. At least one operator must remain.' },
+            { status: 400 }
+          );
+        }
+      }
     }
 
     // Build dynamic update
@@ -99,7 +99,7 @@ export async function DELETE(request: Request) {
     const userId = searchParams.get('id');
     const requesterEmail = searchParams.get('requesterEmail');
 
-    const auth = await requireOperator(requesterEmail);
+    const auth = await requireOperator(requesterEmail, 'users');
     if (!auth.ok) {
       return Response.json({ error: auth.error }, { status: auth.status });
     }

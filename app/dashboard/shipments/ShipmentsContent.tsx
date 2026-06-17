@@ -9,6 +9,8 @@ import ShipmentDetailDrawer from './ShipmentDetailDrawer';
 import StatusDropdown from '@/components/StatusDropdown';
 import CreateShipmentForm from './CreateShipmentForm';
 import EditShipmentForm from './EditShipmentForm';
+import { downloadCsv } from '@/lib/csv';
+import { getStatusBadgeClass, formatStatusLabel } from '@/lib/shipmentStatus';
 
 export default function ShipmentsContent() {
   const { user } = useAuth();
@@ -89,14 +91,7 @@ export default function ShipmentsContent() {
         new Date(s.created_at).toLocaleDateString('id-ID')
       ]);
 
-      const csv = [headers.join(','), ...rows.map((r: string[]) => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))].join('\n');
-      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `ALTUS_Shipments_${new Date().toISOString().slice(0,10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadCsv(`ALTUS_Shipments_${new Date().toISOString().slice(0,10)}.csv`, headers, rows);
       toast.success('CSV exported successfully');
     } catch (error) {
       toast.error('Failed to export CSV');
@@ -319,21 +314,9 @@ export default function ShipmentsContent() {
                         <td className="py-2 px-4 text-slate-700 text-xs">{shipment.flight_number || 'N/A'}</td>
                         <td className="py-2 px-4">
                           <span
-                            className={`px-2 py-0.5 rounded-full text-xs font-semibold inline-block border ${
-                              shipment.status === 'booked'
-                                ? 'bg-blue-100 text-blue-700 border-blue-400'
-                                : shipment.status === 'received'
-                                  ? 'bg-purple-100 text-purple-700 border-purple-400'
-                                  : shipment.status === 'in_transit'
-                                    ? 'bg-orange-100 text-orange-700 border-orange-400'
-                                    : shipment.status === 'arrived'
-                                      ? 'bg-cyan-100 text-cyan-700 border-cyan-400'
-                                      : shipment.status === 'cancelled'
-                                        ? 'bg-red-100 text-red-700 border-red-400'
-                                        : 'bg-emerald-100 text-emerald-700 border-emerald-400'
-                            }`}
+                            className={`px-2 py-0.5 rounded-full text-xs font-semibold inline-block border ${getStatusBadgeClass(shipment.status)}`}
                           >
-                            {shipment.status?.replace('_', ' ').charAt(0).toUpperCase() + shipment.status?.replace('_', ' ').slice(1)}
+                            {formatStatusLabel(shipment.status)}
                           </span>
                         </td>
                         <td className="py-2 px-4 text-slate-700 text-xs">{shipment.weight} kg</td>

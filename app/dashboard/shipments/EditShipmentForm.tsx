@@ -5,10 +5,8 @@ import { X, Package, User, MapPin } from 'lucide-react';
 import Notification from '@/components/Notification';
 import { isValidPhone, validateShipmentInput } from '@/lib/validation';
 import { useAuth } from '@/context/AuthContext';
-
-const RATES: Record<string, number> = { Regular: 5000, Express: 10000, Priority: 15000 };
-const formatRupiah = (n: number) =>
-  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+import { RATES } from '@/lib/pricing';
+import { formatRupiah } from '@/lib/format';
 
 interface EditShipmentFormProps {
   shipment: any;
@@ -30,7 +28,6 @@ export default function EditShipmentForm({ shipment, onClose, onSuccess }: EditS
     sender: shipment.sender || '',
     sender_contact: shipment.sender_contact || '',
     sender_address: shipment.sender_address || '',
-    receiver: shipment.receiver || '',
     recipient_name: shipment.recipient_name || '',
     recipient_contact: shipment.recipient_contact || '',
     recipient_address: shipment.recipient_address || '',

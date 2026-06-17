@@ -3,6 +3,7 @@
 import { X, Package, MapPin, User, Phone, Home, FileText, Clock, ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getStatusBadgeClass, formatStatusLabel } from '@/lib/shipmentStatus';
 
 interface ShipmentDetailDrawerProps {
   isOpen: boolean;
@@ -60,21 +61,6 @@ export default function ShipmentDetailDrawer({ isOpen, onClose, trackingNumber }
   };
 
   if (!isOpen) return null;
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'booked': return 'bg-blue-100 text-blue-700 border-blue-400';
-      case 'received': return 'bg-purple-100 text-purple-700 border-purple-400';
-      case 'in_transit': return 'bg-orange-100 text-orange-700 border-orange-400';
-      case 'arrived': return 'bg-cyan-100 text-cyan-700 border-cyan-400';
-      case 'delivered': return 'bg-emerald-100 text-emerald-700 border-emerald-400';
-      default: return 'bg-slate-100 text-slate-700 border-slate-400';
-    }
-  };
-
-  const formatStatus = (status: string) => {
-    return status?.replace('_', ' ').charAt(0).toUpperCase() + status?.replace('_', ' ').slice(1);
-  };
 
   return (
     <>
@@ -139,10 +125,10 @@ export default function ShipmentDetailDrawer({ isOpen, onClose, trackingNumber }
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-slate-600 text-xs font-medium mb-1">Current Status</p>
-                    <p className="text-slate-900 font-bold text-base">{formatStatus(shipment.status)}</p>
+                    <p className="text-slate-900 font-bold text-base">{formatStatusLabel(shipment.status)}</p>
                   </div>
-                  <span className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 ${getStatusColor(shipment.status)}`}>
-                    {formatStatus(shipment.status)}
+                  <span className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 ${getStatusBadgeClass(shipment.status)}`}>
+                    {formatStatusLabel(shipment.status)}
                   </span>
                 </div>
               </div>

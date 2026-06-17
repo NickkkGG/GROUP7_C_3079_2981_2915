@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Download, Search, UserCheck, UserX, Trash2, Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import CustomNotification, { useNotification } from '@/components/CustomNotification';
+import { downloadCsv } from '@/lib/csv';
 
 interface User {
   id: number;
@@ -76,14 +77,7 @@ export default function UsersContent() {
       u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID') : '-',
     ]);
 
-    const csv = [headers.join(','), ...rows.map((r) => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))].join('\n');
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ALTUS_Users_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCsv(`ALTUS_Users_${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
     showNotification('CSV exported successfully', 'success');
   };
 

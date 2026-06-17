@@ -6,10 +6,8 @@ import { indonesianCities } from '@/lib/cities';
 import Notification from '@/components/Notification';
 import { isValidPhone, validateShipmentInput } from '@/lib/validation';
 import { useAuth } from '@/context/AuthContext';
-
-const RATES: Record<string, number> = { Regular: 5000, Express: 10000, Priority: 15000 };
-const formatRupiah = (n: number) =>
-  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+import { RATES } from '@/lib/pricing';
+import { formatRupiah } from '@/lib/format';
 
 interface CreateShipmentFormProps {
   onClose: () => void;
@@ -31,7 +29,6 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
     sender: '',
     sender_contact: '',
     sender_address: '',
-    receiver: '',
     recipient_name: '',
     recipient_contact: '',
     recipient_address: '',
@@ -90,22 +87,13 @@ export default function CreateShipmentForm({ onClose, onSuccess }: CreateShipmen
     const originCode = extractCode(formData.origin);
     const destCode = extractCode(formData.destination);
 
-    console.log('Origin:', formData.origin, '-> Code:', originCode);
-    console.log('Destination:', formData.destination, '-> Code:', destCode);
-    console.log('Total flights:', flights.length);
-
     const filtered = flights.filter(flight => {
       // Check if flight departure/arrival cities contain the airport codes
       const departureMatch = originCode && flight.departure_city?.includes(originCode);
       const arrivalMatch = destCode && flight.arrival_city?.includes(destCode);
-
-      console.log(`Flight ${flight.flight_number}: ${flight.departure_city} -> ${flight.arrival_city}`,
-                  `Departure match: ${departureMatch}, Arrival match: ${arrivalMatch}`);
-
       return departureMatch && arrivalMatch;
     });
 
-    console.log('Filtered flights:', filtered.length);
     return filtered;
   };
 

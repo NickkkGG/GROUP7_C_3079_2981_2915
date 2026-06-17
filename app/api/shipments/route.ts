@@ -1,26 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { validateShipmentInput } from '@/lib/validation';
-import { getRoleByEmail } from '@/lib/db';
-
-// Hanya operator yang boleh membuat/mengubah/membatalkan shipment.
-// Role diverifikasi dari DB, bukan dari cookie yang bisa dipalsukan client.
-async function requireOperator(requesterEmail: unknown): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
-  const email = typeof requesterEmail === 'string' ? requesterEmail.toLowerCase().trim() : '';
-  if (!email) {
-    return { ok: false, status: 401, error: 'Unauthorized: requester identity is required' };
-  }
-  const role = await getRoleByEmail(email);
-  if (role !== 'operator') {
-    return { ok: false, status: 403, error: 'Forbidden: only operators can manage shipments' };
-  }
-  return { ok: true };
-}
-
-// Tarif per kg berdasarkan jenis pengiriman
-const RATES: Record<string, number> = { Regular: 5000, Express: 10000, Priority: 15000 };
-const computeTariff = (serviceType: string, weight: number) =>
-  (RATES[serviceType] ?? RATES.Regular) * weight;
+import { computeTariff } from '@/lib/pricing';
+import { requireOperator } from '@/lib/auth';
 
 // Alur status & lokasi untuk tracking history
 const STATUS_FLOW = ['booked', 'received', 'in_transit', 'arrived', 'delivered'];
@@ -121,7 +103,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const auth = await requireOperator(body?.requesterEmail);
+    const auth = await requireOperator(body?.requesterEmail, 'shipments');
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
@@ -235,7 +217,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { id } = body;
 
-    const auth = await requireOperator(body?.requesterEmail);
+    const auth = await requireOperator(body?.requesterEmail, 'shipments');
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
@@ -403,7 +385,7 @@ export async function DELETE(request: NextRequest) {
       reason = '';
     }
 
-    const auth = await requireOperator(requesterEmail);
+    const auth = await requireOperator(requesterEmail, 'shipments');
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
