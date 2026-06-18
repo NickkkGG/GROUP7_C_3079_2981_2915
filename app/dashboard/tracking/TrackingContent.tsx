@@ -482,7 +482,7 @@ export default function TrackingContent() {
       {/* Tombol kecil untuk balik ke landing & search AWB lain */}
       <button
         onClick={() => { setHasSearched(false); setShipment(null); setTrackingHistory([]); setNotFound(false); setAwb(''); setVerificationRequired(false); setPendingShipment(null); setPendingHistory([]); setPhoneInput(''); setVerifyError(''); }}
-        className="flex items-center gap-1.5 text-slate-500 hover:text-slate-900 text-xs font-semibold transition self-start flex-shrink-0"
+        className="flex items-center gap-1.5 px-4 py-2 bg-[#1e3a5f] border-[2px] border-[#1e3a5f] text-white hover:bg-[#2c5282] hover:border-[#2c5282] text-xs font-bold rounded-[12px] transition self-start flex-shrink-0 shadow-sm"
       >
         <Search size={13} />
         Track another AWB
