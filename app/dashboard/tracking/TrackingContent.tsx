@@ -16,12 +16,13 @@ function maskName(name: string): string {
   return parts[0] + ' ' + parts.slice(1).map(p => p.charAt(0) + '*'.repeat(Math.max(p.length - 1, 2))).join(' ');
 }
 
-// Helper: sensor telepon — "08123456508" → "****6508"
+// Helper: sensor telepon — "08123456789" → "0812*****9" (4 depan + bintang + 1 belakang)
 function maskPhone(phone: string): string {
   if (!phone) return '-';
   const digits = phone.replace(/\D/g, '');
-  if (digits.length <= 4) return '****';
-  return '****' + digits.slice(-4);
+  if (digits.length <= 5) return '*'.repeat(digits.length);
+  const stars = '*'.repeat(Math.max(digits.length - 5, 1));
+  return digits.slice(0, 4) + stars + digits.slice(-1);
 }
 
 // Estimasi waktu tiba: created_at + hari sesuai service type
@@ -45,6 +46,14 @@ export default function TrackingContent() {
   const [loading, setLoading] = useState(false);
   const [showGuestPopup, setShowGuestPopup] = useState(false);
   const [searchError, setSearchError] = useState('');
+  const [verificationRequired, setVerificationRequired] = useState(false);
+  const [phoneInput, setPhoneInput] = useState('');
+  const [verifyError, setVerifyError] = useState('');
+  const [pendingShipment, setPendingShipment] = useState<any>(null);
+  const [pendingHistory, setPendingHistory] = useState<any[]>([]);
+  const [verifyAttempts, setVerifyAttempts] = useState(0);
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
+  const [verifySuccess, setVerifySuccess] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -192,10 +201,19 @@ export default function TrackingContent() {
 
       if (response.ok) {
         const data = await response.json();
-        setShipment(data.shipment);
-        setTrackingHistory(data.history || []);
-        setNotFound(false);
-        logActivity('track', data.shipment?.tracking_number || normalizedAwb);
+        // Operator skip verification, others must verify phone
+        if (user?.role === 'operator') {
+          setShipment(data.shipment);
+          setTrackingHistory(data.history || []);
+          setNotFound(false);
+          logActivity('track', data.shipment?.tracking_number || normalizedAwb);
+        } else {
+          setPendingShipment(data.shipment);
+          setPendingHistory(data.history || []);
+          setVerificationRequired(true);
+          setPhoneInput('');
+          setVerifyError('');
+        }
       } else {
         setShipment(null);
         setTrackingHistory([]);
@@ -220,6 +238,50 @@ export default function TrackingContent() {
       handleSearchWithAwb(searchParam);
     }
   }, [searchParams, awb]);
+
+  useEffect(() => {
+    if (lockoutSeconds <= 0) return;
+    const timer = setTimeout(() => setLockoutSeconds((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [lockoutSeconds]);
+
+  const handleVerifyPhone = () => {
+    if (lockoutSeconds > 0) return;
+    const input = phoneInput.trim().replace(/\D/g, '');
+    if (input.length !== 4) {
+      setVerifyError('Please enter exactly 4 digits.');
+      return;
+    }
+    const senderLast4 = (pendingShipment?.sender_contact || '').replace(/\D/g, '').slice(-4);
+    const recipientLast4 = (pendingShipment?.recipient_contact || '').replace(/\D/g, '').slice(-4);
+    if (input === senderLast4 || input === recipientLast4) {
+      setVerifySuccess(true);
+      setVerifyError('');
+      setTimeout(() => {
+        setShipment(pendingShipment);
+        setTrackingHistory(pendingHistory);
+        setNotFound(false);
+        setVerificationRequired(false);
+        setPendingShipment(null);
+        setPendingHistory([]);
+        setVerifyAttempts(0);
+        setLockoutSeconds(0);
+        setVerifySuccess(false);
+        logActivity('track', pendingShipment?.tracking_number || awb);
+      }, 1200);
+    } else {
+      const newAttempts = verifyAttempts + 1;
+      setVerifyAttempts(newAttempts);
+      setPhoneInput('');
+      if (newAttempts >= 3) {
+        setVerifyAttempts(0);
+        setLockoutSeconds(30);
+        setVerifyError('');
+      } else {
+        setVerifyError(`Incorrect. ${3 - newAttempts} attempt${3 - newAttempts === 1 ? '' : 's'} remaining.`);
+      }
+    }
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -313,11 +375,113 @@ export default function TrackingContent() {
           <p className="text-slate-500 text-sm mt-1.5 font-mono">{awb}</p>
           <p className="text-slate-400 text-xs mt-3">Fetching status, route, and tracking history…</p>
         </div>
+      ) : verificationRequired ? (
+        /* VERIFICATION SCREEN */
+        <div className="flex-1 flex flex-col items-center justify-center px-4 animate-fade-in">
+          <div className="w-full max-w-sm">
+            <div className="bg-white border-[2px] border-black/20 rounded-[24px] overflow-hidden shadow-lg">
+              {/* Header */}
+              <div className="bg-[#1e3a5f] px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Package size={18} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-white/70 text-[10px] uppercase tracking-wider">Tracking Number</p>
+                    <p className="text-white font-bold text-sm font-mono">{awb}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="px-5 py-5">
+                {verifySuccess ? (
+                  <div className="flex flex-col items-center py-6 animate-fade-in">
+                    <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mb-3">
+                      <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <h2 className="text-emerald-700 font-black text-base mb-1">Verification Successful</h2>
+                    <p className="text-slate-500 text-xs">Loading your shipment…</p>
+                  </div>
+                ) : (
+                  <>
+                    <h2 className="text-slate-900 font-black text-base mb-1">Phone Verification</h2>
+                    <p className="text-slate-500 text-xs leading-relaxed mb-4">
+                      Enter the <span className="font-bold text-slate-700">last 4 digits</span> of the phone number registered to this shipment (sender or recipient).
+                    </p>
+
+                {/* Lockout banner */}
+                {lockoutSeconds > 0 && (
+                  <div className="mb-4 flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-[12px] px-4 py-3">
+                    <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-orange-600 font-black text-sm">{lockoutSeconds}</span>
+                    </div>
+                    <p className="text-orange-700 text-xs leading-relaxed">
+                      Too many incorrect attempts. Please wait <span className="font-bold">{lockoutSeconds}s</span> before trying again.
+                    </p>
+                  </div>
+                )}
+
+                {/* Input */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={phoneInput}
+                    autoFocus
+                    disabled={lockoutSeconds > 0}
+                    onChange={(e) => { setPhoneInput(e.target.value.replace(/\D/g, '').slice(0, 4)); setVerifyError(''); }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleVerifyPhone()}
+                    placeholder="_ _ _ _"
+                    className={`flex-1 border-[2px] rounded-[12px] px-4 py-2.5 text-slate-900 text-sm font-mono font-bold outline-none transition-all placeholder-slate-400 text-center tracking-[0.3em] ${
+                      lockoutSeconds > 0
+                        ? 'bg-slate-100 border-slate-200 cursor-not-allowed text-slate-400'
+                        : 'bg-white border-black/20 focus:border-blue-400 focus:ring-2 focus:ring-blue-100'
+                    }`}
+                  />
+                  <button
+                    onClick={handleVerifyPhone}
+                    disabled={lockoutSeconds > 0}
+                    className={`px-5 py-2.5 font-bold text-sm rounded-[12px] transition-all ${
+                      lockoutSeconds > 0
+                        ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                        : 'bg-[#1e3a5f] text-white hover:bg-[#2c5282] active:scale-95'
+                    }`}
+                  >
+                    Verify
+                  </button>
+                </div>
+
+                {verifyError && (
+                  <div className="mt-2.5 flex items-start gap-2 bg-red-50 border border-red-200 rounded-[10px] px-3 py-2">
+                    <Info size={13} className="text-red-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-red-600 text-xs">{verifyError}</p>
+                  </div>
+                )}
+                  </>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="border-t border-black/10 px-5 py-3">
+                <button
+                  onClick={() => { setHasSearched(false); setVerificationRequired(false); setPendingShipment(null); setPendingHistory([]); setPhoneInput(''); setVerifyError(''); setAwb(''); }}
+                  className="text-slate-400 hover:text-slate-700 text-xs font-semibold transition"
+                >
+                  ← Search different AWB
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       ) : (
       <>
       {/* Tombol kecil untuk balik ke landing & search AWB lain */}
       <button
-        onClick={() => { setHasSearched(false); setShipment(null); setTrackingHistory([]); setNotFound(false); setAwb(''); }}
+        onClick={() => { setHasSearched(false); setShipment(null); setTrackingHistory([]); setNotFound(false); setAwb(''); setVerificationRequired(false); setPendingShipment(null); setPendingHistory([]); setPhoneInput(''); setVerifyError(''); }}
         className="flex items-center gap-1.5 text-slate-500 hover:text-slate-900 text-xs font-semibold transition self-start flex-shrink-0"
       >
         <Search size={13} />
