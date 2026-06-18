@@ -1,17 +1,20 @@
 import { sql } from '@vercel/postgres';
 import bcrypt from 'bcrypt';
+import { requireUserOrOperator } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
+    const requesterEmail = searchParams.get('requesterEmail');
 
-    if (!email) {
-      return Response.json({ error: 'Email required' }, { status: 400 });
+    const auth = await requireUserOrOperator(requesterEmail, email);
+    if (!auth.ok) {
+      return Response.json({ error: auth.error }, { status: auth.status });
     }
 
     const result = await sql`
-      SELECT id, fullname, email, role FROM users WHERE email = ${email.toLowerCase().trim()};
+      SELECT id, fullname, email, role FROM users WHERE email = ${email!.toLowerCase().trim()};
     `;
 
     if (result.rows.length === 0) {
@@ -28,12 +31,17 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { email, fullname, newPassword, currentPassword } = body;
+    const { email, fullname, newPassword, currentPassword, requesterEmail } = body;
     const normalizedEmail = typeof email === 'string' ? email.toLowerCase().trim() : '';
     const normalizedFullname = typeof fullname === 'string' ? fullname.trim() : '';
 
     if (!normalizedEmail) {
       return Response.json({ error: 'Email required' }, { status: 400 });
+    }
+
+    const auth = await requireUserOrOperator(requesterEmail, normalizedEmail);
+    if (!auth.ok) {
+      return Response.json({ error: auth.error }, { status: auth.status });
     }
 
     // Get current user

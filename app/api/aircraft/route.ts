@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { requireOperator } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
@@ -59,7 +60,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { registration, model, airline, capacity, status } = body;
+    const { registration, model, airline, capacity, status, requesterEmail } = body;
+
+    const auth = await requireOperator(requesterEmail, 'aircraft');
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
 
     // Validate required fields
     if (!registration || !model) {
@@ -103,7 +109,12 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, registration, model, airline, capacity, status } = body;
+    const { id, registration, model, airline, capacity, status, requesterEmail } = body;
+
+    const auth = await requireOperator(requesterEmail, 'aircraft');
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
 
     // Validate required fields
     if (!id || !registration || !model) {
@@ -158,6 +169,12 @@ export async function DELETE(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');
+    const requesterEmail = searchParams.get('requesterEmail');
+
+    const auth = await requireOperator(requesterEmail, 'aircraft');
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
 
     if (!id) {
       return NextResponse.json({ error: 'Aircraft ID is required' }, { status: 400 });

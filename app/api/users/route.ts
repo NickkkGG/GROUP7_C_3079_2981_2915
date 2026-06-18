@@ -2,8 +2,16 @@ import { sql } from '@vercel/postgres';
 import bcrypt from 'bcrypt';
 import { requireOperator } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const requesterEmail = searchParams.get('requesterEmail');
+
+    const auth = await requireOperator(requesterEmail, 'users');
+    if (!auth.ok) {
+      return Response.json({ error: auth.error }, { status: auth.status });
+    }
+
     const result = await sql`
       SELECT id, fullname, email, role, created_at FROM users ORDER BY created_at DESC;
     `;
@@ -103,7 +111,6 @@ export async function DELETE(request: Request) {
     if (!auth.ok) {
       return Response.json({ error: auth.error }, { status: auth.status });
     }
-
     if (!userId) {
       return Response.json({ error: 'User ID required' }, { status: 400 });
     }

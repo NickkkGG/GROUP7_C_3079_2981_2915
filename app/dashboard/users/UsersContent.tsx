@@ -47,7 +47,7 @@ export default function UsersContent() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/users');
+      const response = await fetch(`/api/users?requesterEmail=${encodeURIComponent(user?.email || '')}`);
       const data = await response.json();
 
       if (!response.ok) {

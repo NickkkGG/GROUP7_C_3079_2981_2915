@@ -224,6 +224,7 @@ function AccountTab({
         body: JSON.stringify({
           email: user.email,
           fullname: profileData.fullname,
+          requesterEmail: user.email,
         }),
       });
 
@@ -595,6 +596,7 @@ function SecurityTab({
           email: user.email,
           currentPassword: passwords.current,
           newPassword: passwords.newPass,
+          requesterEmail: user.email,
         }),
       });
 
